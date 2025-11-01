@@ -1,5 +1,5 @@
 # Script PowerShell para crear el archivo .env
-
+# Ejecuta este script desde la carpeta backend/
 
 Write-Host "🔧 Configuración del archivo .env" -ForegroundColor Cyan
 Write-Host ""
