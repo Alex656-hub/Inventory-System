@@ -21,7 +21,7 @@ interface MovimientoInventarioAttributes {
   updatedAt?: Date;
 }
 
-interface MovimientoInventarioCreationAttributes extends Optional<MovimientoInventarioAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
+interface MovimientoInventarioCreationAttributes extends Optional<MovimientoInventarioAttributes, 'id' | 'createdAt' | 'updatedAt' | 'fecha'> {}
 
 class MovimientoInventario extends Model<MovimientoInventarioAttributes, MovimientoInventarioCreationAttributes> implements MovimientoInventarioAttributes {
   public id!: number;

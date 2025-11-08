@@ -1,12 +1,12 @@
 .dashboard {
-  background: white;
+  background: var(--color-surface);
   border-radius: 10px;
   padding: 30px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .dashboard h1 {
-  color: #333;
+  color: var(--color-text);
   margin-bottom: 30px;
 }
 
@@ -18,7 +18,7 @@
 }
 
 .stat-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
   color: white;
   padding: 25px;
   border-radius: 10px;
@@ -26,14 +26,14 @@
 }
 
 .stat-card.warning {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%);
 }
 
 .stat-card h3 {
   margin: 0 0 15px 0;
   font-size: 16px;
   font-weight: normal;
-  opacity: 0.9;
+  opacity: 0.85;
 }
 
 .stat-value {
@@ -47,7 +47,7 @@
 }
 
 .alertas-section h2 {
-  color: #333;
+  color: var(--color-text);
   margin-bottom: 20px;
 }
 
@@ -57,8 +57,8 @@
 }
 
 .alerta-item {
-  background-color: #fff3cd;
-  border: 1px solid #ffc107;
+  background-color: var(--color-primary-lighter);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 15px;
   display: flex;
@@ -67,11 +67,11 @@
 }
 
 .alerta-item strong {
-  color: #856404;
+  color: var(--color-primary-dark);
 }
 
 .codigo {
-  color: #666;
+  color: var(--color-text-muted);
   font-size: 14px;
   margin-left: 10px;
 }
@@ -79,13 +79,13 @@
 .stock-info {
   display: flex;
   gap: 20px;
-  color: #856404;
+  color: var(--color-primary);
   font-weight: 600;
 }
 
 .loading {
   text-align: center;
   padding: 40px;
-  color: #666;
+  color: var(--color-text-muted);
 }
 

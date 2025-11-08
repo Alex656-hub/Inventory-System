@@ -1,5 +1,5 @@
 .product-list {
-  background: white;
+  background: var(--color-surface);
   border-radius: 10px;
   padding: 30px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -10,7 +10,7 @@
 }
 
 .page-header h1 {
-  color: #333;
+  color: var(--color-primary-dark);
   margin: 0;
 }
 
@@ -23,14 +23,14 @@
 .search-input {
   flex: 1;
   padding: 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   border-radius: 5px;
   font-size: 16px;
 }
 
 .filter-select {
   padding: 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   border-radius: 5px;
   font-size: 16px;
   min-width: 200px;
@@ -47,24 +47,24 @@
 }
 
 .products-table thead {
-  background-color: #f8f9fa;
+  background-color: var(--color-primary-lighter);
 }
 
 .products-table th {
   padding: 15px;
   text-align: left;
   font-weight: 600;
-  color: #333;
-  border-bottom: 2px solid #dee2e6;
+  color: var(--color-primary-dark);
+  border-bottom: 2px solid var(--color-border);
 }
 
 .products-table td {
   padding: 15px;
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .products-table tbody tr:hover {
-  background-color: #f8f9fa;
+  background-color: var(--color-primary-lighter);
 }
 
 .products-table tbody tr.stock-bajo {
@@ -74,7 +74,7 @@
 .no-data {
   text-align: center;
   padding: 40px;
-  color: #666;
+  color: var(--color-text-muted);
 }
 
 .badge {
@@ -104,17 +104,17 @@
 
 .btn-pagination {
   padding: 8px 20px;
-  border: 1px solid #ddd;
-  background-color: white;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
   border-radius: 5px;
   cursor: pointer;
   transition: all 0.3s;
 }
 
 .btn-pagination:hover:not(:disabled) {
-  background-color: #667eea;
+  background-color: var(--color-primary);
   color: white;
-  border-color: #667eea;
+  border-color: var(--color-primary);
 }
 
 .btn-pagination:disabled {
@@ -125,6 +125,6 @@
 .loading {
   text-align: center;
   padding: 40px;
-  color: #666;
+  color: var(--color-text-muted);
 }
 
