@@ -1,0 +1,160 @@
+.settings-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  color: var(--color-text);
+}
+
+.settings-container h1 {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  color: var(--color-text);
+  border-bottom: 2px solid var(--color-border);
+  padding-bottom: 0.5rem;
+}
+
+.settings-section {
+  background: var(--color-surface);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.settings-section h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.theme-selector h3 {
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.theme-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.theme-option {
+  position: relative;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  transition: all 0.25s ease;
+  border: 2px solid var(--color-border);
+  background: var(--color-surface);
+  overflow: hidden;
+  height: auto;
+  min-height: 140px;
+}
+
+.theme-option:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  border-color: var(--color-primary);
+}
+
+.theme-option.active {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary), 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.theme-preview {
+  width: 100%;
+  height: 80px;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+  display: flex;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.theme-preview-primary,
+.theme-preview-dark,
+.theme-preview-light {
+  flex: 1;
+  height: 100%;
+}
+
+.theme-preview-primary {
+  background-color: var(--color-primary);
+}
+
+.theme-preview-dark {
+  background-color: var(--color-dark);
+}
+
+.theme-preview-light {
+  background-color: var(--color-light);
+}
+
+.theme-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-text);
+  text-align: center;
+  margin-top: 0.5rem;
+  transition: color 0.2s;
+}
+
+.theme-option:hover .theme-name {
+  color: var(--color-primary);
+}
+
+.check-icon {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: var(--color-primary);
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.9rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.theme-option:not(.active) .check-icon {
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+/* Estilos para pantallas pequeñas */
+@media (max-width: 768px) {
+  .settings-container {
+    padding: 1rem;
+  }
+  
+  .theme-options {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 1rem;
+  }
+  
+  .theme-option {
+    min-height: 120px;
+    padding: 0.75rem;
+  }
+  
+  .theme-preview {
+    height: 60px;
+  }
+  
+  .theme-option {
+    min-height: 120px;
+  }
+}
