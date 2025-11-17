@@ -184,14 +184,12 @@ export type Theme = ThemeType;
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-// Tema por defecto para el login
 export const DEFAULT_THEME: Theme = 'cyan';
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>(DEFAULT_THEME);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Cargar el tema guardado del localStorage al iniciar
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as Theme | null;
     if (savedTheme && themes[savedTheme]) {
@@ -202,26 +200,22 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setIsInitialized(true);
   }, []);
 
-  // Aplicar el tema actual
   useEffect(() => {
     if (!isInitialized) return;
     
     const root = document.documentElement;
     const colorScheme = themes[theme];
     
-    // Aplicar todas las variantes de color del tema
     Object.entries(colorScheme).forEach(([key, value]) => {
       root.style.setProperty(`--color-${theme}-${key}`, value);
     });
     
-    // Establecer las variables CSS principales
     root.style.setProperty('--color-primary', colorScheme[500]);
     root.style.setProperty('--color-primary-dark', colorScheme[700]);
     root.style.setProperty('--color-primary-light', colorScheme[300]);
-    root.style.setProperty('--color-primary-ultralight', colorScheme[100]);
+    root.style.setProperty('--color-warning', colorScheme[400]); // Usamos el tono 400 para el warning
     root.style.setProperty('--color-text-on-primary', theme === 'zinc' ? '#1f2937' : '#ffffff');
     
-    // Guardar el tema en localStorage solo si no es la inicialización
     if (theme !== DEFAULT_THEME) {
       localStorage.setItem('theme', theme);
     } else {
@@ -229,13 +223,8 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   }, [theme, isInitialized]);
 
-  // Función para establecer el tema del usuario
-  const setUserTheme = (newTheme: Theme) => {
-    setTheme(newTheme);
-  };
-
   return (
-    <ThemeContext.Provider value={{ theme, setTheme: setUserTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme }}>
       {children}
     </ThemeContext.Provider>
   );
@@ -249,5 +238,4 @@ export const useTheme = (): ThemeContextType => {
   return context;
 };
 
-// Exportar ThemeContext como valor por defecto
 export default ThemeContext;
