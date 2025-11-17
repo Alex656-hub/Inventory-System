@@ -154,7 +154,7 @@ li {
   transition: all 0.3s ease;
 }
 
-.sidebar .side-menu li.active a { color: var(--success); }
+.sidebar .side-menu li.active a { color: var(--color-primary); }
 
 .sidebar.close .side-menu li a {
   width: calc(48px - (4px * 2));
