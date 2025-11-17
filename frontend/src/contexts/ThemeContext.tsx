@@ -16,7 +16,7 @@ type ColorShades = {
   950: string;
 };
 
-const themes: Record<ThemeType, ColorShades> = {
+export const themes: Record<ThemeType, ColorShades> = {
   red: {
     '50': '#fef2f2',
     '100': '#ffe2e2',
@@ -173,14 +173,14 @@ const themes: Record<ThemeType, ColorShades> = {
     '900': '#004f3b',
     '950': '#002c22'
   }
-};
+} as const;
 
 type ThemeContextType = {
   theme: ThemeType;
   setTheme: (theme: ThemeType) => void;
 };
 
-export type Theme = ThemeType;
+export type Theme = keyof typeof themes;
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 

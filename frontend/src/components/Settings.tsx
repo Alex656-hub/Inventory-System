@@ -1,76 +1,59 @@
 import React from 'react';
-import { useTheme, type Theme } from '../contexts';
+import { useTheme, type Theme, themes } from '../contexts/ThemeContext';
 import './Settings.css';
 
-type ThemeInfo = {
-  id: string;
-  name: string;
-  colors: {
-    primary: string;
-    dark: string;
-    light: string;
-  };
-};
-
-const themeNames: Record<string, string> = {
-  red: 'Rojo',
-  teal: 'Verde Azulado',
-  orange: 'Naranja',
-  amber: 'Ámbar',
-  yellow: 'Amarillo',
-  sky: 'Celeste',
-  blue: 'Azul',
-  cyan: 'Cian',
-  zinc: 'Zinc',
-  indigo: 'Índigo',
-  lime: 'Lima',
-  emerald: 'Esmeralda'
-};
+const themeOrder = [
+  { id: 'red', name: 'Rojo' },
+  { id: 'teal', name: 'Verde Azulado' },
+  { id: 'orange', name: 'Naranja' },
+  { id: 'amber', name: 'Ámbar' },
+  { id: 'yellow', name: 'Amarillo' },
+  { id: 'sky', name: 'Celeste' },
+  { id: 'blue', name: 'Azul' },
+  { id: 'cyan', name: 'Cian' },
+  { id: 'zinc', name: 'Zinc' },
+  { id: 'indigo', name: 'Índigo' },
+  { id: 'lime', name: 'Lima' },
+  { id: 'emerald', name: 'Esmeralda' },
+] as const;
 
 const Settings: React.FC = () => {
   const { theme, setTheme } = useTheme();
 
-  const themeList: ThemeInfo[] = Object.entries(themeNames).map(([id, name]) => ({
-    id,
-    name,
-    colors: {
-      primary: `var(--color-${id}-500)`,
-      dark: `var(--color-${id}-700)`,
-      light: `var(--color-${id}-300)`
-    }
-  }));
-
   return (
     <div className="settings-container">
-      <h1>Configuraciones</h1>
-      
+      <h1>Apariencia</h1>
+
       <div className="settings-section">
-        <h2>Apariencia</h2>
-        <div className="theme-selector">
-          <h3>Seleccionar tema</h3>
-          <div className="theme-options">
-            {themeList.map((t) => (
-              <div 
-                key={t.id}
-                className={`theme-option ${theme === t.id ? 'active' : ''}`}
-                onClick={() => setTheme(t.id as any)}
-                style={{
-                  '--color-primary': t.colors.primary,
-                  '--color-dark': t.colors.dark,
-                  '--color-light': t.colors.light,
-                } as React.CSSProperties}
-                title={t.name}
+        <h2>Seleccionar tema</h2>
+        <div className="theme-options">
+          {themeOrder.map(({ id, name }) => {
+            const colors = themes[id];
+            return (
+              <div
+                key={id}
+                className={`theme-option ${theme === id ? 'active' : ''}`}
+                onClick={() => setTheme(id as Theme)}
               >
                 <div className="theme-preview">
-                  <div className="theme-preview-primary" style={{ backgroundColor: t.colors.primary }}></div>
-                  <div className="theme-preview-dark" style={{ backgroundColor: t.colors.dark }}></div>
-                  <div className="theme-preview-light" style={{ backgroundColor: t.colors.light }}></div>
+                  <div
+                    className="theme-preview-primary"
+                    style={{ backgroundColor: colors[500] }}
+                  />
+                  <div
+                    className="theme-preview-dark"
+                    style={{ backgroundColor: colors[700] }}
+                  />
+                  <div
+                    className="theme-preview-light"
+                    style={{ backgroundColor: colors[300] }}
+                  />
                 </div>
-                <span className="theme-name">{t.name}</span>
-                {theme === t.id && <span className="check-icon">✓</span>}
+                <span className="theme-name">{name}</span>
+                {theme === id && <span className="check-icon">✓</span>}
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
       </div>
     </div>

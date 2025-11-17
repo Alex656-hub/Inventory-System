@@ -1,7 +1,7 @@
 // src/components/Layout.tsx (versión final corregida - 17 nov 2025)
 
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/auth.service';
 import './Layout.css';
 
@@ -12,6 +12,10 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { usuario } = authService.obtenerSesion();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Función auxiliar para saber si una ruta está activa
+  const isActive = (path: string) => location.pathname === path;
 
   const [sidebarClosed, setSidebarClosed] = useState(false);
   const [searchShow, setSearchShow] = useState(false);
@@ -62,38 +66,38 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </Link>
 
         <ul className="side-menu">
-          <li className="active">
+          <li className={isActive('/') ? 'active' : ''}>
             <Link to="/">
               <i className='bx bxs-dashboard'></i> Dashboard
             </Link>
           </li>
-          <li>
+          <li className={isActive('/productos') ? 'active' : ''}>
             <Link to="/productos">
               <i className='bx bx-store-alt'></i> Productos
             </Link>
           </li>
           {esGerente && (
-            <li>
+            <li className={isActive('/categorias') ? 'active' : ''}>
               <Link to="/categorias">
                 <i className='bx bx-analyse'></i> Categorías
               </Link>
             </li>
           )}
           {esGerente && (
-            <li>
+            <li className={isActive('/proveedores') ? 'active' : ''}>
               <Link to="/proveedores">
                 <i className='bx bx-message-square-dots'></i> Proveedores
               </Link>
             </li>
           )}
           {esGerente && (
-            <li>
+            <li className={isActive('/usuarios') ? 'active' : ''}>
               <Link to="/usuarios">
                 <i className='bx bx-group'></i> Usuarios
               </Link>
             </li>
           )}
-          <li>
+          <li className={isActive('/configuraciones') ? 'active' : ''}>
             <Link to="/configuraciones">
               <i className='bx bx-cog'></i> Configuraciones
             </Link>
