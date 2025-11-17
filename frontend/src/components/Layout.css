@@ -1,4 +1,3 @@
-/* Layout.css - Versión actualizada y corregida (17 nov 2025) */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
 .layout {
@@ -7,7 +6,7 @@
   overflow-x: hidden;
 }
 
-/* Variables base (compatibles con tu ThemeContext) */
+/* Variables base */
 :root {
   --light: #f6f6f9;
   --primary: var(--color-primary, #06b6d4);
@@ -62,16 +61,18 @@ li {
   width: 60px;
 }
 
+/* LOGO - SIN ESPACIO EXTRA DEBAJO */
 .sidebar .logo {
   font-size: 24px;
   font-weight: 700;
-  height: 56px;
+  height: 48px;
   display: flex;
   align-items: center;
   color: var(--primary);
   z-index: 500;
-  padding-bottom: 20px;
+  padding-bottom: 0;        /* ← Eliminado el padding de 20px */
   box-sizing: content-box;
+  margin-bottom: 8px;       /* ← Separación mínima y controlada */
 }
 
 .sidebar .logo .logo-name {
@@ -85,17 +86,10 @@ li {
   line-height: 1.2;
 }
 
-.sidebar .logo .logo-part:first-child {
-  color: var(--color-primary, var(--primary));
-}
+.sidebar .logo .logo-part:first-child { color: var(--color-primary, var(--primary)); }
+.sidebar .logo .logo-part.cred { color: var(--color-warning, var(--warning)); }
 
-.sidebar .logo .logo-part.cred {
-  color: var(--color-warning, var(--warning));
-}
-
-.sidebar.close .logo .logo-name {
-  display: none;
-}
+.sidebar.close .logo .logo-name { display: none; }
 
 .sidebar .logo i {
   font-size: 28px;
@@ -105,24 +99,13 @@ li {
   color: var(--primary);
 }
 
+/* MENÚ - ESPACIO REDUCIDO */
 .sidebar .side-menu {
   width: 100%;
-  margin-top: 48px;
+  margin-top: 4px;   /* ← Antes era 48px, ahora casi nada */
 }
 
-.sidebar .side-menu li {
-  height: 48px;
-  background: transparent;
-  margin-left: 6px;
-  border-radius: 48px 0 0 48px;
-  padding: 4px;
-}
-
-.sidebar .side-menu li.active {
-  background: var(--grey);
-  position: relative;
-}
-
+/* EFECTO DEL ÍTEM ACTIVO - QUITAMOS EL CÍRCULO SUPERIOR CUANDO ES EL PRIMERO */
 .sidebar .side-menu li.active::before,
 .sidebar .side-menu li.active::after {
   content: "";
@@ -137,6 +120,25 @@ li {
 
 .sidebar .side-menu li.active::before { top: -40px; }
 .sidebar .side-menu li.active::after  { bottom: -40px; box-shadow: 20px -20px 0 var(--grey); }
+
+/* ¡¡NUEVA REGLA CLAVE!! - Elimina el círculo de arriba cuando Dashboard está activo */
+.sidebar .side-menu li.active:first-child::before {
+  display: none;
+}
+
+/* Resto del menú */
+.sidebar .side-menu li {
+  height: 48px;
+  background: transparent;
+  margin-left: 6px;
+  border-radius: 48px 0 0 48px;
+  padding: 4px;
+}
+
+.sidebar .side-menu li.active {
+  background: var(--grey);
+  position: relative;
+}
 
 .sidebar .side-menu li a {
   width: 100%;
