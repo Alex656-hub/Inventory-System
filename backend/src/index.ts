@@ -24,6 +24,7 @@ import supplierRoutes from './routes/supplier.routes';
 import entradaRoutes from './routes/entrada.routes';
 import salidaRoutes from './routes/salida.routes';
 import movimientoRoutes from './routes/movimiento.routes';
+import analyticsRoutes from './routes/analytics.routes';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -59,6 +60,7 @@ app.use('/api/suppliers', supplierRoutes);
 app.use('/api/inventory/entries', entradaRoutes);
 app.use('/api/inventory/exits', salidaRoutes);
 app.use('/api/inventory/movements', movimientoRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Ruta de salud
 app.get('/api/health', (req, res) => {

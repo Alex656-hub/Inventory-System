@@ -1,9 +1,74 @@
-import User from '../models/User';
-import Category from '../models/Category';
-import Supplier from '../models/Supplier';
 import { sequelize } from '../config/database';
+import * as models from '../models';
+import bcrypt from 'bcryptjs';
+
+interface SeedData {
+  users: Array<{
+    nombre: string;
+    email: string;
+    password: string;
+    rol: 'gerente' | 'empleado';
+    activo: boolean;
+  }>;
+  categories: Array<{
+    nombre: string;
+    descripcion: string;
+  }>;
+  suppliers: Array<{
+    nombre: string;
+    ruc_dni: string;
+    contacto_telefono: string;
+    contacto_email: string;
+    direccion: string;
+  }>;
+}
+
+const seedData: SeedData = {
+  users: [
+    {
+      nombre: 'Gerente Principal',
+      email: 'gerente@credisa.com',
+      password: 'gerente123',
+      rol: 'gerente',
+      activo: true
+    },
+    {
+      nombre: 'Empleado Ejemplo',
+      email: 'empleado@credisa.com',
+      password: 'empleado123',
+      rol: 'empleado',
+      activo: true
+    }
+  ],
+  categories: [
+    { nombre: 'Electrodomésticos', descripcion: 'Productos electrodomésticos' },
+    { nombre: 'Tecnología', descripcion: 'Dispositivos electrónicos y accesorios' },
+    { nombre: 'Hogar', descripcion: 'Artículos para el hogar' },
+    { nombre: 'Oficina', descripcion: 'Suministros de oficina' },
+    { nombre: 'Limpieza', descripcion: 'Productos de limpieza' },
+    { nombre: 'Alimentos y Bebidas', descripcion: 'Productos alimenticios' }
+  ],
+  suppliers: [
+    {
+      nombre: 'Distribuidora del Norte S.A.',
+      ruc_dni: '20123456789',
+      contacto_telefono: '041-123456',
+      contacto_email: 'contacto@distribuidora.com',
+      direccion: 'Av. Principal 123, Bagua'
+    },
+    {
+      nombre: 'Proveedor Sur E.I.R.L.',
+      ruc_dni: '20234567890',
+      contacto_telefono: '041-234567',
+      contacto_email: 'info@proveedor.com',
+      direccion: 'Jr. Comercio 456, Bagua'
+    }
+  ]
+};
 
 const seed = async () => {
+  const transaction = await sequelize.transaction();
+  
   try {
     console.log('🌱 Iniciando seed de datos iniciales...');
 
@@ -12,88 +77,57 @@ const seed = async () => {
 
     // Sincronizar modelos (crear tablas si no existen)
     console.log('🔄 Creando tablas en la base de datos...');
-    await sequelize.sync({ alter: false });
+    await sequelize.sync({ force: false });
     console.log('✅ Tablas creadas/sincronizadas correctamente.');
 
-    // Crear usuario gerente inicial
-    const gerenteExistente = await User.findOne({ where: { email: 'gerente@credisa.com' } });
-    if (!gerenteExistente) {
-      await User.create({
-        nombre: 'Gerente Principal',
-        email: 'gerente@credisa.com',
-        password: 'gerente123', // Se hasheará automáticamente
-        rol: 'gerente',
-        activo: true
+    // Crear usuarios
+    console.log('👥 Creando usuarios de prueba...');
+    for (const userData of seedData.users) {
+      const userExists = await models.User.findOne({
+        where: { email: userData.email }
       });
-      console.log('✅ Usuario gerente creado: gerente@credisa.com / gerente123');
-    } else {
-      console.log('ℹ️  Usuario gerente ya existe.');
+
+      if (!userExists) {
+        const hashedPassword = await bcrypt.hash(userData.password, 10);
+        await models.User.create({
+          ...userData,
+          password: hashedPassword
+        });
+        console.log(`✅ Usuario creado: ${userData.email} / ${userData.password}`);
+      } else {
+        console.log(`ℹ️  Usuario ya existe: ${userData.email}`);
+      }
     }
 
-    // Crear usuario empleado inicial
-    const empleadoExistente = await User.findOne({ where: { email: 'empleado@credisa.com' } });
-    if (!empleadoExistente) {
-      await User.create({
-        nombre: 'Empleado Ejemplo',
-        email: 'empleado@credisa.com',
-        password: 'empleado123', // Se hasheará automáticamente
-        rol: 'empleado',
-        activo: true
+    // Crear categorías
+    console.log('🏷️  Creando categorías...');
+    for (const categoryData of seedData.categories) {
+      const [category] = await models.Category.findOrCreate({
+        where: { nombre: categoryData.nombre },
+        defaults: categoryData
       });
-      console.log('✅ Usuario empleado creado: empleado@credisa.com / empleado123');
-    } else {
-      console.log('ℹ️  Usuario empleado ya existe.');
+      console.log(`✅ Categoría procesada: ${category.nombre}`);
     }
 
-    // Crear categorías de ejemplo
-    const categoriasEjemplo = [
-      { nombre: 'Electrodomésticos', descripcion: 'Productos electrodomésticos' },
-      { nombre: 'Tecnología', descripcion: 'Productos tecnológicos' },
-      { nombre: 'Hogar y Muebles', descripcion: 'Artículos para el hogar' },
-      { nombre: 'Alimentos y Bebidas', descripcion: 'Productos alimenticios' }
-    ];
-
-    for (const cat of categoriasEjemplo) {
-      const existe = await Category.findOne({ where: { nombre: cat.nombre } });
-      if (!existe) {
-        await Category.create(cat);
-        console.log(`✅ Categoría creada: ${cat.nombre}`);
-      }
+    // Crear proveedores
+    console.log('🏢 Creando proveedores...');
+    for (const supplierData of seedData.suppliers) {
+      const [supplier] = await models.Supplier.findOrCreate({
+        where: { ruc_dni: supplierData.ruc_dni },
+        defaults: supplierData
+      });
+      console.log(`✅ Proveedor procesado: ${supplier.nombre}`);
     }
 
-    // Crear proveedores de ejemplo
-    const proveedoresEjemplo = [
-      {
-        nombre: 'Distribuidora del Norte S.A.',
-        ruc_dni: '20123456789',
-        contacto_telefono: '041-123456',
-        contacto_email: 'contacto@distribuidora.com',
-        direccion: 'Av. Principal 123, Bagua'
-      },
-      {
-        nombre: 'Proveedor Sur E.I.R.L.',
-        ruc_dni: '20234567890',
-        contacto_telefono: '041-234567',
-        contacto_email: 'info@proveedor.com',
-        direccion: 'Jr. Comercio 456, Bagua'
-      }
-    ];
-
-    for (const prov of proveedoresEjemplo) {
-      const existe = await Supplier.findOne({ where: { ruc_dni: prov.ruc_dni } });
-      if (!existe) {
-        await Supplier.create(prov);
-        console.log(`✅ Proveedor creado: ${prov.nombre}`);
-      }
-    }
-
-    console.log('✅ Seed completado exitosamente.');
-    process.exit(0);
+    await transaction.commit();
+    console.log('✨ Seed completado exitosamente!');
   } catch (error) {
-    console.error('❌ Error en seed:', error);
-    process.exit(1);
+    await transaction.rollback();
+    console.error('❌ Error durante el seed:', error);
+    throw error;
+  } finally {
+    await sequelize.close();
   }
 };
 
 seed();
-
