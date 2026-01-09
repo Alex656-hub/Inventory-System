@@ -1,16 +1,15 @@
-import { Router } from 'express';
-import { forecastDemand, getInventoryMetrics, advancedForecastDemand } from '../controllers/analyticsController';
-import { verificarToken, verificarRol } from '../middleware/auth.middleware';
-
-const router = Router();
-
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const analyticsController_1 = require("../controllers/analyticsController");
+const auth_middleware_1 = require("../middleware/auth.middleware");
+const router = (0, express_1.Router)();
 /**
  * @swagger
  * tags:
  *   name: Analytics
  *   description: Análisis predictivo y métricas de inventario
  */
-
 /**
  * @swagger
  * /api/analytics/advanced-forecast:
@@ -49,8 +48,7 @@ const router = Router();
  *       500:
  *         description: Error al generar el pronóstico
  */
-router.get('/advanced-forecast', verificarToken, advancedForecastDemand);
-
+router.get('/advanced-forecast', auth_middleware_1.verificarToken, analyticsController_1.advancedForecastDemand);
 /**
  * @swagger
  * /api/analytics/forecast:
@@ -95,8 +93,7 @@ router.get('/advanced-forecast', verificarToken, advancedForecastDemand);
  *       500:
  *         description: Error del servidor
  */
-router.get('/forecast', verificarToken, verificarRol(['admin', 'analyst']), forecastDemand);
-
+router.get('/forecast', auth_middleware_1.verificarToken, (0, auth_middleware_1.verificarRol)(['admin', 'analyst']), analyticsController_1.forecastDemand);
 /**
  * @swagger
  * /api/analytics/metrics:
@@ -166,6 +163,5 @@ router.get('/forecast', verificarToken, verificarRol(['admin', 'analyst']), fore
  *       500:
  *         description: Error del servidor al obtener las métricas
  */
-router.get('/metrics', verificarToken, verificarRol(['gerente']), getInventoryMetrics);
-
-export default router;
+router.get('/metrics', auth_middleware_1.verificarToken, (0, auth_middleware_1.verificarRol)(['admin', 'analyst']), analyticsController_1.getInventoryMetrics);
+exports.default = router;

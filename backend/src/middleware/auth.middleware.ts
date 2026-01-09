@@ -33,14 +33,18 @@ export const verificarToken = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
-
-    if (!token) {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader) {
       res.status(401).json({ mensaje: 'Token de autenticación requerido' });
       return;
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as DecodedToken;
+    const token = authHeader.split(' ')[1];
+    const secret = process.env.JWT_SECRET || 'secret';
+
+    // Verificar y decodificar el token
+    const decoded = jwt.verify(token, secret) as DecodedToken;
     
     // Verificar si es un token temporal (2FA)
     if ('temp' in decoded && decoded.temp === true) {
@@ -51,10 +55,16 @@ export const verificarToken = async (
       return;
     }
     
+    // Obtener el usuario de la base de datos
     const usuario = await User.findByPk(decoded.id);
     
-    if (!usuario || !usuario.activo) {
-      res.status(401).json({ mensaje: 'Usuario no válido o inactivo' });
+    if (!usuario) {
+      res.status(401).json({ mensaje: 'Usuario no encontrado' });
+      return;
+    }
+
+    if (!usuario.activo) {
+      res.status(401).json({ mensaje: 'Usuario inactivo' });
       return;
     }
 
@@ -69,10 +79,32 @@ export const verificarToken = async (
       }
     }
 
+    // Adjuntar el usuario a la solicitud
     req.usuario = usuario;
     next();
   } catch (error) {
-    res.status(401).json({ mensaje: 'Token inválido o expirado' });
+    console.error('Error en verificación de token:', error);
+    
+    if (error instanceof jwt.TokenExpiredError) {
+      res.status(401).json({ 
+        mensaje: 'Token expirado', 
+        codigo: 'TOKEN_EXPIRED' 
+      });
+    } else if (error instanceof jwt.JsonWebTokenError) {
+      res.status(401).json({ 
+        mensaje: 'Token inválido', 
+        codigo: 'INVALID_TOKEN' 
+      });
+    } else if (error instanceof Error) {
+      res.status(500).json({ 
+        mensaje: 'Error al verificar el token',
+        error: error.message 
+      });
+    } else {
+      res.status(500).json({ 
+        mensaje: 'Error desconocido al verificar el token'
+      });
+    }
   }
 };
 
@@ -125,18 +157,31 @@ export const verificarToken2FA = async (
   }
 };
 
-export const verificarRol = (roles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
+export const verificarRol = (rolesPermitidos: string[]) => {
+  return (req: Request, res: Response, next: NextFunction) => {
     if (!req.usuario) {
-      res.status(401).json({ mensaje: 'Usuario no autenticado' });
-      return;
+      console.log('Error: Usuario no autenticado en verificarRol');
+      return res.status(401).json({ mensaje: 'Usuario no autenticado' });
     }
 
-    if (!roles.includes(req.usuario.rol)) {
-      res.status(403).json({ mensaje: 'No tienes permisos para realizar esta acción' });
-      return;
+    console.log('Verificando roles:', {
+      usuario: req.usuario.email,
+      rolActual: req.usuario.rol,
+      rolesRequeridos: rolesPermitidos
+    });
+
+    if (!rolesPermitidos.includes(req.usuario.rol)) {
+      console.log('Acceso denegado. Rol no permitido');
+      return res.status(403).json({ 
+        mensaje: 'No tienes permisos para realizar esta acción',
+        detalle: {
+          rolActual: req.usuario.rol,
+          rolesRequeridos: rolesPermitidos
+        }
+      });
     }
 
+    console.log('Acceso permitido para el rol:', req.usuario.rol);
     next();
   };
 };

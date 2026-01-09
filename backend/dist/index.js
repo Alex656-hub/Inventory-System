@@ -13,19 +13,38 @@ require("./models/User");
 require("./models/Category");
 require("./models/Supplier");
 require("./models/Product");
+require("./models/EntradaInventario");
+require("./models/DetalleEntrada");
+require("./models/SalidaInventario");
+require("./models/DetalleSalida");
+require("./models/MovimientoInventario");
 // Importar rutas
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const user_routes_1 = __importDefault(require("./routes/user.routes"));
 const product_routes_1 = __importDefault(require("./routes/product.routes"));
 const category_routes_1 = __importDefault(require("./routes/category.routes"));
 const supplier_routes_1 = __importDefault(require("./routes/supplier.routes"));
+const entrada_routes_1 = __importDefault(require("./routes/entrada.routes"));
+const salida_routes_1 = __importDefault(require("./routes/salida.routes"));
+const movimiento_routes_1 = __importDefault(require("./routes/movimiento.routes"));
+const analytics_routes_1 = __importDefault(require("./routes/analytics.routes"));
+const twoFactorAuth_routes_1 = __importDefault(require("./routes/twoFactorAuth.routes"));
 // Cargar variables de entorno
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3001;
+const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000')
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean);
 // Middlewares
 app.use((0, cors_1.default)({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        return callback(new Error(`Origin ${origin} not allowed by CORS`));
+    },
     credentials: true
 }));
 app.use((0, morgan_1.default)('dev'));
@@ -37,6 +56,11 @@ app.use('/api/users', user_routes_1.default);
 app.use('/api/products', product_routes_1.default);
 app.use('/api/categories', category_routes_1.default);
 app.use('/api/suppliers', supplier_routes_1.default);
+app.use('/api/inventory/entries', entrada_routes_1.default);
+app.use('/api/inventory/exits', salida_routes_1.default);
+app.use('/api/inventory/movements', movimiento_routes_1.default);
+app.use('/api/analytics', analytics_routes_1.default);
+app.use('/api/2fa', twoFactorAuth_routes_1.default);
 // Ruta de salud
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'API funcionando correctamente' });

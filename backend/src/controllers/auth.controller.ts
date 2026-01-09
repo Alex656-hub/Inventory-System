@@ -44,30 +44,43 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const usuario = await User.findOne({ where: { email } });
+    // 1. Buscar usuario incluyendo el rol
+    const usuario = await User.findOne({ 
+      where: { email },
+      attributes: ['id', 'nombre', 'email', 'password', 'rol', 'activo', 'twoFactorEnabled', 'twoFactorSecret']
+    });
 
     if (!usuario) {
+      console.log(`Intento de inicio de sesión fallido para el email: ${email}`);
       res.status(401).json({ mensaje: 'Credenciales inválidas' });
       return;
     }
 
+    // 2. Verificar si el usuario está activo
     if (!usuario.activo) {
+      console.log(`Intento de inicio de sesión para usuario inactivo: ${email}`);
       res.status(401).json({ mensaje: 'Usuario inactivo' });
       return;
     }
 
+    // 3. Verificar contraseña
     const esPasswordValido = await usuario.verificarPassword(password);
-
     if (!esPasswordValido) {
+      console.log(`Contraseña incorrecta para el usuario: ${email}`);
       res.status(401).json({ mensaje: 'Credenciales inválidas' });
       return;
     }
 
-    // Verificar si el usuario tiene 2FA habilitado
+    console.log('Inicio de sesión exitoso para:', {
+      id: usuario.id,
+      email: usuario.email,
+      rol: usuario.rol,
+      twoFactorEnabled: usuario.twoFactorEnabled
+    });
+
+    // 4. Manejar 2FA si está habilitado
     if (usuario.twoFactorEnabled && usuario.twoFactorSecret) {
-      // Generar token temporal para 2FA
       const tempToken = generarTokenTemporal(usuario);
-      
       res.status(200).json({
         mensaje: 'Se requiere autenticación de dos factores',
         requiere2FA: true,
@@ -78,7 +91,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         }
       });
     } else {
-      // Si no tiene 2FA habilitado, devolver token normal
+      // 5. Si no requiere 2FA, devolver token normal
       const token = generarToken(usuario);
 
       res.json({
@@ -89,14 +102,17 @@ export const login = async (req: Request, res: Response): Promise<void> => {
           id: usuario.id,
           nombre: usuario.nombre,
           email: usuario.email,
-          rol: usuario.rol,
+          rol: usuario.rol,  // Asegurarse de incluir el rol en la respuesta
           twoFactorEnabled: false
         }
       });
     }
   } catch (error) {
     console.error('Error en login:', error);
-    res.status(500).json({ mensaje: 'Error al iniciar sesión' });
+    res.status(500).json({ 
+      mensaje: 'Error al iniciar sesión',
+      error: error instanceof Error ? error.message : 'Error desconocido'
+    });
   }
 };
 

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { getDemandForecast, DemandForecastOptions } from '../analytics/services/demandForecasting';
 import { advancedDemandForecasting } from '../analytics/services/advancedDemandForecasting';
+import { getInventoryMetrics as getInventoryMetricsService, InventoryMetrics } from '../analytics/services/inventoryAnalysis';
 
 /**
  * Controlador para las rutas de análisis predictivo
@@ -111,20 +112,41 @@ export const advancedForecastDemand = async (req: Request, res: Response) => {
 };
 
 /**
- * Obtiene métricas clave de inventario
+ * Obtiene métricas clave de inventario con indicadores financieros
  */
 export const getInventoryMetrics = async (req: Request, res: Response) => {
   try {
-    // TODO: Implementar obtención de métricas de inventario
+    const metrics = await getInventoryMetricsService();
+    
     res.json({
       success: true,
-      message: 'Endpoint de métricas de inventario (pendiente de implementar)'
+      data: {
+        summary: {
+          totalProducts: metrics.totalProducts,
+          totalValue: metrics.totalInventoryValue,
+          lastUpdated: metrics.lastUpdated
+        },
+        stock: {
+          lowStockItems: metrics.lowStockItems,
+          outOfStockItems: metrics.outOfStockItems,
+          stockoutRate: metrics.stockoutRate,
+          slowMovingItems: metrics.slowMovingItems
+        },
+        financial: {
+          inventoryTurnover: metrics.inventoryTurnover,
+          daysSalesOfInventory: metrics.daysSalesOfInventory,
+          grossMargin: metrics.grossMargin,
+          carryingCost: metrics.carryingCost,
+          averageStockValue: metrics.averageStockValue
+        }
+      }
     });
   } catch (error) {
     console.error('Error al obtener métricas de inventario:', error);
     res.status(500).json({
       success: false,
-      error: 'Error al obtener métricas de inventario'
+      error: 'Error al obtener métricas de inventario',
+      details: error instanceof Error ? error.message : 'Error desconocido'
     });
   }
 };

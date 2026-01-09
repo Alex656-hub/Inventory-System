@@ -30,7 +30,7 @@ export interface ProductAttributes {
 }
 
 export interface DailySaleAttributes {
-  id: number;
+  id?: number; // Hacer el id opcional para permitir la creación sin ID
   date: Date;
   productId: number;
   quantity: number;

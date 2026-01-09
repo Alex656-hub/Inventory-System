@@ -6,6 +6,7 @@ import DetalleSalida from '../models/DetalleSalida';
 import Product from '../models/Product';
 import MovimientoInventario from '../models/MovimientoInventario';
 import User from '../models/User';
+import { DailySale } from '../models/sales';
 
 export const obtenerSalidas = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -172,6 +173,45 @@ export const crearSalida = async (req: Request, res: Response): Promise<void> =>
         fecha: salida.fecha,
         motivo: `Venta - ${salida.numero_documento}`
       }, { transaction });
+
+      // Actualizar daily_sales
+      const fechaVenta = new Date(salida.fecha);
+      fechaVenta.setHours(0, 0, 0, 0); // Normalizar a inicio del día
+      
+      const costoUnitario = producto!.precio_compra;
+      const montoTotal = Number(detalle.cantidad) * Number(detalle.precio_unitario);
+      const costoTotal = Number(detalle.cantidad) * Number(costoUnitario);
+      const ganancia = montoTotal - costoTotal;
+
+      // Buscar si ya existe un registro para esta fecha y producto
+      const [dailySale, created] = await DailySale.findOrCreate({
+        where: {
+          date: fechaVenta,
+          productId: detalle.producto_id
+        },
+        defaults: {
+          date: fechaVenta,
+          productId: detalle.producto_id,
+          quantity: detalle.cantidad,
+          unitPrice: detalle.precio_unitario,
+          totalAmount: montoTotal,
+          costPrice: costoTotal,
+          profit: ganancia
+        },
+        transaction
+      });
+
+      // Si el registro ya existía, actualizarlo
+      if (!created) {
+        dailySale.quantity += Number(detalle.cantidad);
+        dailySale.totalAmount += montoTotal;
+        dailySale.costPrice += costoTotal;
+        dailySale.profit += ganancia;
+        // Actualizar el precio unitario al promedio ponderado
+        dailySale.unitPrice = dailySale.totalAmount / dailySale.quantity;
+        
+        await dailySale.save({ transaction });
+      }
     }
 
     await transaction.commit();

@@ -8,11 +8,18 @@
     "dev:frontend": "cd frontend && npm start",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install"
   },
-  "keywords": ["inventory", "management", "crédito", "perú"],
+  "keywords": [
+    "inventory",
+    "management",
+    "crédito",
+    "perú"
+  ],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "web-vitals": "^5.1.0"
   }
 }
-
