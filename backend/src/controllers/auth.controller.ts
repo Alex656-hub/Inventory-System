@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
 import { JWTPayload, TempJWTPayload } from '../middleware/auth.middleware';
+import RefreshTokenService, { TokenResponse } from '../services/refreshToken.service';
 
 // Función para generar token JWT normal
 const generarToken = (usuario: User): string => {
@@ -91,18 +92,18 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         }
       });
     } else {
-      // 5. Si no requiere 2FA, devolver token normal
-      const token = generarToken(usuario);
+      // 5. Si no requiere 2FA, generar ambos tokens
+      const tokens = await RefreshTokenService.generateTokens(usuario);
 
       res.json({
         mensaje: 'Inicio de sesión exitoso',
         requiere2FA: false,
-        token,
+        ...tokens, // accessToken, refreshToken, expiresIn, tokenType
         usuario: {
           id: usuario.id,
           nombre: usuario.nombre,
           email: usuario.email,
-          rol: usuario.rol,  // Asegurarse de incluir el rol en la respuesta
+          rol: usuario.rol,
           twoFactorEnabled: false
         }
       });
@@ -144,6 +145,84 @@ export const obtenerPerfil = async (req: Request, res: Response): Promise<void> 
   } catch (error) {
     console.error('Error al obtener perfil:', error);
     res.status(500).json({ mensaje: 'Error al obtener perfil' });
+  }
+};
+
+// Endpoint para refrescar el access token
+export const refreshToken = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { refreshToken: refreshTokenString } = req.body;
+
+    if (!refreshTokenString) {
+      res.status(400).json({ mensaje: 'Refresh token es requerido' });
+      return;
+    }
+
+    const tokens = await RefreshTokenService.refreshAccessToken(refreshTokenString);
+
+    if (!tokens) {
+      res.status(401).json({ mensaje: 'Refresh token inválido o expirado' });
+      return;
+    }
+
+    res.json(tokens);
+  } catch (error) {
+    console.error('Error al refrescar token:', error);
+    res.status(500).json({ mensaje: 'Error al refrescar token' });
+  }
+};
+
+// Endpoint para logout (revocar refresh token)
+export const logout = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { refreshToken: refreshTokenString } = req.body;
+
+    if (!refreshTokenString) {
+      res.status(400).json({ mensaje: 'Refresh token es requerido' });
+      return;
+    }
+
+    const revoked = await RefreshTokenService.revokeRefreshToken(refreshTokenString);
+
+    if (!revoked) {
+      res.status(404).json({ mensaje: 'Refresh token no encontrado' });
+      return;
+    }
+
+    res.json({ mensaje: 'Sesión cerrada exitosamente' });
+  } catch (error) {
+    console.error('Error al cerrar sesión:', error);
+    res.status(500).json({ mensaje: 'Error al cerrar sesión' });
+  }
+};
+
+// Endpoint para logout en todos los dispositivos
+export const logoutAll = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const usuario = req.usuario;
+
+    if (!usuario) {
+      res.status(401).json({ mensaje: 'Usuario no autenticado' });
+      return;
+    }
+
+    await RefreshTokenService.revokeAllUserTokens(usuario.id);
+
+    res.json({ mensaje: 'Sesiones cerradas en todos los dispositivos' });
+  } catch (error) {
+    console.error('Error al cerrar todas las sesiones:', error);
+    res.status(500).json({ mensaje: 'Error al cerrar todas las sesiones' });
+  }
+};
+
+// Endpoint para limpiar tokens expirados (para mantenimiento)
+export const cleanupTokens = async (req: Request, res: Response): Promise<void> => {
+  try {
+    await RefreshTokenService.cleanupExpiredTokens();
+    res.json({ mensaje: 'Tokens expirados limpiados exitosamente' });
+  } catch (error) {
+    console.error('Error al limpiar tokens:', error);
+    res.status(500).json({ mensaje: 'Error al limpiar tokens expirados' });
   }
 };
 

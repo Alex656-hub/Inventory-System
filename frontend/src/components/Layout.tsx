@@ -19,6 +19,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const [sidebarClosed, setSidebarClosed] = useState(false);
   const [searchShow, setSearchShow] = useState(false);
+  const [showLogoutMenu, setShowLogoutMenu] = useState(false);
 
   // Responsive: cerrar sidebar en pantallas pequeñas
   useEffect(() => {
@@ -46,9 +47,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     }
   };
 
-  const handleLogout = () => {
-    authService.logout();
+  const handleLogout = async () => {
+    await authService.logout();
     navigate('/login');
+  };
+
+  const handleLogoutAll = async () => {
+    if (window.confirm('¿Estás seguro de que quieres cerrar todas las sesiones en todos los dispositivos?')) {
+      await authService.logoutAll();
+      navigate('/login');
+    }
   };
 
   const esGerente = usuario?.rol === 'gerente';
@@ -105,11 +113,26 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </ul>
 
         <ul className="side-menu">
-          <li>
-            <a href="#" className="logout" onClick={handleLogout}>
+          <li className={`logout-menu ${showLogoutMenu ? 'show' : ''}`}>
+            <a href="#" className="logout" onClick={(e) => { e.preventDefault(); setShowLogoutMenu(!showLogoutMenu); }}>
               <i className='bx bx-log-out-circle'></i>
               Salir
+              <i className={`bx bx-chevron-${showLogoutMenu ? 'up' : 'down'} arrow`}></i>
             </a>
+            <ul className="logout-submenu">
+              <li>
+                <a href="#" onClick={(e) => { e.preventDefault(); handleLogout(); }}>
+                  <i className='bx bx-log-out'></i>
+                  Cerrar sesión actual
+                </a>
+              </li>
+              <li>
+                <a href="#" onClick={(e) => { e.preventDefault(); handleLogoutAll(); }}>
+                  <i className='bx bx-log-out-circle'></i>
+                  Cerrar todas las sesiones
+                </a>
+              </li>
+            </ul>
           </li>
         </ul>
       </div>

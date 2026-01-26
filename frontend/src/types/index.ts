@@ -4,6 +4,7 @@ export interface Usuario {
   email: string;
   rol: 'gerente' | 'empleado';
   activo: boolean;
+  twoFactorEnabled?: boolean;
 }
 
 export interface Producto {
@@ -55,7 +56,27 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   mensaje: string;
-  token: string;
+  requiere2FA: boolean;
+  accessToken?: string;
+  refreshToken?: string;
+  expiresIn?: number;
+  tokenType?: string;
+  token?: string; // Para compatibilidad con login con 2FA
   usuario: Usuario;
+}
+
+export interface RefreshTokenRequest {
+  refreshToken: string;
+}
+
+export interface RefreshTokenResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  tokenType: string;
+}
+
+export interface LogoutRequest {
+  refreshToken: string;
 }
 

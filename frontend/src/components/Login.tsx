@@ -22,6 +22,9 @@ const Login: React.FC = () => {
   }, []);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [show2FA, setShow2FA] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState('');
   const [registerData, setRegisterData] = useState({
     name: '',
     email: '',
@@ -40,10 +43,35 @@ const Login: React.FC = () => {
 
     try {
       const response = await authService.login({ email, password });
-      authService.guardarSesion(response.token, response.usuario);
-      navigate('/');
+      
+      if (response.requiere2FA) {
+        // Mostrar formulario de 2FA
+        setShow2FA(true);
+        setPendingEmail(email);
+        setError('');
+      } else {
+        // Login exitoso sin 2FA
+        authService.guardarSesion(response.usuario);
+        navigate('/');
+      }
     } catch (err: any) {
       setError(err.response?.data?.mensaje || 'Error al iniciar sesión');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handle2FASubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await authService.login2FA(pendingEmail, twoFactorCode);
+      authService.guardarSesion(response.usuario);
+      navigate('/');
+    } catch (err: any) {
+      setError(err.response?.data?.mensaje || 'Código 2FA inválido');
     } finally {
       setLoading(false);
     }
@@ -68,41 +96,75 @@ const Login: React.FC = () => {
     setIsActive(!showLogin);
   };
 
+  const reset2FA = () => {
+    setShow2FA(false);
+    setTwoFactorCode('');
+    setPendingEmail('');
+    setError('');
+  };
+
   return (
     <div className="login-container">
       <div id="container" className={isActive ? "container active" : "container"}>
         {/* Sign In Form */}
         <div className="form-container sign-in">
-          <form onSubmit={handleLoginSubmit}>
-            <h1>Iniciar Sesión</h1>
-            {error && <div className="error-message">{error}</div>}
-            <input
-              type="email"
-              placeholder="Correo electrónico"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <input
-              type="password"
-              placeholder="Contraseña"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <button type="button" className="forgot-password" onClick={(e) => {
-              e.preventDefault();
-              // Lógica para recuperar contraseña
-            }}>
-              ¿Olvidaste tu contraseña?
-            </button>
-            <button type="submit" disabled={loading}>
-              {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-            </button>
-            <button type="button" className="hidden" id="signUp" onClick={() => setIsActive(true)}>
-              Registrarse
-            </button>
-          </form>
+          {!show2FA ? (
+            <form onSubmit={handleLoginSubmit}>
+              <h1>Iniciar Sesión</h1>
+              {error && <div className="error-message">{error}</div>}
+              <input
+                type="email"
+                placeholder="Correo electrónico"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <input
+                type="password"
+                placeholder="Contraseña"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button type="button" className="forgot-password" onClick={(e) => {
+                e.preventDefault();
+                // Lógica para recuperar contraseña
+              }}>
+                ¿Olvidaste tu contraseña?
+              </button>
+              <button type="submit" disabled={loading}>
+                {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+              </button>
+              <button type="button" className="hidden" id="signUp" onClick={() => setIsActive(true)}>
+                Registrarse
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handle2FASubmit}>
+              <h1>Verificación 2FA</h1>
+              <p>Ingresa el código de tu aplicación autenticadora</p>
+              {error && <div className="error-message">{error}</div>}
+              <input
+                type="text"
+                placeholder="Código de 6 dígitos"
+                value={twoFactorCode}
+                onChange={(e) => setTwoFactorCode(e.target.value)}
+                maxLength={6}
+                required
+                autoFocus
+              />
+              <button type="submit" disabled={loading}>
+                {loading ? 'Verificando...' : 'Verificar'}
+              </button>
+              <button 
+                type="button" 
+                className="back-button" 
+                onClick={reset2FA}
+              >
+                ← Volver al login
+              </button>
+            </form>
+          )}
         </div>
 
         {/* Sign Up Form */}

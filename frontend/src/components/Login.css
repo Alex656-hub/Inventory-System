@@ -549,3 +549,31 @@ input[type="text"] {
     transform: translateX(100%);
   }
 }
+
+/* Estilos para el botón de volver en 2FA */
+.back-button {
+  background: transparent;
+  border: 2px solid var(--color-primary);
+  color: var(--color-primary);
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+  width: 100%;
+}
+
+.back-button:hover {
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+  transform: translateY(-2px);
+}
+
+/* Estilos para el formulario de 2FA */
+.form-container.sign-in form p {
+  color: #666;
+  margin-bottom: 20px;
+  text-align: center;
+  font-size: 14px;
+}

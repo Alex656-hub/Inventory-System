@@ -4,6 +4,7 @@ import * as speakeasy from 'speakeasy';
 import * as QRCode from 'qrcode';
 import User from '../models/User';
 import jwt, { SignOptions } from 'jsonwebtoken';
+import RefreshTokenService from '../services/refreshToken.service';
 
 // Extender la interfaz Request para incluir la propiedad user
 declare global {
@@ -217,12 +218,12 @@ export const verificarLogin2FA = async (req: Request, res: Response): Promise<vo
       return;
     }
 
-    // Generar token JWT final
-    const tokenJWT = generarToken(user);
+    // Generar ambos tokens (access y refresh)
+    const tokens = await RefreshTokenService.generateTokens(user);
 
     res.json({
       mensaje: 'Autenticación exitosa',
-      token: tokenJWT,
+      ...tokens, // accessToken, refreshToken, expiresIn, tokenType
       usuario: {
         id: user.id,
         nombre: user.nombre,

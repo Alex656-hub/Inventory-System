@@ -1,0 +1,194 @@
+import { Op } from 'sequelize';
+import jwt from 'jsonwebtoken';
+import RefreshToken from '../models/RefreshToken';
+import User from '../models/User';
+
+export interface TokenResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  tokenType: string;
+}
+
+class RefreshTokenService {
+  /**
+   * Genera un refresh token aleatorio
+   */
+  private generateRefreshToken(): string {
+    return require('crypto').randomBytes(64).toString('hex');
+  }
+
+  /**
+   * Genera un access token JWT
+   */
+  private generateAccessToken(user: User): string {
+    const payload = {
+      id: user.id,
+      email: user.email,
+      rol: user.rol,
+      twoFactorEnabled: user.twoFactorEnabled || false
+    };
+
+    const secret: string = process.env.JWT_SECRET || 'secret';
+    const expiresIn: string = process.env.JWT_EXPIRE || '15m'; // Access token de corta duración
+
+    return jwt.sign(payload, secret, {
+      expiresIn: expiresIn
+    } as jwt.SignOptions);
+  }
+
+  /**
+   * Crea un nuevo refresh token para un usuario
+   */
+  async createRefreshToken(userId: number): Promise<RefreshToken> {
+    // Revocar todos los tokens anteriores del usuario
+    await this.revokeAllUserTokens(userId);
+
+    const token = this.generateRefreshToken();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30); // Expira en 30 días
+
+    return await RefreshToken.create({
+      token,
+      userId,
+      expiresAt,
+      isRevoked: false,
+    });
+  }
+
+  /**
+   * Genera ambos tokens (access y refresh) para un usuario
+   */
+  async generateTokens(user: User): Promise<TokenResponse> {
+    const accessToken = this.generateAccessToken(user);
+    const refreshToken = await this.createRefreshToken(user.id);
+
+    return {
+      accessToken,
+      refreshToken: refreshToken.token,
+      expiresIn: 15 * 60, // 15 minutos en segundos
+      tokenType: 'Bearer'
+    };
+  }
+
+  /**
+   * Refresca un access token usando un refresh token
+   */
+  async refreshAccessToken(refreshTokenString: string): Promise<TokenResponse | null> {
+    try {
+      const refreshToken = await RefreshToken.findOne({
+        where: {
+          token: refreshTokenString,
+          isRevoked: false,
+          expiresAt: {
+            [Op.gt]: new Date()
+          }
+        },
+        include: [{
+          model: User,
+          as: 'user'
+        }]
+      });
+
+      if (!refreshToken || !refreshToken.user) {
+        return null;
+      }
+
+      // Generar nuevo access token
+      const accessToken = this.generateAccessToken(refreshToken.user);
+
+      // Opcional: crear nuevo refresh token para mayor seguridad
+      const newRefreshToken = await this.createRefreshToken(refreshToken.userId);
+      
+      // Revocar el refresh token anterior
+      await refreshToken.update({ isRevoked: true });
+
+      return {
+        accessToken,
+        refreshToken: newRefreshToken.token,
+        expiresIn: 15 * 60,
+        tokenType: 'Bearer'
+      };
+    } catch (error) {
+      console.error('Error refreshing token:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Revoca un refresh token específico
+   */
+  async revokeRefreshToken(token: string): Promise<boolean> {
+    try {
+      const result = await RefreshToken.update(
+        { isRevoked: true },
+        {
+          where: { token }
+        }
+      );
+      return result[0] > 0;
+    } catch (error) {
+      console.error('Error revoking refresh token:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Revoca todos los refresh tokens de un usuario
+   */
+  async revokeAllUserTokens(userId: number): Promise<void> {
+    try {
+      await RefreshToken.update(
+        { isRevoked: true },
+        {
+          where: {
+            userId,
+            isRevoked: false
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Error revoking all user tokens:', error);
+    }
+  }
+
+  /**
+   * Limpia tokens expirados
+   */
+  async cleanupExpiredTokens(): Promise<void> {
+    try {
+      await RefreshToken.destroy({
+        where: {
+          [Op.or]: [
+            { expiresAt: { [Op.lt]: new Date() } },
+            { isRevoked: true }
+          ]
+        }
+      });
+    } catch (error) {
+      console.error('Error cleaning up expired tokens:', error);
+    }
+  }
+
+  /**
+   * Verifica si un refresh token es válido
+   */
+  async validateRefreshToken(token: string): Promise<RefreshToken | null> {
+    try {
+      return await RefreshToken.findOne({
+        where: {
+          token,
+          isRevoked: false,
+          expiresAt: {
+            [Op.gt]: new Date()
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error validating refresh token:', error);
+      return null;
+    }
+  }
+}
+
+export default new RefreshTokenService();

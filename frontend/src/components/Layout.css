@@ -336,3 +336,71 @@ li {
   }
   .content nav form.show ~ .nav-right { display: none; }
 }
+
+/* Estilos para el menú desplegable de logout */
+.logout-menu {
+  position: relative;
+}
+
+.logout-menu .logout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logout-menu .logout .arrow {
+  font-size: 12px;
+  transition: transform 0.3s ease;
+}
+
+.logout-menu.show .logout .arrow {
+  transform: rotate(180deg);
+}
+
+.logout-submenu {
+  display: none;
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 8px 0;
+  margin-bottom: 8px;
+  z-index: 1000;
+}
+
+.logout-menu.show .logout-submenu {
+  display: block;
+}
+
+.logout-submenu li {
+  margin: 0;
+}
+
+.logout-submenu li a {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+  color: #333;
+  text-decoration: none;
+  transition: background-color 0.3s ease;
+  font-size: 14px;
+}
+
+.logout-submenu li a:hover {
+  background-color: #f5f5f5;
+}
+
+.logout-submenu li a i {
+  margin-right: 10px;
+  font-size: 16px;
+}
+
+/* Sidebar cerrado: ajustar submenu */
+.sidebar.close .logout-submenu {
+  left: -20px;
+  right: auto;
+  width: 200px;
+}
