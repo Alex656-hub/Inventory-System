@@ -5,6 +5,7 @@ import Login from './components/Login';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import ProductList from './components/ProductList';
+import CategoryList from './components/CategoryList';
 import Settings from './components/Settings';
 import PrivateRoute from './components/PrivateRoute';
 import { authService } from './services/auth.service';
@@ -41,6 +42,16 @@ function App() {
               <PrivateRoute>
                 <Layout>
                   <ProductList />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/categorias"
+            element={
+              <PrivateRoute>
+                <Layout>
+                  <CategoryList />
                 </Layout>
               </PrivateRoute>
             }

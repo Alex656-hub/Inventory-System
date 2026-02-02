@@ -18,6 +18,12 @@
   --color-text-muted: #666666;
   --color-text-light: #ffffff;
   
+  /* Colores primarios y variantes */
+  --color-primary: #4a90e2;
+  --color-primary-dark: #357abd;
+  --color-primary-light: #6ba3e5;
+  --color-primary-lighter: #e8f2fd;
+  
   /* Colores de fondo */
   --color-background: #f5f5f5;
   --color-surface: #ffffff;

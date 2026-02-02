@@ -13,8 +13,8 @@ export const api = axios.create({
 // Interceptor para agregar el token a las peticiones
 api.interceptors.request.use(
   async (config) => {
-    // Verificar si el token está por expirar y refrescarlo si es necesario
-    if (tokenManager.isTokenExpiringSoon()) {
+    // Solo verificar refresco si hay una sesión activa (evitar bucle en login)
+    if (tokenManager.hasValidTokens() && tokenManager.isTokenExpiringSoon()) {
       await tokenManager.refreshAccessToken();
     }
     
@@ -36,8 +36,8 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     
-    // Si el error es 401 y no es un intento de refresco previo
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Si el error es 401, no es un intento de refresco previo, y hay una sesión activa
+    if (error.response?.status === 401 && !originalRequest._retry && tokenManager.hasValidTokens()) {
       originalRequest._retry = true;
       
       // Intentar refrescar el token

@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { productService } from '../services/product.service';
 import { categoryService } from '../services/category.service';
 import { Producto, Categoria } from '../types';
+import { useAuth } from '../hooks/useAuth';
+import Modal from './Modal';
+import ProductForm from './ProductForm';
 import './ProductList.css';
 
 const ProductList: React.FC = () => {
@@ -12,6 +15,12 @@ const ProductList: React.FC = () => {
   const [categoriaFiltro, setCategoriaFiltro] = useState<number | ''>('');
   const [pagina, setPagina] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
+  const [showForm, setShowForm] = useState(false);
+  const [productoEditando, setProductoEditando] = useState<Producto | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [productoEliminar, setProductoEliminar] = useState<Producto | null>(null);
+  const { usuario } = useAuth();
+  const esGerente = usuario?.rol === 'gerente';
 
   const cargarDatos = async () => {
     setLoading(true);
@@ -63,10 +72,42 @@ const ProductList: React.FC = () => {
     return producto.stock_actual <= producto.stock_minimo;
   };
 
+  const handleNuevoProducto = () => {
+    setProductoEditando(null);
+    setShowForm(true);
+  };
+
+  const handleEditarProducto = (producto: Producto) => {
+    setProductoEditando(producto);
+    setShowForm(true);
+  };
+
+  const handleEliminarProducto = async () => {
+    if (!productoEliminar) return;
+    
+    try {
+      await productService.eliminarProducto(productoEliminar.id);
+      cargarDatos();
+      setShowDeleteConfirm(false);
+      setProductoEliminar(null);
+    } catch (error: any) {
+      alert(error.response?.data?.mensaje || 'Error al eliminar producto');
+    }
+  };
+
+  const handleFormSuccess = () => {
+    cargarDatos();
+  };
+
   return (
     <div className="product-list">
       <div className="page-header">
         <h1>Gestión de Productos</h1>
+        {esGerente && (
+          <button onClick={handleNuevoProducto} className="btn-primary">
+            <i className='bx bx-plus'></i> Nuevo Producto
+          </button>
+        )}
       </div>
 
       <div className="filters">
@@ -107,6 +148,7 @@ const ProductList: React.FC = () => {
                   <th>Precio Compra</th>
                   <th>Precio Venta</th>
                   <th>Estado</th>
+                  {esGerente && <th>Acciones</th>}
                 </tr>
               </thead>
               <tbody>
@@ -133,6 +175,29 @@ const ProductList: React.FC = () => {
                           <span className="badge success">✓ Disponible</span>
                         )}
                       </td>
+                      {esGerente && (
+                        <td>
+                          <div className="action-buttons">
+                            <button 
+                              onClick={() => handleEditarProducto(producto)}
+                              className="btn-icon btn-edit"
+                              title="Editar"
+                            >
+                              <i className='bx bx-edit'></i>
+                            </button>
+                            <button 
+                              onClick={() => {
+                                setProductoEliminar(producto);
+                                setShowDeleteConfirm(true);
+                              }}
+                              className="btn-icon btn-delete"
+                              title="Eliminar"
+                            >
+                              <i className='bx bx-trash'></i>
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))
                 )}
@@ -163,6 +228,48 @@ const ProductList: React.FC = () => {
           )}
         </>
       )}
+
+      <Modal
+        isOpen={showForm}
+        onClose={() => {
+          setShowForm(false);
+          setProductoEditando(null);
+        }}
+        title={productoEditando ? 'Editar Producto' : 'Nuevo Producto'}
+        size="large"
+      >
+        <ProductForm
+          producto={productoEditando}
+          onClose={() => {
+            setShowForm(false);
+            setProductoEditando(null);
+          }}
+          onSuccess={handleFormSuccess}
+        />
+      </Modal>
+
+      <Modal
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          setShowDeleteConfirm(false);
+          setProductoEliminar(null);
+        }}
+        title="Confirmar Eliminación"
+        size="small"
+      >
+        <p>¿Estás seguro de que deseas eliminar el producto <strong>{productoEliminar?.nombre}</strong>?</p>
+        <div className="form-actions">
+          <button onClick={() => {
+            setShowDeleteConfirm(false);
+            setProductoEliminar(null);
+          }} className="btn-secondary">
+            Cancelar
+          </button>
+          <button onClick={handleEliminarProducto} className="btn-primary" style={{ backgroundColor: '#dc3545' }}>
+            Eliminar
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 };
