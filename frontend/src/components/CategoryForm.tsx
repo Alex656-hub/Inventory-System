@@ -30,11 +30,9 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ categoria, onClose, onSucce
     const newErrors: Record<string, string> = {};
     if (!formData.nombre.trim()) {
       newErrors.nombre = 'El nombre es requerido';
-    }
-    if (formData.nombre.trim().length < 2) {
+    } else if (formData.nombre.trim().length < 2) {
       newErrors.nombre = 'El nombre debe tener al menos 2 caracteres';
-    }
-    if (formData.nombre.trim().length > 100) {
+    } else if (formData.nombre.trim().length > 100) {
       newErrors.nombre = 'El nombre no puede exceder 100 caracteres';
     }
     if (formData.descripcion && formData.descripcion.length > 500) {

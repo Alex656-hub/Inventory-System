@@ -6,6 +6,7 @@ import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import ProductList from './components/ProductList';
 import CategoryList from './components/CategoryList';
+import SupplierList from './components/SupplierList';
 import Settings from './components/Settings';
 import PrivateRoute from './components/PrivateRoute';
 import { authService } from './services/auth.service';
@@ -52,6 +53,16 @@ function App() {
               <PrivateRoute>
                 <Layout>
                   <CategoryList />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/proveedores"
+            element={
+              <PrivateRoute>
+                <Layout>
+                  <SupplierList />
                 </Layout>
               </PrivateRoute>
             }

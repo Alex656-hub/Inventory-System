@@ -164,8 +164,7 @@ const CategoryList: React.FC = () => {
         size="small"
       >
         <p>
-          ¿Estás seguro de que deseas eliminar la categoría 
-          <strong>{categoriaEliminar?.nombre}</strong>?
+          ¿Estás seguro de que deseas eliminar la categoría <strong> {categoriaEliminar?.nombre}</strong>?
         </p>
         <p className="warning-text">
           Esta acción marcará la categoría como inactiva pero no eliminará los productos asociados.
