@@ -1,0 +1,486 @@
+.sales-summary {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  min-height: 400px;
+}
+
+.summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.summary-header h2 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.refresh-button {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.refresh-button:hover {
+  background: #0056b3;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: #6c757d;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error {
+  text-align: center;
+  padding: 2rem;
+  color: #dc3545;
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+}
+
+.error h3 {
+  margin: 0 0 0.5rem 0;
+  color: #721c24;
+}
+
+.retry-button {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: background-color 0.2s;
+}
+
+.retry-button:hover {
+  background: #c82333;
+}
+
+.no-data {
+  text-align: center;
+  padding: 3rem;
+  color: #6c757d;
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+}
+
+/* Tarjetas de totales */
+.totals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.total-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.total-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.total-card.sales {
+  border-left: 4px solid #28a745;
+}
+
+.total-card.cost {
+  border-left: 4px solid #ffc107;
+}
+
+.total-card.profit {
+  border-left: 4px solid #007bff;
+}
+
+.card-icon {
+  font-size: 2rem;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #f8f9fa;
+}
+
+.card-content h3 {
+  margin: 0 0 0.5rem 0;
+  color: #495057;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.card-content .amount {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.card-content .transactions {
+  font-size: 0.75rem;
+  color: #6c757d;
+}
+
+/* Gráficos */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.chart-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.chart-card.full-width {
+  grid-column: 1 / -1;
+}
+
+.chart-card h3 {
+  margin: 0 0 1.5rem 0;
+  color: #2c3e50;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+/* Lista de categorías */
+.category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.category-item {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #007bff;
+}
+
+.category-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.category-name {
+  font-weight: 600;
+  color: #495057;
+}
+
+.category-amount {
+  font-weight: 700;
+  color: #007bff;
+}
+
+.category-bar {
+  height: 8px;
+  background: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #007bff, #0056b3);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.category-details {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.category-details .profit {
+  color: #28a745;
+  font-weight: 600;
+}
+
+/* Lista de productos */
+.product-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.product-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.product-item:hover {
+  background: #e9ecef;
+}
+
+.product-rank {
+  width: 30px;
+  height: 30px;
+  background: #007bff;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.product-info {
+  flex: 1;
+}
+
+.product-name {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.25rem;
+}
+
+.product-code {
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.product-stats {
+  text-align: right;
+}
+
+.quantity {
+  font-size: 0.875rem;
+  color: #6c757d;
+  margin-bottom: 0.25rem;
+}
+
+.amount {
+  font-weight: 700;
+  color: #28a745;
+}
+
+/* Gráfico de tendencia */
+.trend-chart {
+  width: 100%;
+}
+
+.trend-bars {
+  display: flex;
+  gap: 0.5rem;
+  height: 200px;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+  padding: 1rem 0;
+  background: #f8f9fa;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.trend-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 60px;
+  flex: 1;
+}
+
+.trend-bar-container {
+  display: flex;
+  gap: 2px;
+  height: 100%;
+  width: 100%;
+  max-width: 40px;
+  align-items: flex-end;
+}
+
+.trend-bar {
+  width: 8px;
+  border-radius: 2px 2px 0 0;
+  transition: height 0.3s ease;
+}
+
+.trend-bar.sales {
+  background: #28a745;
+}
+
+.trend-bar.profit {
+  background: #007bff;
+}
+
+.trend-label {
+  text-align: center;
+  font-size: 0.75rem;
+  color: #6c757d;
+  margin-top: 0.5rem;
+}
+
+.trend-label .date {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.trend-legend {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #495057;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.legend-color.sales {
+  background: #28a745;
+}
+
+.legend-color.profit {
+  background: #007bff;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sales-summary {
+    padding: 0.5rem;
+  }
+  
+  .summary-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  
+  .totals-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .charts-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .total-card {
+    padding: 1rem;
+  }
+  
+  .card-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
+  }
+  
+  .card-content .amount {
+    font-size: 1.25rem;
+  }
+  
+  .trend-bars {
+    height: 150px;
+    gap: 0.25rem;
+  }
+  
+  .trend-item {
+    min-width: 50px;
+  }
+  
+  .trend-bar-container {
+    max-width: 30px;
+  }
+  
+  .trend-bar {
+    width: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .chart-card {
+    padding: 1rem;
+  }
+  
+  .category-item,
+  .product-item {
+    padding: 0.5rem;
+  }
+  
+  .trend-bars {
+    height: 120px;
+  }
+  
+  .trend-item {
+    min-width: 40px;
+  }
+  
+  .trend-bar-container {
+    max-width: 25px;
+  }
+  
+  .trend-label {
+    font-size: 0.7rem;
+  }
+}

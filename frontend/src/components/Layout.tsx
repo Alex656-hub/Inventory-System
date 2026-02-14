@@ -60,6 +60,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   const esGerente = usuario?.rol === 'gerente';
+  const esEmpleado = usuario?.rol === 'empleado';
 
   return (
     <div className="layout">
@@ -95,6 +96,27 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <li className={isActive('/proveedores') ? 'active' : ''}>
               <Link to="/proveedores">
                 <i className='bx bx-message-square-dots'></i> Proveedores
+              </Link>
+            </li>
+          )}
+          {(esGerente || esEmpleado) && (
+            <li className={isActive('/ventas') ? 'active' : ''}>
+              <Link to="/ventas">
+                <i className='bx bx-cart-alt'></i> Ventas
+              </Link>
+            </li>
+          )}
+          {(esGerente || esEmpleado) && (
+            <li className={isActive('/ventas/resumen') ? 'active' : ''}>
+              <Link to="/ventas/resumen">
+                <i className='bx bx-bar-chart-alt'></i> Resumen Ventas
+              </Link>
+            </li>
+          )}
+          {esGerente && (
+            <li className={isActive('/importar') ? 'active' : ''}>
+              <Link to="/importar">
+                <i className='bx bx-upload'></i> Importar Excel
               </Link>
             </li>
           )}

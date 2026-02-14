@@ -8,6 +8,9 @@ import ProductList from './components/ProductList';
 import CategoryList from './components/CategoryList';
 import SupplierList from './components/SupplierList';
 import Settings from './components/Settings';
+import ImportSales from './components/ImportSales';
+import SalesList from './components/SalesList';
+import SalesSummaryPage from './components/SalesSummary';
 import PrivateRoute from './components/PrivateRoute';
 import { authService } from './services/auth.service';
 import './App.css';
@@ -73,6 +76,36 @@ function App() {
               <PrivateRoute>
                 <Layout>
                   <Settings />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/importar"
+            element={
+              <PrivateRoute>
+                <Layout>
+                  <ImportSales />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/ventas"
+            element={
+              <PrivateRoute>
+                <Layout>
+                  <SalesList />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/ventas/resumen"
+            element={
+              <PrivateRoute>
+                <Layout>
+                  <SalesSummaryPage />
                 </Layout>
               </PrivateRoute>
             }

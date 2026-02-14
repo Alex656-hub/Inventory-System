@@ -2,11 +2,15 @@
 import { Request, Response, RequestHandler } from 'express';
 import multer, { FileFilterCallback } from 'multer';
 import path from 'path';
-import { v4 as uuidv4 } from 'uuid';
 import { SalesImportService } from '../services/salesImportService';
 import { sequelize } from '../config/database';
 import { Op } from 'sequelize';
-import { DailySale, Product, Category, Supplier } from '../models/sales';
+import SalidaInventario from '../models/SalidaInventario';
+import DetalleSalida from '../models/DetalleSalida';
+import Product from '../models/Product';
+import Category from '../models/Category';
+import Supplier from '../models/Supplier';
+import User from '../models/User';
 
 // Extender el tipo de Request para incluir file
 declare global {
@@ -68,8 +72,14 @@ class SalesController {
           return;
         }
 
+        // Verificar que el usuario esté autenticado
+        if (!req.usuario) {
+          res.status(401).json({ success: false, message: 'No autenticado' });
+          return;
+        }
+
         // Procesar el archivo
-        const result = await SalesImportService.importFromExcel(req.file);
+        const result = await SalesImportService.importFromExcel(req.file, req.usuario.id);
 
         const response = {
           success: true,
@@ -79,8 +89,11 @@ class SalesController {
             nuevasCategorias: result.newCategories,
             nuevosProveedores: result.newSuppliers,
             nuevosProductos: result.newProducts,
-            nuevasVentas: result.newSales,
+            nuevasSalidas: result.newSalidas,
             errores: result.errors.length > 0 ? result.errors : undefined,
+            proveedoresConRUCTemporal: result.proveedoresConRUCTemporal?.length 
+              ? result.proveedoresConRUCTemporal 
+              : undefined,
           },
         };
 
@@ -107,37 +120,51 @@ class SalesController {
       const { page = '1', limit = '10', startDate, endDate, productId } = req.query;
       const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
       
-      const whereClause: any = {};
+      const whereClause: any = { estado: 'completado' };
       
       if (startDate || endDate) {
-        whereClause.date = {};
-        if (startDate) whereClause.date[Op.gte] = new Date(startDate as string);
+        whereClause.fecha = {};
+        if (startDate) whereClause.fecha[Op.gte] = new Date(startDate as string);
         if (endDate) {
           const end = new Date(endDate as string);
           end.setHours(23, 59, 59, 999);
-          whereClause.date[Op.lte] = end;
+          whereClause.fecha[Op.lte] = end;
         }
       }
       
+      // Configurar include para filtrar por productId si se especifica
+      const includeOptions: any = [
+        { model: User, as: 'usuario', attributes: ['id', 'nombre'] },
+        {
+          model: DetalleSalida,
+          as: 'detalles',
+          include: [
+            {
+              model: Product,
+              as: 'producto',
+              include: [
+                { model: Category, as: 'categoria' },
+                { model: Supplier, as: 'proveedor' }
+              ]
+            }
+          ]
+        }
+      ];
+      
+      // Si hay productId, agregar where en el include para filtrar por producto
       if (productId) {
-        whereClause.productId = productId;
+        const productIdNum = parseInt(productId as string);
+        includeOptions[1].where = { producto_id: productIdNum };
+        includeOptions[1].required = true; // INNER JOIN para asegurar que solo traiga salidas con ese producto
       }
       
-      const { count, rows } = await DailySale.findAndCountAll({
+      const { count, rows } = await SalidaInventario.findAndCountAll({
         where: whereClause,
-        include: [
-          {
-            model: Product,
-            as: 'product',
-            include: [
-              { model: Category, as: 'category' },
-              { model: Supplier, as: 'supplier' },
-            ],
-          },
-        ],
-        order: [['date', 'DESC']],
+        include: includeOptions,
         limit: parseInt(limit as string),
         offset,
+        order: [['fecha', 'DESC']],
+        distinct: true // Necesario para count correcto con includes
       });
       
       res.status(200).json({
@@ -146,7 +173,7 @@ class SalesController {
           total: count,
           page: parseInt(page as string),
           totalPages: Math.ceil(count / parseInt(limit as string)),
-          data: rows,
+          data: rows
         },
       });
     } catch (error: unknown) {
@@ -167,100 +194,124 @@ class SalesController {
     try {
       const { startDate, endDate } = req.query;
       
-      const whereClause: any = {};
+      const whereClause: any = { estado: 'completado' };
       
       if (startDate || endDate) {
-        whereClause.date = {};
-        if (startDate) whereClause.date[Op.gte] = new Date(startDate as string);
+        whereClause.fecha = {};
+        if (startDate) whereClause.fecha[Op.gte] = new Date(startDate as string);
         if (endDate) {
           const end = new Date(endDate as string);
           end.setHours(23, 59, 59, 999);
-          whereClause.date[Op.lte] = end;
+          whereClause.fecha[Op.lte] = end;
         }
       }
       
-      // Obtener totales
-      const totals = await DailySale.findAll({
-        where: whereClause,
-        attributes: [
-          [sequelize.fn('SUM', sequelize.col('total_amount')), 'totalSales'],
-          [sequelize.fn('SUM', sequelize.col('cost_price')), 'totalCost'],
-          [sequelize.fn('SUM', sequelize.col('profit')), 'totalProfit'],
-          [sequelize.fn('COUNT', sequelize.col('id')), 'totalTransactions'],
-        ],
-        raw: true,
-      });
-      
-      // Obtener ventas por categoría
-      const byCategory = await DailySale.findAll({
+      const salidas = await SalidaInventario.findAll({
         where: whereClause,
         include: [
           {
-            model: Product,
-            as: 'product',
-            include: [{ model: Category, as: 'category' }],
-            attributes: [],
-          },
-        ],
-        attributes: [
-          [sequelize.col('product.category.name'), 'categoryName'],
-          [sequelize.fn('SUM', sequelize.col('total_amount')), 'totalSales'],
-          [sequelize.fn('SUM', sequelize.col('profit')), 'totalProfit'],
-          [sequelize.fn('COUNT', sequelize.col('daily_sales.id')), 'transactionCount'],
-        ],
-        group: ['product.category.name'],
-        order: [[sequelize.fn('SUM', sequelize.col('total_amount')), 'DESC']],
-        raw: true,
+            model: DetalleSalida,
+            as: 'detalles',
+            include: [
+              {
+                model: Product,
+                as: 'producto',
+                include: [
+                  { model: Category, as: 'categoria' }
+                ]
+              }
+            ]
+          }
+        ]
       });
-
-      // Obtener tendencia de ventas (por día)
-      const dateTrunc = sequelize.fn('date_trunc', 'day', sequelize.col('date'));
       
-      const salesTrend = await DailySale.findAll({
-        where: whereClause,
-        attributes: [
-          [dateTrunc, 'date'],
-          [sequelize.fn('SUM', sequelize.col('total_amount')), 'totalSales'],
-          [sequelize.fn('SUM', sequelize.col('profit')), 'totalProfit'],
-          [sequelize.fn('COUNT', sequelize.col('id')), 'transactionCount'],
-        ],
-        group: ['date'],
-        order: [['date', 'ASC']],
-        raw: true,
+      // Calcular totales
+      let totalSales = 0;
+      let totalCost = 0;
+      const byCategory: Record<string, { totalSales: number; totalProfit: number; count: number }> = {};
+      const productMap = new Map<number, { producto: Product; quantity: number; sales: number; cost: number }>();
+      
+      salidas.forEach((salida: any) => {
+        (salida.detalles || []).forEach((detalle: any) => {
+          const cantidad = Number(detalle.cantidad);
+          const subtotal = Number(detalle.subtotal);
+          const cost = cantidad * Number(detalle.producto?.precio_compra || 0);
+          const profit = subtotal - cost;
+          
+          totalSales += subtotal;
+          totalCost += cost;
+          
+          const catName = detalle.producto?.categoria?.nombre || 'Sin categoría';
+          if (!byCategory[catName]) byCategory[catName] = { totalSales: 0, totalProfit: 0, count: 0 };
+          byCategory[catName].totalSales += subtotal;
+          byCategory[catName].totalProfit += profit;
+          byCategory[catName].count += 1;
+          
+          const prodId = detalle.producto_id;
+          if (!productMap.has(prodId)) {
+            productMap.set(prodId, {
+              producto: detalle.producto,
+              quantity: 0,
+              sales: 0,
+              cost: 0
+            });
+          }
+          const p = productMap.get(prodId)!;
+          p.quantity += cantidad;
+          p.sales += subtotal;
+          p.cost += cost;
+        });
       });
-
-      // Obtener productos más vendidos
-      const byProduct = await DailySale.findAll({
-        where: whereClause,
-        include: [
-          {
-            model: Product,
-            as: 'product',
-            attributes: ['name', 'sku'],
-          },
-        ],
-        attributes: [
-          [sequelize.fn('SUM', sequelize.col('quantity')), 'totalQuantity'],
-          [sequelize.fn('SUM', sequelize.col('total_amount')), 'totalSales'],
-          [sequelize.fn('SUM', sequelize.col('profit')), 'totalProfit'],
-        ],
-        group: ['product.id'],
-        order: [[sequelize.fn('SUM', sequelize.col('total_amount')), 'DESC']],
-        limit: 10,
+      
+      const byCategoryArr = Object.entries(byCategory).map(([name, v]) => ({
+        categoryName: name,
+        totalSales: v.totalSales,
+        totalProfit: v.totalProfit,
+        transactionCount: v.count
+      })).sort((a, b) => b.totalSales - a.totalSales);
+      
+      const byProductArr = Array.from(productMap.values())
+        .map(({ producto, quantity, sales, cost }) => ({
+          producto: { id: producto?.id, nombre: producto?.nombre, codigo: producto?.codigo },
+          totalQuantity: quantity,
+          totalSales: sales,
+          totalProfit: sales - cost
+        }))
+        .sort((a, b) => b.totalSales - a.totalSales)
+        .slice(0, 10);
+      
+      // Tendencia por día
+      const dateSales: Record<string, { totalSales: number; totalProfit: number; count: number }> = {};
+      salidas.forEach((s: any) => {
+        const d = new Date(s.fecha).toISOString().split('T')[0];
+        if (!dateSales[d]) dateSales[d] = { totalSales: 0, totalProfit: 0, count: 0 };
+        dateSales[d].totalSales += Number(s.total);
+        dateSales[d].count += 1;
+        (s.detalles || []).forEach((det: any) => {
+          const cost = Number(det.cantidad) * Number(det.producto?.precio_compra || 0);
+          dateSales[d].totalProfit += Number(det.subtotal) - cost;
+        });
       });
-
+      
+      const salesTrend = Object.entries(dateSales).map(([date, v]) => ({
+        date,
+        totalSales: v.totalSales,
+        totalProfit: v.totalProfit,
+        transactionCount: v.count
+      })).sort((a, b) => a.date.localeCompare(b.date));
+      
       res.status(200).json({
         success: true,
         data: {
-          totals: totals[0] || { 
-            totalSales: 0, 
-            totalCost: 0, 
-            totalProfit: 0, 
-            totalTransactions: 0 
+          totals: {
+            totalSales,
+            totalCost,
+            totalProfit: totalSales - totalCost,
+            totalTransactions: salidas.length
           },
-          byCategory,
-          byProduct,
-          salesTrend,
+          byCategory: byCategoryArr,
+          byProduct: byProductArr,
+          salesTrend
         },
       });
     } catch (error: unknown) {

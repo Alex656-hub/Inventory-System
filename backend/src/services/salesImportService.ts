@@ -1,22 +1,12 @@
-import { Readable } from 'stream';
 import * as XLSX from 'xlsx';
-import { Category, Supplier, Product, DailySale, ProductAttributes } from '../models/sales';
-import { Op, Transaction } from 'sequelize';
 import { sequelize } from '../config/database';
-
-// Usar el tipo de creación de Producto que espera Sequelize
-type ProductCreationAttributes = Omit<ProductAttributes, 'id' | 'createdAt' | 'updatedAt' | 'category' | 'supplier'> & {
-  categoryId: number;
-  supplierId: number;
-  createdAt?: Date;
-  updatedAt?: Date;
-};
-
-// Tipo para el bulkCreate
-type ProductBulkCreateAttributes = Omit<ProductAttributes, 'id' | 'category' | 'supplier'> & {
-  categoryId: number;
-  supplierId: number;
-};
+import { Transaction } from 'sequelize';
+import Category from '../models/Category';
+import Supplier from '../models/Supplier';
+import Product from '../models/Product';
+import SalidaInventario from '../models/SalidaInventario';
+import DetalleSalida from '../models/DetalleSalida';
+import { Op } from 'sequelize';
 
 const REQUIRED_COLUMNS = [
   'fecha',
@@ -47,292 +37,284 @@ export interface ImportResult {
   newCategories: number;
   newSuppliers: number;
   newProducts: number;
-  newSales: number;
+  newSalidas: number;
   errors: string[];
+  proveedoresConRUCTemporal?: string[]; // Nombres de proveedores con RUC temporal
 }
 
 export class SalesImportService {
-  static async importFromExcel(file: Express.Multer.File): Promise<ImportResult> {
+  static async importFromExcel(
+    file: Express.Multer.File,
+    usuarioId: number
+  ): Promise<ImportResult> {
     const result: ImportResult = {
       totalRows: 0,
       processedRows: 0,
       newCategories: 0,
       newSuppliers: 0,
       newProducts: 0,
-      newSales: 0,
-      errors: []
+      newSalidas: 0,
+      errors: [],
+      proveedoresConRUCTemporal: []
     };
 
     try {
-      // Read Excel file
       const workbook = XLSX.read(file.buffer, { type: 'buffer' });
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       const rows: ExcelRow[] = XLSX.utils.sheet_to_json(worksheet, { raw: false });
 
       if (rows.length === 0) {
         throw new Error('El archivo Excel está vacío');
       }
 
-      // Validate columns
-      const firstRow = rows[0];
-      const columnNames = Object.keys(firstRow).map(name => name.toLowerCase().trim());
+      result.totalRows = rows.length;
+
+      // Validar columnas
+      const columnNames = Object.keys(rows[0])
+        .map((k) => k.toLowerCase().trim())
+        .filter((k) => k && k !== '__empty' && k !== 'undefined' && k !== 'null'); // Filtrar claves vacías y problemáticas
       
-      const missingColumns = REQUIRED_COLUMNS.filter(
-        col => !columnNames.some(name => name === col.toLowerCase())
+      const missing = REQUIRED_COLUMNS.filter(
+        (col) => !columnNames.includes(col.toLowerCase())
       );
 
-      if (missingColumns.length > 0) {
-        throw new Error(`Faltan columnas obligatorias: ${missingColumns.join(', ')}`);
+      if (missing.length > 0) {
+        throw new Error(`Faltan columnas: ${missing.join(', ')}`);
       }
 
-      // Normalize column names
-      const normalizedRows = rows.map(row => {
-        const normalized: any = {};
-        Object.entries(row).forEach(([key, value]) => {
-          normalized[key.toLowerCase().trim()] = value;
+      const normalizedRows = rows.map((row) => {
+        const n: any = {};
+        Object.entries(row).forEach(([k, v]) => {
+          const key = k.toLowerCase().trim();
+          // Ignorar claves vacías, __empty, undefined, null, y claves numéricas
+          if (key && 
+              key !== '__empty' && 
+              key !== 'undefined' && 
+              key !== 'null' && 
+              !/^\d+$/.test(key)) { // No procesar claves puramente numéricas
+            n[key] = v;
+          }
         });
-        return normalized as ExcelRow;
+        return n as ExcelRow;
       });
 
-      // Process in transaction
       await sequelize.transaction(async (t) => {
-        // Process categories and suppliers first
-        const categories = await this.processCategories(normalizedRows, t);
-        const suppliers = await this.processSuppliers(normalizedRows, t);
-
-        // Process products
-        const products = await this.processProducts(
-          normalizedRows, 
-          categories, 
-          suppliers, 
+        const categoryMap = await this.processCategories(normalizedRows, t);
+        const supplierMap = await this.processSuppliers(normalizedRows, result, t);
+        const productMap = await this.processProducts(
+          normalizedRows,
+          categoryMap,
+          supplierMap,
+          result,
           t
         );
-
-        // Process sales
-        await this.processSales(normalizedRows, products, result, t);
+        await this.processSalidas(
+          normalizedRows,
+          productMap,
+          usuarioId,
+          result,
+          t
+        );
       });
 
       return result;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      console.error('Error importing sales data:', errorMessage);
-      throw error instanceof Error ? error : new Error('Error desconocido al importar datos');
+      const msg = error instanceof Error ? error.message : 'Error desconocido';
+      throw new Error(msg);
     }
   }
 
   private static async processCategories(
-    rows: ExcelRow[], 
-    transaction: Transaction
+    rows: ExcelRow[],
+    t: Transaction
   ): Promise<Map<string, Category>> {
-    const categoryMap = new Map<string, Category>();
-    const uniqueCategories = [...new Set(rows.map(row => row.categoria?.toString().trim()).filter(Boolean))];
+    const map = new Map<string, Category>();
+    const names = [...new Set(rows.map((r) => (r.categoria || '').toString().trim()).filter(Boolean))];
 
-    // Find existing categories
-    const existingCategories = await Category.findAll({
-      where: { name: { [Op.in]: uniqueCategories } },
-      transaction
+    const existing = await Category.findAll({
+      where: { nombre: { [Op.in]: names } },
+      transaction: t
     });
 
-    // Add existing to map
-    existingCategories.forEach(cat => categoryMap.set(cat.name, cat));
+    existing.forEach((c) => map.set(c.nombre, c));
 
-    // Create new categories
-    const newCategories = uniqueCategories.filter(
-      name => !categoryMap.has(name) && name
-    );
+    const toCreate = names.filter((n) => !map.has(n));
 
-    if (newCategories.length > 0) {
-      const createdCategories = await Category.bulkCreate(
-        newCategories.map(name => ({
-          name,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        } as any)),
-        { transaction }
+    if (toCreate.length > 0) {
+      const created = await Category.bulkCreate(
+        toCreate.map((nombre) => ({ nombre })),
+        { transaction: t }
       );
-      createdCategories.forEach(cat => categoryMap.set(cat.name, cat));
+      created.forEach((c) => map.set(c.nombre, c));
     }
 
-    return categoryMap;
+    return map;
   }
 
   private static async processSuppliers(
-    rows: ExcelRow[], 
-    transaction: Transaction
+    rows: ExcelRow[],
+    result: ImportResult,
+    t: Transaction
   ): Promise<Map<string, Supplier>> {
-    const supplierMap = new Map<string, Supplier>();
-    const uniqueSuppliers = [...new Set(rows.map(row => row.proveedor?.toString().trim()).filter(Boolean))];
+    const map = new Map<string, Supplier>();
+    const names = [...new Set(rows.map((r) => (r.proveedor || '').toString().trim()).filter(Boolean))];
 
-    // Find existing suppliers
-    const existingSuppliers = await Supplier.findAll({
-      where: { name: { [Op.in]: uniqueSuppliers } },
-      transaction
+    const existing = await Supplier.findAll({
+      where: { nombre: { [Op.in]: names } },
+      transaction: t
     });
 
-    // Add existing to map
-    existingSuppliers.forEach(sup => supplierMap.set(sup.name, sup));
+    existing.forEach((s) => map.set(s.nombre, s));
 
-    // Create new suppliers
-    const newSuppliers = uniqueSuppliers.filter(
-      name => !supplierMap.has(name) && name
-    );
+    const toCreate = names.filter((n) => !map.has(n));
 
-    if (newSuppliers.length > 0) {
-      const createdSuppliers = await Supplier.bulkCreate(
-        newSuppliers.map(name => ({
-          name,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        } as any)),
-        { transaction }
+    if (toCreate.length > 0) {
+      const created = await Supplier.bulkCreate(
+        toCreate.map((nombre) => ({ 
+          nombre, 
+          ruc_dni: `TEMP-${Date.now()}-${Math.random().toString(36).slice(2)}` 
+        })),
+        { transaction: t }
       );
-      createdSuppliers.forEach(sup => supplierMap.set(sup.name, sup));
+      created.forEach((s) => map.set(s.nombre, s));
+      
+      // Registrar proveedores con RUC temporal para notificación
+      result.proveedoresConRUCTemporal!.push(...toCreate);
     }
 
-    return supplierMap;
+    return map;
   }
 
   private static async processProducts(
     rows: ExcelRow[],
-    categories: Map<string, Category>,
-    suppliers: Map<string, Supplier>,
-    transaction: Transaction
+    categoryMap: Map<string, Category>,
+    supplierMap: Map<string, Supplier>,
+    result: ImportResult,
+    t: Transaction
   ): Promise<Map<string, Product>> {
-    const productMap = new Map<string, Product>();
-    const uniqueSkus = [...new Set(rows.map(row => row.sku?.toString().trim()).filter(Boolean))];
+    const map = new Map<string, Product>();
+    const skus = [...new Set(rows.map((r) => (r.sku || '').toString().trim()).filter(Boolean))];
 
-    // Find existing products
-    const existingProducts = await Product.findAll({
-      where: { sku: { [Op.in]: uniqueSkus } },
+    const existing = await Product.findAll({
+      where: { codigo: { [Op.in]: skus } },
       include: [
-        { model: Category, as: 'category' },
-        { model: Supplier, as: 'supplier' }
+        { model: Category, as: 'categoria' },
+        { model: Supplier, as: 'proveedor' }
       ],
-      transaction
+      transaction: t
     });
 
-    // Add existing to map
-    existingProducts.forEach(prod => productMap.set(prod.sku, prod));
+    existing.forEach((p) => map.set(p.codigo, p));
 
-    // Prepare new products
-    const productsToCreate: ProductBulkCreateAttributes[] = [];
-    
-    // Group by SKU and get the most recent data
-    rows.forEach(row => {
-      const sku = row.sku?.toString().trim();
-      if (!sku || productMap.has(sku)) return;
+    for (const row of rows) {
+      const sku = (row.sku || '').toString().trim();
+      if (!sku || map.has(sku)) continue;
 
-      const category = categories.get(row.categoria?.toString().trim() || '');
-      const supplier = suppliers.get(row.proveedor?.toString().trim() || '');
+      const cat = categoryMap.get((row.categoria || '').toString().trim());
+      const sup = supplierMap.get((row.proveedor || '').toString().trim());
 
-      if (category && supplier) {
-        productsToCreate.push({
-          sku,
-          name: row['nombre producto']?.toString().trim() || `Producto ${sku}`,
-          categoryId: category.id,
-          supplierId: supplier.id,
-          costPrice: parseFloat(String(row['costo unitario'])) || 0,
-          sellingPrice: parseFloat(String(row['precio venta unitario'])) || 0,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
-      }
-    });
+      if (!cat || !sup) continue;
 
-    // Create new products
-    if (productsToCreate.length > 0) {
-      const createdProducts = await Product.bulkCreate(
-        productsToCreate as any, // Hacemos un cast a any para evitar problemas con los tipos de Sequelize
-        { 
-          transaction,
-          returning: true,
-          validate: true
-        }
-      );
-      createdProducts.forEach(prod => productMap.set(prod.sku, prod));
+      const [created, wasCreated] = await Product.findOrCreate({
+        where: { codigo: sku },
+        defaults: {
+          codigo: sku,
+          nombre: (row['nombre producto'] || `Producto ${sku}`).toString().trim(),
+          categoria_id: cat.id,
+          proveedor_id: sup.id,
+          precio_compra: parseFloat(String(row['costo unitario'])) || 0,
+          precio_venta: parseFloat(String(row['precio venta unitario'])) || 0,
+          stock_actual: 0,
+          stock_minimo: 0
+        },
+        transaction: t
+      });
+
+      map.set(created.codigo, created);
+      if (wasCreated) result.newProducts++;
     }
 
-    return productMap;
+    return map;
   }
 
-  private static async processSales(
+  private static async processSalidas(
     rows: ExcelRow[],
-    products: Map<string, Product>,
+    productMap: Map<string, Product>,
+    usuarioId: number,
     result: ImportResult,
-    transaction: Transaction
+    t: Transaction
   ): Promise<void> {
-    const salesToCreate: any[] = [];
-    const existingSales = new Set<string>();
+    // Agrupar por fecha para crear una SalidaInventario por día
+    const byDate = new Map<string, Array<{ producto: Product; cantidad: number; precio: number; costo: number }>>();
 
-    // Process each row
     for (const row of rows) {
+      const sku = (row.sku || '').toString().trim();
+      const product = productMap.get(sku);
+      if (!product) continue;
+
+      let fecha: Date;
       try {
-        const sku = row.sku?.toString().trim();
-        if (!sku) continue;
-
-        const product = products.get(sku);
-        if (!product) continue;
-
-        // Parse date
-        let saleDate: Date;
-        try {
-          saleDate = new Date(row.fecha);
-          if (isNaN(saleDate.getTime())) {
-            throw new Error('Fecha inválida');
-          }
-        } catch (error) {
-          result.errors.push(`SKU ${sku}: Fecha inválida: ${row.fecha}`);
-          continue;
-        }
-
-        // Parse quantities and prices
-        const quantity = parseInt(String(row['cantidad vendida']), 10) || 0;
-        const unitPrice = parseFloat(String(row['precio venta unitario'])) || 0;
-        const costPrice = parseFloat(String(row['costo unitario'])) || 0;
-        const totalAmount = quantity * unitPrice;
-        const profit = totalAmount - (quantity * costPrice);
-
-        if (quantity <= 0 || unitPrice <= 0) {
-          result.errors.push(
-            `SKU ${sku}: Cantidad o precio unitario inválido (cantidad: ${quantity}, precio: ${unitPrice})`
-          );
-          continue;
-        }
-
-        const saleKey = `${saleDate.toISOString().split('T')[0]}_${product.id}`;
-        if (existingSales.has(saleKey)) {
-          // Skip duplicate date+product entries
-          continue;
-        }
-
-        salesToCreate.push({
-          date: saleDate,
-          productId: product.id,
-          quantity,
-          unitPrice,
-          totalAmount,
-          costPrice: costPrice * quantity,
-          profit
-        });
-
-        existingSales.add(saleKey);
-        result.processedRows++;
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-        result.errors.push(`Error procesando fila: ${errorMessage}`);
+        fecha = new Date(row.fecha);
+        if (isNaN(fecha.getTime())) throw new Error('Fecha inválida');
+      } catch {
+        result.errors.push(`SKU ${sku}: Fecha inválida`);
+        continue;
       }
+
+      const cantidad = parseInt(String(row['cantidad vendida']), 10) || 0;
+      const precio = parseFloat(String(row['precio venta unitario'])) || 0;
+      const costo = parseFloat(String(row['costo unitario'])) || 0;
+
+      if (cantidad <= 0 || precio <= 0) {
+        result.errors.push(`SKU ${sku}: Cantidad o precio inválido`);
+        continue;
+      }
+
+      const key = fecha.toISOString().split('T')[0];
+      if (!byDate.has(key)) byDate.set(key, []);
+      
+      const list = byDate.get(key)!;
+      const existing = list.find((i) => i.producto.id === product.id);
+
+      if (existing) {
+        existing.cantidad += cantidad;
+      } else {
+        list.push({ producto: product, cantidad, precio, costo });
+      }
+
+      result.processedRows++;
     }
 
-    // Insert all sales in batch
-    if (salesToCreate.length > 0) {
-      await DailySale.bulkCreate(salesToCreate, {
-        updateOnDuplicate: ['quantity', 'unitPrice', 'totalAmount', 'costPrice', 'profit', 'updatedAt'],
-        transaction
-      });
-      result.newSales = salesToCreate.length;
+    for (const [dateStr, items] of byDate) {
+      const total = items.reduce((s, i) => s + i.cantidad * i.precio, 0);
+
+      const salida = await SalidaInventario.create(
+        {
+          numero_documento: `IMP-${dateStr.replace(/-/g, '')}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          fecha: new Date(dateStr),
+          usuario_id: usuarioId,
+          tipo_documento: 'boleta',
+          total,
+          metodo_pago: 'efectivo',
+          estado: 'completado'
+        },
+        { transaction: t }
+      );
+
+      for (const item of items) {
+        await DetalleSalida.create(
+          {
+            salida_id: salida.id,
+            producto_id: item.producto.id,
+            cantidad: item.cantidad,
+            precio_unitario: item.precio,
+            subtotal: item.cantidad * item.precio
+          },
+          { transaction: t }
+        );
+      }
+
+      result.newSalidas++;
     }
   }
 }
-
-export default new SalesImportService();
