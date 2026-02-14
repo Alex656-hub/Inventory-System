@@ -17,8 +17,12 @@ export const importService = {
 
     const { data } = await api.post<{ success: boolean; data: ImportResult; message: string }>(
       '/sales/import',
-      formData
-      // NO enviar headers: { 'Content-Type': 'multipart/form-data' }
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      }
     );
 
     return data;

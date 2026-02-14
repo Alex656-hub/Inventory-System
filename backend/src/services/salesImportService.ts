@@ -19,6 +19,17 @@ const REQUIRED_COLUMNS = [
   'proveedor'
 ];
 
+// Mapeo de columnas alternativas
+const COLUMN_ALIASES = {
+  'categoria': ['categoria', 'categoría', 'category', 'categoría producto'],
+  'proveedor': ['proveedor', 'supplier', 'proveedor nombre'],
+  'sku': ['sku', 'código', 'codigo', 'product code'],
+  'nombre producto': ['nombre producto', 'producto', 'nombre', 'product name'],
+  'cantidad vendida': ['cantidad vendida', 'cantidad', 'quantity', 'qty'],
+  'precio venta unitario': ['precio venta unitario', 'precio venta', 'precio', 'price', 'precio unitario'],
+  'costo unitario': ['costo unitario', 'costo', 'cost', 'precio compra']
+};
+
 interface ExcelRow {
   [key: string]: any;
   fecha: string | Date;
@@ -69,16 +80,23 @@ export class SalesImportService {
 
       result.totalRows = rows.length;
 
-      // Validar columnas
+      // Validar columnas con aliases
       const columnNames = Object.keys(rows[0])
         .map((k) => k.toLowerCase().trim())
-        .filter((k) => k && k !== '__empty' && k !== 'undefined' && k !== 'null'); // Filtrar claves vacías y problemáticas
+        .filter((k) => k && k !== '__empty' && k !== 'undefined' && k !== 'null');
       
-      const missing = REQUIRED_COLUMNS.filter(
-        (col) => !columnNames.includes(col.toLowerCase())
-      );
+      // Función para verificar si una columna requerida está presente (considerando aliases)
+      const hasColumn = (requiredColumn: string): boolean => {
+        const aliases = (COLUMN_ALIASES as any)[requiredColumn] || [requiredColumn];
+        return aliases.some((alias: string) => columnNames.includes(alias.toLowerCase()));
+      };
+      
+      const missing = REQUIRED_COLUMNS.filter(col => !hasColumn(col));
 
       if (missing.length > 0) {
+        console.log('Columnas encontradas:', columnNames);
+        console.log('Columnas requeridas:', REQUIRED_COLUMNS);
+        console.log('Columnas faltantes:', missing);
         throw new Error(`Faltan columnas: ${missing.join(', ')}`);
       }
 
@@ -86,13 +104,24 @@ export class SalesImportService {
         const n: any = {};
         Object.entries(row).forEach(([k, v]) => {
           const key = k.toLowerCase().trim();
+          
           // Ignorar claves vacías, __empty, undefined, null, y claves numéricas
           if (key && 
               key !== '__empty' && 
               key !== 'undefined' && 
               key !== 'null' && 
-              !/^\d+$/.test(key)) { // No procesar claves puramente numéricas
-            n[key] = v;
+              !/^\d+$/.test(key)) {
+            
+            // Buscar si esta clave coincide con alguna columna requerida (usando aliases)
+            let matchedKey = key;
+            for (const [requiredKey, aliases] of Object.entries(COLUMN_ALIASES)) {
+              if (aliases.includes(key)) {
+                matchedKey = requiredKey;
+                break;
+              }
+            }
+            
+            n[matchedKey] = v;
           }
         });
         return n as ExcelRow;
@@ -172,7 +201,7 @@ export class SalesImportService {
       const created = await Supplier.bulkCreate(
         toCreate.map((nombre) => ({ 
           nombre, 
-          ruc_dni: `TEMP-${Date.now()}-${Math.random().toString(36).slice(2)}` 
+          ruc_dni: `TEMP-${Date.now().toString().slice(-8)}-${Math.random().toString(36).slice(2, 6)}` 
         })),
         { transaction: t }
       );

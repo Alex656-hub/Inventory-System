@@ -31,9 +31,16 @@ const fileFilter = (
 ) => {
   const filetypes = /xlsx|xls/;
   const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = filetypes.test(file.mimetype);
+  
+  // Ser más flexible con el mimetype - algunos navegadores no lo envían correctamente
+  const allowedMimetypes = [
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+    'application/vnd.ms-excel', // .xls
+    'application/octet-stream' // A veces los archivos se envían como binary
+  ];
+  const mimetype = allowedMimetypes.includes(file.mimetype) || !file.mimetype;
 
-  if (mimetype && extname) {
+  if (extname && mimetype) {
     return cb(null, true);
   } else {
     cb(new Error('Solo se permiten archivos Excel (.xlsx, .xls)'));
@@ -55,7 +62,12 @@ class SalesController {
     
     async (req: Request, res: Response): Promise<void> => {
       try {
+        console.log('=== INICIO IMPORTACIÓN ===');
+        console.log('req.file:', req.file);
+        console.log('req.usuario:', req.usuario?.email);
+        
         if (!req.file) {
+          console.log('ERROR: No se proporcionó archivo');
           res.status(400).json({
             success: false,
             message: 'No se ha proporcionado ningún archivo',
@@ -63,8 +75,16 @@ class SalesController {
           return;
         }
 
+        console.log('Archivo recibido:', {
+          originalname: req.file.originalname,
+          mimetype: req.file.mimetype,
+          size: req.file.size,
+          bufferLength: req.file.buffer?.length
+        });
+
         const fileExt = path.extname(req.file.originalname).toLowerCase();
         if (!['.xlsx', '.xls'].includes(fileExt)) {
+          console.log('ERROR: Formato de archivo inválido:', fileExt);
           res.status(400).json({
             success: false,
             message: 'Formato de archivo no válido. Solo se permiten archivos Excel (.xlsx, .xls)',
@@ -74,12 +94,16 @@ class SalesController {
 
         // Verificar que el usuario esté autenticado
         if (!req.usuario) {
+          console.log('ERROR: Usuario no autenticado');
           res.status(401).json({ success: false, message: 'No autenticado' });
           return;
         }
 
+        console.log('Iniciando procesamiento del archivo...');
         // Procesar el archivo
         const result = await SalesImportService.importFromExcel(req.file, req.usuario.id);
+
+        console.log('Procesamiento completado:', result);
 
         const response = {
           success: true,
@@ -97,6 +121,7 @@ class SalesController {
           },
         };
 
+        console.log('Enviando respuesta exitosa');
         res.status(200).json(response);
       } catch (error: unknown) {
         console.error('Error al procesar el archivo:', error);
@@ -104,6 +129,9 @@ class SalesController {
         const errorMessage = error instanceof Error 
           ? error.message 
           : 'Error desconocido al procesar el archivo';
+        
+        console.error('Mensaje de error:', errorMessage);
+        console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
         
         res.status(500).json({
           success: false,

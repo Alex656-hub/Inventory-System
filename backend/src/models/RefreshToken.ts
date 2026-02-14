@@ -53,7 +53,7 @@ RefreshToken.init(
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'Users',
+        model: 'usuarios',
         key: 'id',
       },
       onUpdate: 'CASCADE',

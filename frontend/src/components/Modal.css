@@ -8,7 +8,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 2500;
+  padding: 16px; /* espacio en móvil */
 }
 
 .modal-content {
@@ -17,6 +18,10 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   max-height: 90vh;
   overflow-y: auto;
+  width: 90%;
+  /* flex para centrar en overlay */
+  max-width: 800px;
+  margin: auto;
 }
 
 .modal-small {
@@ -69,4 +74,58 @@
 
 .modal-body {
   padding: 20px;
+}
+
+/* Móvil estándar (≤576px) */
+@media (max-width: 576px) {
+  .modal-overlay {
+    padding: 12px;
+    align-items: flex-start; /* empieza arriba para no perder contenido */
+    padding-top: 20px;
+  }
+  
+  .modal-content {
+    width: 100%;
+    max-height: 85vh;
+    border-radius: 8px;
+    margin: 0;
+  }
+  
+  .modal-header {
+    padding: 16px;
+  }
+  
+  .modal-header h2 {
+    font-size: 1.1rem;
+  }
+  
+  .modal-close {
+    width: 36px;
+    height: 36px;
+    font-size: 22px;
+    /* área táctil mayor en móvil */
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  .modal-body {
+    padding: 16px;
+  }
+  
+  .modal-small,
+  .modal-medium,
+  .modal-large {
+    max-width: 100%;
+  }
+}
+
+/* Tablet (577px - 768px) */
+@media (min-width: 577px) and (max-width: 768px) {
+  .modal-overlay {
+    padding: 20px;
+  }
+  
+  .modal-content {
+    width: 95%;
+  }
 }

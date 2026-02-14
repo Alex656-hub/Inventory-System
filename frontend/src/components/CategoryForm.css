@@ -121,3 +121,24 @@
     width: 100%;
   }
 }
+
+/* Móvil pequeño (≤576px) */
+@media (max-width: 576px) {
+  .form-group input,
+  .form-group textarea {
+    padding: 14px; /* área táctil mínima recomendada */
+    font-size: 16px; /* evita zoom en iOS */
+  }
+  
+  .form-actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+    padding: 14px 20px;
+    min-height: 44px; /* mínimo recomendado para tocar */
+  }
+}

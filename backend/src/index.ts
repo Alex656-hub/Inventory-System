@@ -50,8 +50,8 @@ app.use(cors({
   credentials: true
 }));
 app.use(morgan('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Rutas
 app.use('/api/auth', authRoutes);
@@ -78,7 +78,7 @@ const startServer = async () => {
     console.log('✅ Conexión a la base de datos establecida correctamente.');
     
     // Sincronizar modelos (crear tablas si no existen)
-    await sequelize.sync({ alter: false });
+    await sequelize.sync({ alter: true });
     console.log('✅ Modelos sincronizados con la base de datos.');
     
     app.listen(PORT, () => {
