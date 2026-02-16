@@ -1,8 +1,10 @@
 // src/components/Layout.tsx (versión final corregida - 17 nov 2025)
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/auth.service';
+import { searchService } from '../services/search.service';
+import { GlobalSearchResponse } from '../types';
 import './Layout.css';
 
 interface LayoutProps {
@@ -18,8 +20,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isActive = (path: string) => location.pathname === path;
 
   const [sidebarClosed, setSidebarClosed] = useState(false);
-  const [searchShow, setSearchShow] = useState(false);
   const [showLogoutMenu, setShowLogoutMenu] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState<GlobalSearchResponse | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+
+  // Ref para debounce
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Refs for UX features
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchDropdownRef = useRef<HTMLDivElement>(null);
 
   // Responsive: cerrar sidebar en pantallas pequeñas
   useEffect(() => {
@@ -29,9 +41,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       } else {
         setSidebarClosed(false);
       }
-      if (window.innerWidth > 576) {
-        setSearchShow(false);
-      }
     };
 
     handleResize();
@@ -39,13 +48,67 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const toggleSidebar = () => setSidebarClosed(!sidebarClosed);
-  const toggleSearch = (e: React.MouseEvent) => {
-    if (window.innerWidth <= 576) {
-      e.preventDefault();
-      setSearchShow(!searchShow);
-    }
+  // Cleanup debounce timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        searchDropdownRef.current &&
+        !searchDropdownRef.current.contains(event.target as Node) &&
+        searchInputRef.current &&
+        !searchInputRef.current.contains(event.target as Node)
+      ) {
+        setShowResults(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Close dropdown on route change
+  useEffect(() => {
+    closeSearch();
+  }, [location.pathname]);
+
+  // Keyboard shortcut to focus search bar
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Ctrl+K or / to focus search
+      if ((event.ctrlKey && event.key === 'k') || event.key === '/') {
+        event.preventDefault();
+        if (searchInputRef.current) {
+          searchInputRef.current.focus();
+        }
+      }
+      // Escape to close dropdown
+      if (event.key === 'Escape') {
+        closeSearch();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  const closeSearch = () => {
+    setSearchTerm('');
+    setSearchResults(null);
+    setShowResults(false);
   };
+  const toggleSidebar = () => setSidebarClosed(!sidebarClosed);
 
   const handleLogout = async () => {
     await authService.logout();
@@ -59,8 +122,154 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     }
   };
 
+  // Función para realizar búsqueda global
+  const performSearch = async (query: string) => {
+    if (query.trim().length === 0) {
+      setSearchResults(null);
+      setShowResults(false);
+      return;
+    }
+
+    setSearchLoading(true);
+    try {
+      const results = await searchService.busquedaGlobal(query.trim());
+      setSearchResults(results);
+      setShowResults(true);
+    } catch (error) {
+      console.error('Error en búsqueda global:', error);
+      setSearchResults(null);
+      setShowResults(false);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // Handler para cambios en el input de búsqueda
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+
+    // Limpiar timeout anterior
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    // Si el valor está vacío, limpiar resultados inmediatamente
+    if (value.trim().length === 0) {
+      setSearchResults(null);
+      setShowResults(false);
+      setSearchLoading(false);
+      return;
+    }
+
+    // Establecer nuevo timeout para debounce
+    debounceTimeoutRef.current = setTimeout(() => {
+      performSearch(value);
+    }, 300); // 300ms debounce
+  };
+
   const esGerente = usuario?.rol === 'gerente';
   const esEmpleado = usuario?.rol === 'empleado';
+
+  // Componentes reutilizables para búsqueda
+  const SearchResultsDropdown: React.FC = () => (
+    <>
+      {showResults && searchResults && (
+        <div ref={searchDropdownRef} className="search-dropdown">
+          <div className="search-dropdown-inner">
+            {/* Productos */}
+            {searchResults.productos.length > 0 && (
+              <div className="search-section">
+                <h4>Productos</h4>
+                <ul>
+                  {searchResults.productos.slice(0, 5).map((producto) => (
+                    <li key={producto.id}>
+                      <Link to={`/productos?focusId=${producto.id}`} onClick={() => setShowResults(false)}>
+                        <strong>{producto.nombre}</strong> ({producto.codigo})
+                        {producto.categoria && <span> - {producto.categoria.nombre}</span>}
+                        <br />
+                        <small>{producto.resumen}</small>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Ventas */}
+            {searchResults.ventas.length > 0 && (
+              <div className="search-section">
+                <h4>Ventas</h4>
+                <ul>
+                  {searchResults.ventas.slice(0, 5).map((venta) => (
+                    <li key={venta.id}>
+                      <Link to={`/ventas?ventaId=${venta.id}`} onClick={() => setShowResults(false)}>
+                        <strong>Venta #{venta.numero}</strong> - {venta.fecha}
+                        <br />
+                        <small>{venta.resumen}</small>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Categorías */}
+            {searchResults.categorias.length > 0 && (
+              <div className="search-section">
+                <h4>Categorías</h4>
+                <ul>
+                  {searchResults.categorias.slice(0, 5).map((categoria) => (
+                    <li key={categoria.id}>
+                      <Link to={`/categorias?categoriaId=${categoria.id}`} onClick={() => setShowResults(false)}>
+                        <strong>{categoria.nombre}</strong>
+                        <br />
+                        <small>{categoria.resumen}</small>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Proveedores */}
+            {searchResults.proveedores.length > 0 && (
+              <div className="search-section">
+                <h4>Proveedores</h4>
+                <ul>
+                  {searchResults.proveedores.slice(0, 5).map((proveedor) => (
+                    <li key={proveedor.id}>
+                      <Link to={`/proveedores?proveedorId=${proveedor.id}`} onClick={() => setShowResults(false)}>
+                        <strong>{proveedor.nombre}</strong> - {proveedor.ruc_dni}
+                        <br />
+                        <small>{proveedor.resumen}</small>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Mensaje si no hay resultados */}
+            {searchResults.productos.length === 0 &&
+             searchResults.ventas.length === 0 &&
+             searchResults.categorias.length === 0 &&
+             searchResults.proveedores.length === 0 && (
+              <div className="no-results">
+                No se encontraron resultados para "{searchTerm}"
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      {/* Indicador de carga */}
+      {searchLoading && (
+        <div className="search-loading">
+          <i className='bx bx-loader-alt bx-spin'></i> Buscando...
+        </div>
+      )}
+    </>
+  );
 
   return (
     <div className="layout">
@@ -166,15 +375,26 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           {/* Menú hamburguesa */}
           <i className='bx bx-menu' onClick={toggleSidebar}></i>
 
-          {/* Buscador */}
-          <form action="#" onSubmit={(e) => e.preventDefault()}>
-            <div className={`form-input ${searchShow ? 'show' : ''}`}>
-              <input type="search" placeholder="Buscar..." />
-              <button className="search-btn" type="submit" onClick={toggleSearch}>
-                <i className={`bx ${searchShow ? 'bx-x' : 'bx-search'}`}></i>
-              </button>
-            </div>
-          </form>
+          {/* Buscador: solo mostrar cuando NO hay búsqueda activa */}
+          {!searchTerm.trim() && (
+            <form action="#" onSubmit={(e) => e.preventDefault()}>
+              <div className="form-input">
+                <input
+                  ref={searchInputRef}
+                  type="search"
+                  placeholder="Buscar..."
+                  value={searchTerm}
+                  onChange={handleSearchInputChange}
+                />
+                <button
+                  className="search-btn"
+                  type="button"
+                >
+                  <i className='bx bx-search'></i>
+                </button>
+              </div>
+            </form>
+          )}
 
           {/* Iconos a la derecha */}
           <div className="nav-right">
@@ -191,11 +411,41 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
         </nav>
 
+        {/* Overlay oscuro y form flotante cuando hay búsqueda activa */}
+        {searchTerm.trim().length > 0 && (
+          <>
+            {/* Overlay que oscurece TODO */}
+            <div className="search-overlay" onClick={closeSearch} />
+            {/* Form flotante con input y dropdown iluminados */}
+            <div className="search-form-floating">
+              <form action="#" onSubmit={(e) => e.preventDefault()}>
+                <div className="form-input">
+                  <input
+                    ref={searchInputRef}
+                    type="search"
+                    placeholder="Buscar..."
+                    value={searchTerm}
+                    onChange={handleSearchInputChange}
+                  />
+                  <button
+                    className="search-btn"
+                    type="button"
+                    onClick={closeSearch}
+                  >
+                    <i className='bx bx-x'></i>
+                  </button>
+                </div>
+                <SearchResultsDropdown />
+              </form>
+            </div>
+          </>
+        )}
+
         {/* ==================== CONTENIDO PRINCIPAL ==================== */}
         <main>{children}</main>
       </div>
     </div>
   );
-};
+} // Added the missing closing brace for the Layout function
 
-export default Layout;
+  export default Layout;

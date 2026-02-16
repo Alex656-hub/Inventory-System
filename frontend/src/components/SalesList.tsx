@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { salesService, Sale, SalesResponse } from '../services/sales.service';
 import './SalesList.css';
 
@@ -16,6 +17,13 @@ const SalesList: React.FC<SalesListProps> = ({ startDate, endDate, productId }) 
   const [totalPages, setTotalPages] = useState(0);
   const [total, setTotal] = useState(0);
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+
+  // URL search params
+  const [searchParams] = useSearchParams();
+  const ventaId = searchParams.get('ventaId');
+
+  // Ref for scrolling to focused sale
+  const salesContainerRef = useRef<HTMLDivElement>(null);
 
   const limit = 10;
 
@@ -50,6 +58,22 @@ const SalesList: React.FC<SalesListProps> = ({ startDate, endDate, productId }) 
   useEffect(() => {
     fetchSales(1);
   }, [startDate, endDate, productId]);
+
+  // Handle ventaId parameter
+  useEffect(() => {
+    if (ventaId && sales.length > 0) {
+      // Scroll to the focused sale
+      const saleElement = document.getElementById(`sale-${ventaId}`);
+      if (saleElement) {
+        saleElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        saleElement.classList.add('highlighted');
+        // Remove highlight after a few seconds
+        setTimeout(() => {
+          saleElement.classList.remove('highlighted');
+        }, 3000);
+      }
+    }
+  }, [ventaId, sales]);
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -146,7 +170,7 @@ const SalesList: React.FC<SalesListProps> = ({ startDate, endDate, productId }) 
               <tbody>
                 {sales.map((sale) => (
                   <React.Fragment key={sale.id}>
-                    <tr className="sale-row">
+                    <tr id={`sale-${sale.id}`} className="sale-row">
                       <td>{formatDate(sale.fecha)}</td>
                       <td>#{sale.id}</td>
                       <td>{sale.usuario.nombre}</td>

@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { categoryService } from '../services/category.service';
 import { Categoria } from '../types';
 import { useAuth } from '../hooks/useAuth';
@@ -16,6 +17,13 @@ const CategoryList: React.FC = () => {
   const { usuario } = useAuth();
   const esGerente = usuario?.rol === 'gerente';
 
+  // URL search params
+  const [searchParams] = useSearchParams();
+  const categoriaId = searchParams.get('categoriaId');
+
+  // Ref for scrolling to focused category
+  const categoriesContainerRef = useRef<HTMLDivElement>(null);
+
   const cargarDatos = async () => {
     setLoading(true);
     try {
@@ -31,6 +39,22 @@ const CategoryList: React.FC = () => {
   useEffect(() => {
     cargarDatos();
   }, []);
+
+  // Handle categoriaId parameter
+  useEffect(() => {
+    if (categoriaId && categorias.length > 0) {
+      // Scroll to the focused category
+      const categoryElement = document.getElementById(`category-${categoriaId}`);
+      if (categoryElement) {
+        categoryElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        categoryElement.classList.add('highlighted');
+        // Remove highlight after a few seconds
+        setTimeout(() => {
+          categoryElement.classList.remove('highlighted');
+        }, 3000);
+      }
+    }
+  }, [categoriaId, categorias]);
 
   const handleNuevo = () => {
     setCategoriaEditando(null);
@@ -93,7 +117,7 @@ const CategoryList: React.FC = () => {
                 </tr>
               ) : (
                 categorias.map((categoria) => (
-                  <tr key={categoria.id}>
+                  <tr key={categoria.id} id={`category-${categoria.id}`}>
                     <td>{categoria.id}</td>
                     <td className="nombre-cell">{categoria.nombre}</td>
                     <td className="descripcion-cell">

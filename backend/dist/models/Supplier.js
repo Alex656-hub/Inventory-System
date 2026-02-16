@@ -15,7 +15,7 @@ Supplier.init({
         allowNull: false
     },
     ruc_dni: {
-        type: sequelize_1.DataTypes.STRING(20),
+        type: sequelize_1.DataTypes.STRING(50),
         allowNull: false,
         unique: true
     },

@@ -163,5 +163,5 @@ router.get('/forecast', auth_middleware_1.verificarToken, (0, auth_middleware_1.
  *       500:
  *         description: Error del servidor al obtener las métricas
  */
-router.get('/metrics', auth_middleware_1.verificarToken, (0, auth_middleware_1.verificarRol)(['admin', 'analyst']), analyticsController_1.getInventoryMetrics);
+router.get('/metrics', auth_middleware_1.verificarToken, (0, auth_middleware_1.verificarRol)(['gerente']), analyticsController_1.getInventoryMetrics);
 exports.default = router;

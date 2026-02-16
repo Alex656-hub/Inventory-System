@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { productService } from '../services/product.service';
 import { categoryService } from '../services/category.service';
 import { Producto, Categoria } from '../types';
@@ -21,6 +22,14 @@ const ProductList: React.FC = () => {
   const [productoEliminar, setProductoEliminar] = useState<Producto | null>(null);
   const { usuario } = useAuth();
   const esGerente = usuario?.rol === 'gerente';
+
+  // URL search params
+  const [searchParams] = useSearchParams();
+  const focusId = searchParams.get('focusId');
+  const urlBusqueda = searchParams.get('busqueda');
+
+  // Ref for scrolling to focused product
+  const productsContainerRef = useRef<HTMLDivElement>(null);
 
   const cargarDatos = async () => {
     setLoading(true);
@@ -53,8 +62,23 @@ const ProductList: React.FC = () => {
   };
 
   useEffect(() => {
-    cargarDatos();
-  }, [pagina, categoriaFiltro]);
+    // Handle URL parameters
+    if (urlBusqueda) {
+      setBusqueda(urlBusqueda);
+    }
+    if (focusId && productos.length > 0) {
+      // Scroll to the focused product
+      const productElement = document.getElementById(`product-${focusId}`);
+      if (productElement) {
+        productElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        productElement.classList.add('highlighted');
+        // Remove highlight after a few seconds
+        setTimeout(() => {
+          productElement.classList.remove('highlighted');
+        }, 3000);
+      }
+    }
+  }, [urlBusqueda, focusId, productos]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -160,7 +184,11 @@ const ProductList: React.FC = () => {
                   </tr>
                 ) : (
                   productos.map((producto) => (
-                    <tr key={producto.id} className={hayStockBajo(producto) ? 'stock-bajo' : ''}>
+                    <tr 
+                      key={producto.id} 
+                      id={`product-${producto.id}`}
+                      className={hayStockBajo(producto) ? 'stock-bajo' : ''}
+                    >
                       <td>{producto.codigo}</td>
                       <td>{producto.nombre}</td>
                       <td>{producto.categoria?.nombre}</td>

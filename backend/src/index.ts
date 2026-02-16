@@ -27,6 +27,7 @@ import movimientoRoutes from './routes/movimiento.routes';
 import analyticsRoutes from './routes/analytics.routes';
 import twoFactorRoutes from './routes/twoFactorAuth.routes';
 import salesRoutes from './routes/sales.routes';
+import searchRoutes from './routes/search.routes';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -65,6 +66,7 @@ app.use('/api/inventory/movements', movimientoRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/2fa', twoFactorRoutes);
 app.use('/api/sales', salesRoutes);
+app.use('/api/search', searchRoutes);
 
 // Ruta de salud
 app.get('/api/health', (req, res) => {

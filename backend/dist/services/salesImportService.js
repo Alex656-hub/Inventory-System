@@ -32,12 +32,19 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SalesImportService = void 0;
 const XLSX = __importStar(require("xlsx"));
-const sales_1 = require("../models/sales");
-const sequelize_1 = require("sequelize");
 const database_1 = require("../config/database");
+const Category_1 = __importDefault(require("../models/Category"));
+const Supplier_1 = __importDefault(require("../models/Supplier"));
+const Product_1 = __importDefault(require("../models/Product"));
+const SalidaInventario_1 = __importDefault(require("../models/SalidaInventario"));
+const DetalleSalida_1 = __importDefault(require("../models/DetalleSalida"));
+const sequelize_1 = require("sequelize");
 const REQUIRED_COLUMNS = [
     'fecha',
     'sku',
@@ -48,216 +55,223 @@ const REQUIRED_COLUMNS = [
     'categoria',
     'proveedor'
 ];
+// Mapeo de columnas alternativas
+const COLUMN_ALIASES = {
+    'categoria': ['categoria', 'categoría', 'category', 'categoría producto'],
+    'proveedor': ['proveedor', 'supplier', 'proveedor nombre'],
+    'sku': ['sku', 'código', 'codigo', 'product code'],
+    'nombre producto': ['nombre producto', 'producto', 'nombre', 'product name'],
+    'cantidad vendida': ['cantidad vendida', 'cantidad', 'quantity', 'qty'],
+    'precio venta unitario': ['precio venta unitario', 'precio venta', 'precio', 'price', 'precio unitario'],
+    'costo unitario': ['costo unitario', 'costo', 'cost', 'precio compra']
+};
 class SalesImportService {
-    static async importFromExcel(file) {
+    static async importFromExcel(file, usuarioId) {
         const result = {
             totalRows: 0,
             processedRows: 0,
             newCategories: 0,
             newSuppliers: 0,
             newProducts: 0,
-            newSales: 0,
-            errors: []
+            newSalidas: 0,
+            errors: [],
+            proveedoresConRUCTemporal: []
         };
         try {
-            // Read Excel file
             const workbook = XLSX.read(file.buffer, { type: 'buffer' });
-            const sheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[sheetName];
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
             const rows = XLSX.utils.sheet_to_json(worksheet, { raw: false });
             if (rows.length === 0) {
                 throw new Error('El archivo Excel está vacío');
             }
-            // Validate columns
-            const firstRow = rows[0];
-            const columnNames = Object.keys(firstRow).map(name => name.toLowerCase().trim());
-            const missingColumns = REQUIRED_COLUMNS.filter(col => !columnNames.some(name => name === col.toLowerCase()));
-            if (missingColumns.length > 0) {
-                throw new Error(`Faltan columnas obligatorias: ${missingColumns.join(', ')}`);
+            result.totalRows = rows.length;
+            // Validar columnas con aliases
+            const columnNames = Object.keys(rows[0])
+                .map((k) => k.toLowerCase().trim())
+                .filter((k) => k && k !== '__empty' && k !== 'undefined' && k !== 'null');
+            // Función para verificar si una columna requerida está presente (considerando aliases)
+            const hasColumn = (requiredColumn) => {
+                const aliases = COLUMN_ALIASES[requiredColumn] || [requiredColumn];
+                return aliases.some((alias) => columnNames.includes(alias.toLowerCase()));
+            };
+            const missing = REQUIRED_COLUMNS.filter(col => !hasColumn(col));
+            if (missing.length > 0) {
+                console.log('Columnas encontradas:', columnNames);
+                console.log('Columnas requeridas:', REQUIRED_COLUMNS);
+                console.log('Columnas faltantes:', missing);
+                throw new Error(`Faltan columnas: ${missing.join(', ')}`);
             }
-            // Normalize column names
-            const normalizedRows = rows.map(row => {
-                const normalized = {};
-                Object.entries(row).forEach(([key, value]) => {
-                    normalized[key.toLowerCase().trim()] = value;
+            const normalizedRows = rows.map((row) => {
+                const n = {};
+                Object.entries(row).forEach(([k, v]) => {
+                    const key = k.toLowerCase().trim();
+                    // Ignorar claves vacías, __empty, undefined, null, y claves numéricas
+                    if (key &&
+                        key !== '__empty' &&
+                        key !== 'undefined' &&
+                        key !== 'null' &&
+                        !/^\d+$/.test(key)) {
+                        // Buscar si esta clave coincide con alguna columna requerida (usando aliases)
+                        let matchedKey = key;
+                        for (const [requiredKey, aliases] of Object.entries(COLUMN_ALIASES)) {
+                            if (aliases.includes(key)) {
+                                matchedKey = requiredKey;
+                                break;
+                            }
+                        }
+                        n[matchedKey] = v;
+                    }
                 });
-                return normalized;
+                return n;
             });
-            // Process in transaction
             await database_1.sequelize.transaction(async (t) => {
-                // Process categories and suppliers first
-                const categories = await this.processCategories(normalizedRows, t);
-                const suppliers = await this.processSuppliers(normalizedRows, t);
-                // Process products
-                const products = await this.processProducts(normalizedRows, categories, suppliers, t);
-                // Process sales
-                await this.processSales(normalizedRows, products, result, t);
+                const categoryMap = await this.processCategories(normalizedRows, t);
+                const supplierMap = await this.processSuppliers(normalizedRows, result, t);
+                const productMap = await this.processProducts(normalizedRows, categoryMap, supplierMap, result, t);
+                await this.processSalidas(normalizedRows, productMap, usuarioId, result, t);
             });
             return result;
         }
         catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-            console.error('Error importing sales data:', errorMessage);
-            throw error instanceof Error ? error : new Error('Error desconocido al importar datos');
+            const msg = error instanceof Error ? error.message : 'Error desconocido';
+            throw new Error(msg);
         }
     }
-    static async processCategories(rows, transaction) {
-        const categoryMap = new Map();
-        const uniqueCategories = [...new Set(rows.map(row => row.categoria?.toString().trim()).filter(Boolean))];
-        // Find existing categories
-        const existingCategories = await sales_1.Category.findAll({
-            where: { name: { [sequelize_1.Op.in]: uniqueCategories } },
-            transaction
+    static async processCategories(rows, t) {
+        const map = new Map();
+        const names = [...new Set(rows.map((r) => (r.categoria || '').toString().trim()).filter(Boolean))];
+        const existing = await Category_1.default.findAll({
+            where: { nombre: { [sequelize_1.Op.in]: names } },
+            transaction: t
         });
-        // Add existing to map
-        existingCategories.forEach(cat => categoryMap.set(cat.name, cat));
-        // Create new categories
-        const newCategories = uniqueCategories.filter(name => !categoryMap.has(name) && name);
-        if (newCategories.length > 0) {
-            const createdCategories = await sales_1.Category.bulkCreate(newCategories.map(name => ({
-                name,
-                createdAt: new Date(),
-                updatedAt: new Date()
-            })), { transaction });
-            createdCategories.forEach(cat => categoryMap.set(cat.name, cat));
+        existing.forEach((c) => map.set(c.nombre, c));
+        const toCreate = names.filter((n) => !map.has(n));
+        if (toCreate.length > 0) {
+            const created = await Category_1.default.bulkCreate(toCreate.map((nombre) => ({ nombre })), { transaction: t });
+            created.forEach((c) => map.set(c.nombre, c));
         }
-        return categoryMap;
+        return map;
     }
-    static async processSuppliers(rows, transaction) {
-        const supplierMap = new Map();
-        const uniqueSuppliers = [...new Set(rows.map(row => row.proveedor?.toString().trim()).filter(Boolean))];
-        // Find existing suppliers
-        const existingSuppliers = await sales_1.Supplier.findAll({
-            where: { name: { [sequelize_1.Op.in]: uniqueSuppliers } },
-            transaction
+    static async processSuppliers(rows, result, t) {
+        const map = new Map();
+        const names = [...new Set(rows.map((r) => (r.proveedor || '').toString().trim()).filter(Boolean))];
+        const existing = await Supplier_1.default.findAll({
+            where: { nombre: { [sequelize_1.Op.in]: names } },
+            transaction: t
         });
-        // Add existing to map
-        existingSuppliers.forEach(sup => supplierMap.set(sup.name, sup));
-        // Create new suppliers
-        const newSuppliers = uniqueSuppliers.filter(name => !supplierMap.has(name) && name);
-        if (newSuppliers.length > 0) {
-            const createdSuppliers = await sales_1.Supplier.bulkCreate(newSuppliers.map(name => ({
-                name,
-                createdAt: new Date(),
-                updatedAt: new Date()
-            })), { transaction });
-            createdSuppliers.forEach(sup => supplierMap.set(sup.name, sup));
+        existing.forEach((s) => map.set(s.nombre, s));
+        const toCreate = names.filter((n) => !map.has(n));
+        if (toCreate.length > 0) {
+            const created = await Supplier_1.default.bulkCreate(toCreate.map((nombre) => ({
+                nombre,
+                ruc_dni: `TEMP-${Date.now().toString().slice(-8)}-${Math.random().toString(36).slice(2, 6)}`
+            })), { transaction: t });
+            created.forEach((s) => map.set(s.nombre, s));
+            // Registrar proveedores con RUC temporal para notificación
+            result.proveedoresConRUCTemporal.push(...toCreate);
         }
-        return supplierMap;
+        return map;
     }
-    static async processProducts(rows, categories, suppliers, transaction) {
-        const productMap = new Map();
-        const uniqueSkus = [...new Set(rows.map(row => row.sku?.toString().trim()).filter(Boolean))];
-        // Find existing products
-        const existingProducts = await sales_1.Product.findAll({
-            where: { sku: { [sequelize_1.Op.in]: uniqueSkus } },
+    static async processProducts(rows, categoryMap, supplierMap, result, t) {
+        const map = new Map();
+        const skus = [...new Set(rows.map((r) => (r.sku || '').toString().trim()).filter(Boolean))];
+        const existing = await Product_1.default.findAll({
+            where: { codigo: { [sequelize_1.Op.in]: skus } },
             include: [
-                { model: sales_1.Category, as: 'category' },
-                { model: sales_1.Supplier, as: 'supplier' }
+                { model: Category_1.default, as: 'categoria' },
+                { model: Supplier_1.default, as: 'proveedor' }
             ],
-            transaction
+            transaction: t
         });
-        // Add existing to map
-        existingProducts.forEach(prod => productMap.set(prod.sku, prod));
-        // Prepare new products
-        const productsToCreate = [];
-        // Group by SKU and get the most recent data
-        rows.forEach(row => {
-            const sku = row.sku?.toString().trim();
-            if (!sku || productMap.has(sku))
-                return;
-            const category = categories.get(row.categoria?.toString().trim() || '');
-            const supplier = suppliers.get(row.proveedor?.toString().trim() || '');
-            if (category && supplier) {
-                productsToCreate.push({
-                    sku,
-                    name: row['nombre producto']?.toString().trim() || `Producto ${sku}`,
-                    categoryId: category.id,
-                    supplierId: supplier.id,
-                    costPrice: parseFloat(String(row['costo unitario'])) || 0,
-                    sellingPrice: parseFloat(String(row['precio venta unitario'])) || 0,
-                    createdAt: new Date(),
-                    updatedAt: new Date()
-                });
-            }
-        });
-        // Create new products
-        if (productsToCreate.length > 0) {
-            const createdProducts = await sales_1.Product.bulkCreate(productsToCreate, // Hacemos un cast a any para evitar problemas con los tipos de Sequelize
-            {
-                transaction,
-                returning: true,
-                validate: true
-            });
-            createdProducts.forEach(prod => productMap.set(prod.sku, prod));
-        }
-        return productMap;
-    }
-    static async processSales(rows, products, result, transaction) {
-        const salesToCreate = [];
-        const existingSales = new Set();
-        // Process each row
+        existing.forEach((p) => map.set(p.codigo, p));
         for (const row of rows) {
-            try {
-                const sku = row.sku?.toString().trim();
-                if (!sku)
-                    continue;
-                const product = products.get(sku);
-                if (!product)
-                    continue;
-                // Parse date
-                let saleDate;
-                try {
-                    saleDate = new Date(row.fecha);
-                    if (isNaN(saleDate.getTime())) {
-                        throw new Error('Fecha inválida');
-                    }
-                }
-                catch (error) {
-                    result.errors.push(`SKU ${sku}: Fecha inválida: ${row.fecha}`);
-                    continue;
-                }
-                // Parse quantities and prices
-                const quantity = parseInt(String(row['cantidad vendida']), 10) || 0;
-                const unitPrice = parseFloat(String(row['precio venta unitario'])) || 0;
-                const costPrice = parseFloat(String(row['costo unitario'])) || 0;
-                const totalAmount = quantity * unitPrice;
-                const profit = totalAmount - (quantity * costPrice);
-                if (quantity <= 0 || unitPrice <= 0) {
-                    result.errors.push(`SKU ${sku}: Cantidad o precio unitario inválido (cantidad: ${quantity}, precio: ${unitPrice})`);
-                    continue;
-                }
-                const saleKey = `${saleDate.toISOString().split('T')[0]}_${product.id}`;
-                if (existingSales.has(saleKey)) {
-                    // Skip duplicate date+product entries
-                    continue;
-                }
-                salesToCreate.push({
-                    date: saleDate,
-                    productId: product.id,
-                    quantity,
-                    unitPrice,
-                    totalAmount,
-                    costPrice: costPrice * quantity,
-                    profit
-                });
-                existingSales.add(saleKey);
-                result.processedRows++;
-            }
-            catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-                result.errors.push(`Error procesando fila: ${errorMessage}`);
-            }
-        }
-        // Insert all sales in batch
-        if (salesToCreate.length > 0) {
-            await sales_1.DailySale.bulkCreate(salesToCreate, {
-                updateOnDuplicate: ['quantity', 'unitPrice', 'totalAmount', 'costPrice', 'profit', 'updatedAt'],
-                transaction
+            const sku = (row.sku || '').toString().trim();
+            if (!sku || map.has(sku))
+                continue;
+            const cat = categoryMap.get((row.categoria || '').toString().trim());
+            const sup = supplierMap.get((row.proveedor || '').toString().trim());
+            if (!cat || !sup)
+                continue;
+            const [created, wasCreated] = await Product_1.default.findOrCreate({
+                where: { codigo: sku },
+                defaults: {
+                    codigo: sku,
+                    nombre: (row['nombre producto'] || `Producto ${sku}`).toString().trim(),
+                    categoria_id: cat.id,
+                    proveedor_id: sup.id,
+                    precio_compra: parseFloat(String(row['costo unitario'])) || 0,
+                    precio_venta: parseFloat(String(row['precio venta unitario'])) || 0,
+                    stock_actual: 0,
+                    stock_minimo: 0
+                },
+                transaction: t
             });
-            result.newSales = salesToCreate.length;
+            map.set(created.codigo, created);
+            if (wasCreated)
+                result.newProducts++;
+        }
+        return map;
+    }
+    static async processSalidas(rows, productMap, usuarioId, result, t) {
+        // Agrupar por fecha para crear una SalidaInventario por día
+        const byDate = new Map();
+        for (const row of rows) {
+            const sku = (row.sku || '').toString().trim();
+            const product = productMap.get(sku);
+            if (!product)
+                continue;
+            let fecha;
+            try {
+                fecha = new Date(row.fecha);
+                if (isNaN(fecha.getTime()))
+                    throw new Error('Fecha inválida');
+            }
+            catch {
+                result.errors.push(`SKU ${sku}: Fecha inválida`);
+                continue;
+            }
+            const cantidad = parseInt(String(row['cantidad vendida']), 10) || 0;
+            const precio = parseFloat(String(row['precio venta unitario'])) || 0;
+            const costo = parseFloat(String(row['costo unitario'])) || 0;
+            if (cantidad <= 0 || precio <= 0) {
+                result.errors.push(`SKU ${sku}: Cantidad o precio inválido`);
+                continue;
+            }
+            const key = fecha.toISOString().split('T')[0];
+            if (!byDate.has(key))
+                byDate.set(key, []);
+            const list = byDate.get(key);
+            const existing = list.find((i) => i.producto.id === product.id);
+            if (existing) {
+                existing.cantidad += cantidad;
+            }
+            else {
+                list.push({ producto: product, cantidad, precio, costo });
+            }
+            result.processedRows++;
+        }
+        for (const [dateStr, items] of byDate) {
+            const total = items.reduce((s, i) => s + i.cantidad * i.precio, 0);
+            const salida = await SalidaInventario_1.default.create({
+                numero_documento: `IMP-${dateStr.replace(/-/g, '')}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                fecha: new Date(dateStr),
+                usuario_id: usuarioId,
+                tipo_documento: 'boleta',
+                total,
+                metodo_pago: 'efectivo',
+                estado: 'completado'
+            }, { transaction: t });
+            for (const item of items) {
+                await DetalleSalida_1.default.create({
+                    salida_id: salida.id,
+                    producto_id: item.producto.id,
+                    cantidad: item.cantidad,
+                    precio_unitario: item.precio,
+                    subtotal: item.cantidad * item.precio
+                }, { transaction: t });
+            }
+            result.newSalidas++;
         }
     }
 }
 exports.SalesImportService = SalesImportService;
-exports.default = new SalesImportService();

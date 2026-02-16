@@ -41,6 +41,7 @@ const speakeasy = __importStar(require("speakeasy"));
 const QRCode = __importStar(require("qrcode"));
 const User_1 = __importDefault(require("../models/User"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const refreshToken_service_1 = __importDefault(require("../services/refreshToken.service"));
 // Generar token JWT temporal para 2FA
 const generarTokenTemporal = (usuario) => {
     const payload = {
@@ -207,11 +208,11 @@ const verificarLogin2FA = async (req, res) => {
             });
             return;
         }
-        // Generar token JWT final
-        const tokenJWT = generarToken(user);
+        // Generar ambos tokens (access y refresh)
+        const tokens = await refreshToken_service_1.default.generateTokens(user);
         res.json({
             mensaje: 'Autenticación exitosa',
-            token: tokenJWT,
+            ...tokens, // accessToken, refreshToken, expiresIn, tokenType
             usuario: {
                 id: user.id,
                 nombre: user.nombre,

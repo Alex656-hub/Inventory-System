@@ -29,6 +29,8 @@ const salida_routes_1 = __importDefault(require("./routes/salida.routes"));
 const movimiento_routes_1 = __importDefault(require("./routes/movimiento.routes"));
 const analytics_routes_1 = __importDefault(require("./routes/analytics.routes"));
 const twoFactorAuth_routes_1 = __importDefault(require("./routes/twoFactorAuth.routes"));
+const sales_routes_1 = __importDefault(require("./routes/sales.routes"));
+const search_routes_1 = __importDefault(require("./routes/search.routes"));
 // Cargar variables de entorno
 dotenv_1.default.config();
 const app = (0, express_1.default)();
@@ -48,8 +50,8 @@ app.use((0, cors_1.default)({
     credentials: true
 }));
 app.use((0, morgan_1.default)('dev'));
-app.use(express_1.default.json());
-app.use(express_1.default.urlencoded({ extended: true }));
+app.use(express_1.default.json({ limit: '50mb' }));
+app.use(express_1.default.urlencoded({ extended: true, limit: '50mb' }));
 // Rutas
 app.use('/api/auth', auth_routes_1.default);
 app.use('/api/users', user_routes_1.default);
@@ -61,6 +63,8 @@ app.use('/api/inventory/exits', salida_routes_1.default);
 app.use('/api/inventory/movements', movimiento_routes_1.default);
 app.use('/api/analytics', analytics_routes_1.default);
 app.use('/api/2fa', twoFactorAuth_routes_1.default);
+app.use('/api/sales', sales_routes_1.default);
+app.use('/api/search', search_routes_1.default);
 // Ruta de salud
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'API funcionando correctamente' });
@@ -71,7 +75,7 @@ const startServer = async () => {
         await database_1.sequelize.authenticate();
         console.log('✅ Conexión a la base de datos establecida correctamente.');
         // Sincronizar modelos (crear tablas si no existen)
-        await database_1.sequelize.sync({ alter: false });
+        await database_1.sequelize.sync({ alter: true });
         console.log('✅ Modelos sincronizados con la base de datos.');
         app.listen(PORT, () => {
             console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);

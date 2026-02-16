@@ -80,3 +80,43 @@ export interface LogoutRequest {
   refreshToken: string;
 }
 
+// Interfaces para búsqueda global
+export interface ProductoSearchResult {
+  id: number;
+  codigo: string;
+  nombre: string;
+  categoria?: {
+    id: number;
+    nombre: string;
+  };
+  resumen: string;
+}
+
+export interface VentaSearchResult {
+  id: number;
+  numero: string;
+  fecha: string;
+  total: number;
+  resumen: string;
+}
+
+export interface CategoriaSearchResult {
+  id: number;
+  nombre: string;
+  resumen: string;
+}
+
+export interface ProveedorSearchResult {
+  id: number;
+  nombre: string;
+  ruc_dni: string;
+  resumen: string;
+}
+
+export interface GlobalSearchResponse {
+  productos: ProductoSearchResult[];
+  ventas: VentaSearchResult[];
+  categorias: CategoriaSearchResult[];
+  proveedores: ProveedorSearchResult[];
+}
+

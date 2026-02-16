@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supplierService } from '../services/supplier.service';
 import { Proveedor } from '../types';
 import { useAuth } from '../hooks/useAuth';
@@ -16,6 +17,13 @@ const SupplierList: React.FC = () => {
   const [filtroActivo, setFiltroActivo] = useState<'activo' | 'inactivo' | 'todos'>('activo');
   const { usuario } = useAuth();
   const esGerente = usuario?.rol === 'gerente';
+
+  // URL search params
+  const [searchParams] = useSearchParams();
+  const proveedorId = searchParams.get('proveedorId');
+
+  // Ref for scrolling to focused supplier
+  const suppliersContainerRef = useRef<HTMLDivElement>(null);
 
   const cargarDatos = async () => {
     setLoading(true);
@@ -42,6 +50,22 @@ const SupplierList: React.FC = () => {
   useEffect(() => {
     cargarDatos();
   }, [filtroActivo]);
+
+  // Handle proveedorId parameter
+  useEffect(() => {
+    if (proveedorId && proveedores.length > 0) {
+      // Scroll to the focused supplier
+      const supplierElement = document.getElementById(`supplier-${proveedorId}`);
+      if (supplierElement) {
+        supplierElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        supplierElement.classList.add('highlighted');
+        // Remove highlight after a few seconds
+        setTimeout(() => {
+          supplierElement.classList.remove('highlighted');
+        }, 3000);
+      }
+    }
+  }, [proveedorId, proveedores]);
 
   const handleNuevo = () => {
     setProveedorEditando(null);
@@ -140,7 +164,7 @@ const SupplierList: React.FC = () => {
                 </tr>
               ) : (
                 proveedores.map((proveedor) => (
-                  <tr key={proveedor.id}>
+                  <tr key={proveedor.id} id={`supplier-${proveedor.id}`}>
                     <td>{proveedor.id}</td>
                     <td className="nombre-cell">{proveedor.nombre}</td>
                     <td className="ruc-dni-cell">{formatRUCDNI(proveedor.ruc_dni)}</td>
