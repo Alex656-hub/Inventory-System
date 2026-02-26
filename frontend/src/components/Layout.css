@@ -222,19 +222,19 @@ li {
   display: flex;
   align-items: center;
   height: 40px;
-  background: var(--grey);
-  border-radius: 40px;
   transition: all 0.3s ease;
 }
 
 .content nav form .form-input input {
   flex-grow: 1;
   padding: 0 16px;
-  background: transparent;
+  background: var(--grey);
   border: none;
   outline: none;
   font-size: 1rem;
   color: var(--dark);
+  border-radius: 20px;
+  height: 40px;
 }
 
 .content nav form .form-input button {
@@ -243,11 +243,12 @@ li {
   background: var(--primary);
   color: white;
   border: none;
-  border-radius: 50%;
+  border-radius: 20px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-left: 10px;
 }
 
 /* Iconos a la derecha */
@@ -395,14 +396,41 @@ li {
   z-index: 1700;  /* Por encima de sidebar (1000) y nav (1500) */
 }
 
+/* Botón X independiente fuera del contenedor */
+.search-close-btn {
+  position: fixed;
+  top: 8px;
+  left: calc(54% + 250px);  /* Posicionado a la derecha del search-form-floating */
+  transform: translateX(-50%);
+  z-index: 2100;  /* Por encima de todo */
+  width: 40px;
+  height: 40px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+}
+
+.search-close-btn:hover {
+  background: var(--light-primary);
+  transform: translateX(-50%) scale(1.1);
+}
+
 /* Form flotante centrado cuando hay búsqueda activa */
 .search-form-floating {
   position: fixed;
   top: 8px;
-  left: 50%;
+  left: 54%;
   transform: translateX(-50%);
   z-index: 2000;  /* Por encima del overlay (1700) */
-  width: min(500px, 100% - 32px);
+  width: min(450px, calc(100% - 40px));
+  max-width: 450px;
   pointer-events: none;  /* El contenedor no recibe clics */
 }
 
@@ -416,19 +444,19 @@ li {
   display: flex;
   align-items: center;
   height: 40px;
-  background: var(--grey);
-  border-radius: 40px;
   transition: all 0.3s ease;
 }
 
 .search-form-floating .form-input input {
   flex-grow: 1;
   padding: 0 16px;
-  background: transparent;
+  background: var(--grey);
   border: none;
   outline: none;
   font-size: 1rem;
   color: var(--dark);
+  border-radius: 20px;
+  height: 40px;
 }
 
 .search-form-floating .form-input button {
@@ -437,11 +465,12 @@ li {
   background: var(--primary);
   color: white;
   border: none;
-  border-radius: 50%;
+  border-radius: 20px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-left: 50px;
 }
 
 /* Dropdown dentro del form flotante */
@@ -449,7 +478,7 @@ li {
   position: absolute;
   top: 100%;
   left: 0;
-  width: 100%;
+  width: 98%;
   background: #ffffff;
   max-height: 60vh;
   overflow-y: auto;

@@ -416,6 +416,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <>
             {/* Overlay que oscurece TODO */}
             <div className="search-overlay" onClick={closeSearch} />
+            {/* Botón X fuera del contenedor principal */}
+            <button
+              className="search-close-btn"
+              type="button"
+              onClick={closeSearch}
+            >
+              <i className='bx bx-x'></i>
+            </button>
             {/* Form flotante con input y dropdown iluminados */}
             <div className="search-form-floating">
               <form action="#" onSubmit={(e) => e.preventDefault()}>
@@ -427,13 +435,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     value={searchTerm}
                     onChange={handleSearchInputChange}
                   />
-                  <button
-                    className="search-btn"
-                    type="button"
-                    onClick={closeSearch}
-                  >
-                    <i className='bx bx-x'></i>
-                  </button>
                 </div>
                 <SearchResultsDropdown />
               </form>
