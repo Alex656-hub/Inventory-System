@@ -4,7 +4,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/auth.service';
 import { searchService } from '../services/search.service';
-import { GlobalSearchResponse } from '../types';
+import { alertService } from '../services/alert.service';
+import { GlobalSearchResponse, Alert } from '../types';
 import './Layout.css';
 
 interface LayoutProps {
@@ -25,6 +26,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [searchResults, setSearchResults] = useState<GlobalSearchResponse | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
+
+  // Alert state
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [alertCount, setAlertCount] = useState(0);
+  const [showAlertDropdown, setShowAlertDropdown] = useState(false);
 
   // Ref para debounce
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -79,7 +85,28 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   // Close dropdown on route change
   useEffect(() => {
     closeSearch();
+    loadAlerts();
   }, [location.pathname]);
+
+  // Load alerts on component mount and periodically
+  useEffect(() => {
+    loadAlerts();
+    const interval = setInterval(loadAlerts, 30000); // Refresh every 30 seconds
+    return () => clearInterval(interval);
+  }, []);
+
+  const loadAlerts = async () => {
+    try {
+      const response = await alertService.getAlerts({
+        resolved: false,
+        limite: 10
+      });
+      setAlerts(response.alertas);
+      setAlertCount(response.alertas.length);
+    } catch (error) {
+      console.error('Error loading alerts:', error);
+    }
+  };
 
   // Keyboard shortcut to focus search bar
   useEffect(() => {
@@ -271,6 +298,56 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     </>
   );
 
+  // Componente para dropdown de alertas
+  const AlertDropdown: React.FC = () => (
+    <>
+      {showAlertDropdown && (
+        <div className="alert-dropdown">
+          <div className="alert-dropdown-inner">
+            <div className="alert-header">
+              <h4>Alertas Recientes</h4>
+              <Link to="/alertas" onClick={() => setShowAlertDropdown(false)}>
+                Ver todas
+              </Link>
+            </div>
+
+            {alerts.length > 0 ? (
+              <ul>
+                {alerts.slice(0, 5).map((alert) => (
+                  <li key={alert.id} className={`alert-item ${alert.severity}`}>
+                    <div className="alert-content">
+                      <strong>{alert.product?.nombre || 'Producto'}</strong>
+                      <p>{alert.message}</p>
+                      <small>{new Date(alert.created_at).toLocaleDateString()}</small>
+                    </div>
+                    <div className="alert-actions">
+                      {esGerente && !alert.resolved && (
+                        <button
+                          className="btn-sm btn-success"
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            await alertService.resolveAlert(alert.id);
+                            loadAlerts();
+                          }}
+                        >
+                          Resolver
+                        </button>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="no-alerts">
+                No hay alertas activas
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+
   return (
     <div className="layout">
       {/* ==================== SIDEBAR ==================== */}
@@ -398,9 +475,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
           {/* Iconos a la derecha */}
           <div className="nav-right">
-            <a href="#" className="notif">
+            <a href="#" className="notif" onClick={(e) => { e.preventDefault(); setShowAlertDropdown(!showAlertDropdown); }}>
               <i className='bx bx-bell'></i>
-              <span className="count">12</span>
+              {alertCount > 0 && <span className="count">{alertCount}</span>}
             </a>
             <a href="#" className="notif">
               <i className='bx bx-refresh'></i>
@@ -441,6 +518,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
           </>
         )}
+
+        {/* Alert Dropdown */}
+        <AlertDropdown />
 
         {/* ==================== CONTENIDO PRINCIPAL ==================== */}
         <main>{children}</main>

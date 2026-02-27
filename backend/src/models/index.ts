@@ -8,6 +8,7 @@ import DetalleEntrada from './DetalleEntrada';
 import SalidaInventario from './SalidaInventario';
 import DetalleSalida from './DetalleSalida';
 import MovimientoInventario from './MovimientoInventario';
+import Alert from './Alert';
 
 // Exportar modelos
 export {
@@ -19,7 +20,8 @@ export {
   DetalleEntrada,
   SalidaInventario,
   DetalleSalida,
-  MovimientoInventario
+  MovimientoInventario,
+  Alert
 };
 
 // Exportar tipos
@@ -32,3 +34,8 @@ export * from './DetalleEntrada';
 export * from './SalidaInventario';
 export * from './DetalleSalida';
 export * from './MovimientoInventario';
+export * from './Alert';
+
+// Definir asociaciones adicionales
+Product.hasMany(Alert, { foreignKey: 'product_id', as: 'alerts' });
+User.hasMany(Alert, { foreignKey: 'user_id', as: 'alerts' });

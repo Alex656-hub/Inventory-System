@@ -14,6 +14,7 @@ import './models/DetalleEntrada';
 import './models/SalidaInventario';
 import './models/DetalleSalida';
 import './models/MovimientoInventario';
+import './models/Alert';
 
 // Importar rutas
 import authRoutes from './routes/auth.routes';
@@ -28,6 +29,7 @@ import analyticsRoutes from './routes/analytics.routes';
 import twoFactorRoutes from './routes/twoFactorAuth.routes';
 import salesRoutes from './routes/sales.routes';
 import searchRoutes from './routes/search.routes';
+import alertsRoutes from './routes/alerts.routes';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -67,6 +69,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/2fa', twoFactorRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/alerts', alertsRoutes);
 
 // Ruta de salud
 app.get('/api/health', (req, res) => {

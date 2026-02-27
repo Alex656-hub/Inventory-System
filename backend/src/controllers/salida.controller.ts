@@ -7,6 +7,7 @@ import Product from '../models/Product';
 import MovimientoInventario from '../models/MovimientoInventario';
 import User from '../models/User';
 import { DailySale } from '../models/sales';
+import { alertService } from '../services/alertService';
 
 export const obtenerSalidas = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -215,6 +216,14 @@ export const crearSalida = async (req: Request, res: Response): Promise<void> =>
     }
 
     await transaction.commit();
+
+    // Verificar alertas después de la salida
+    try {
+      await alertService.checkLowStock();
+      await alertService.checkOverstock();
+    } catch (alertError) {
+      console.error('Error al verificar alertas después de salida:', alertError);
+    }
 
     const salidaCompleta = await SalidaInventario.findByPk(salida.id, {
       include: [

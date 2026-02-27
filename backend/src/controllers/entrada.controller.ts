@@ -7,6 +7,7 @@ import Product from '../models/Product';
 import MovimientoInventario from '../models/MovimientoInventario';
 import Supplier from '../models/Supplier';
 import User from '../models/User';
+import { alertService } from '../services/alertService';
 
 export const obtenerEntradas = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -173,6 +174,13 @@ export const crearEntrada = async (req: Request, res: Response): Promise<void> =
     }
 
     await transaction.commit();
+
+    // Verificar alertas de sobrestock después de la entrada
+    try {
+      await alertService.checkOverstock();
+    } catch (alertError) {
+      console.error('Error al verificar alertas de sobrestock después de entrada:', alertError);
+    }
 
     const entradaCompleta = await EntradaInventario.findByPk(entrada.id, {
       include: [

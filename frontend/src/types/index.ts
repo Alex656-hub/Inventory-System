@@ -120,3 +120,14 @@ export interface GlobalSearchResponse {
   proveedores: ProveedorSearchResult[];
 }
 
+export interface Alert {
+  id: number;
+  type: string;
+  message: string;
+  severity: 'high' | 'medium' | 'low';
+  product_id?: number;
+  product?: Producto;
+  resolved: boolean;
+  created_at: string;
+}
+
