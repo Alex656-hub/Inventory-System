@@ -56,6 +56,27 @@
   border-radius: 5px;
   font-size: 16px;
   min-width: 200px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: var(--color-surface);
+  padding-right: 30px;
+  position: relative;
+}
+
+.select-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.select-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-primary);
+  pointer-events: none;
+  font-size: 16px;
 }
 
 .table-container {

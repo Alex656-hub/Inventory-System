@@ -22,8 +22,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
     precio_venta: '',
     stock_actual: '0',
     stock_minimo: '0',
-    ubicacion: '',
-    imagen_url: ''
+    ubicacion: ''
   });
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
@@ -43,11 +42,20 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
         precio_venta: producto.precio_venta?.toString() || '',
         stock_actual: producto.stock_actual?.toString() || '0',
         stock_minimo: producto.stock_minimo?.toString() || '0',
-        ubicacion: producto.ubicacion || '',
-        imagen_url: producto.imagen_url || ''
+        ubicacion: producto.ubicacion || ''
       });
     }
   }, [producto]);
+
+  useEffect(() => {
+    if (!producto && formData.categoria_id) {
+      productService.obtenerSiguienteCodigo(Number(formData.categoria_id)).then(data => {
+        setFormData(prev => ({ ...prev, codigo: data.codigo }));
+      }).catch(error => {
+        console.error('Error generando código:', error);
+      });
+    }
+  }, [formData.categoria_id, producto]);
 
   const cargarDatos = async () => {
     try {
@@ -139,44 +147,6 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
     <form onSubmit={handleSubmit} className="product-form">
       <div className="form-grid">
         <div className="form-group">
-          <label htmlFor="codigo">Código *</label>
-          <input
-            type="text"
-            id="codigo"
-            name="codigo"
-            value={formData.codigo}
-            onChange={handleChange}
-            className={errors.codigo ? 'error' : ''}
-            disabled={!!producto}
-          />
-          {errors.codigo && <span className="error-message">{errors.codigo}</span>}
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="nombre">Nombre *</label>
-          <input
-            type="text"
-            id="nombre"
-            name="nombre"
-            value={formData.nombre}
-            onChange={handleChange}
-            className={errors.nombre ? 'error' : ''}
-          />
-          {errors.nombre && <span className="error-message">{errors.nombre}</span>}
-        </div>
-
-        <div className="form-group full-width">
-          <label htmlFor="descripcion">Descripción</label>
-          <textarea
-            id="descripcion"
-            name="descripcion"
-            value={formData.descripcion}
-            onChange={handleChange}
-            rows={3}
-          />
-        </div>
-
-        <div className="form-group">
           <label htmlFor="categoria_id">Categoría *</label>
           <select
             id="categoria_id"
@@ -208,6 +178,33 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
             ))}
           </select>
           {errors.proveedor_id && <span className="error-message">{errors.proveedor_id}</span>}
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="codigo">Código *</label>
+          <input
+            type="text"
+            id="codigo"
+            name="codigo"
+            value={formData.codigo}
+            onChange={handleChange}
+            className={errors.codigo ? 'error' : ''}
+            disabled={!producto}
+          />
+          {errors.codigo && <span className="error-message">{errors.codigo}</span>}
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="nombre">Nombre *</label>
+          <input
+            type="text"
+            id="nombre"
+            name="nombre"
+            value={formData.nombre}
+            onChange={handleChange}
+            className={errors.nombre ? 'error' : ''}
+          />
+          {errors.nombre && <span className="error-message">{errors.nombre}</span>}
         </div>
 
         <div className="form-group">
@@ -269,7 +266,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
         </div>
 
         <div className="form-group">
-          <label htmlFor="ubicacion">Ubicación</label>
+          <label htmlFor="ubicacion">Ubicación Opcional*</label>
           <input
             type="text"
             id="ubicacion"
@@ -280,14 +277,13 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
         </div>
 
         <div className="form-group full-width">
-          <label htmlFor="imagen_url">URL de Imagen</label>
-          <input
-            type="url"
-            id="imagen_url"
-            name="imagen_url"
-            value={formData.imagen_url}
+          <label htmlFor="descripcion">Descripción</label>
+          <textarea
+            id="descripcion"
+            name="descripcion"
+            value={formData.descripcion}
             onChange={handleChange}
-            placeholder="https://ejemplo.com/imagen.jpg"
+            rows={3}
           />
         </div>
       </div>

@@ -92,6 +92,18 @@ const ProductList: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [busqueda]);
 
+  useEffect(() => {
+    if (pagina === 1) {
+      cargarDatos();
+    } else {
+      setPagina(1);
+    }
+  }, [categoriaFiltro]);
+
+  useEffect(() => {
+    cargarDatos();
+  }, [pagina]);
+
   const hayStockBajo = (producto: Producto) => {
     return producto.stock_actual <= producto.stock_minimo;
   };
@@ -142,18 +154,21 @@ const ProductList: React.FC = () => {
           onChange={(e) => setBusqueda(e.target.value)}
           className="search-input"
         />
-        <select
-          value={categoriaFiltro}
-          onChange={(e) => setCategoriaFiltro(e.target.value ? Number(e.target.value) : '')}
-          className="filter-select"
-        >
-          <option value="">Todas las categorías</option>
-          {categorias.map((cat) => (
-            <option key={cat.id} value={cat.id}>
-              {cat.nombre}
-            </option>
-          ))}
-        </select>
+        <div className="select-wrapper">
+          <select
+            value={categoriaFiltro}
+            onChange={(e) => setCategoriaFiltro(e.target.value ? Number(e.target.value) : '')}
+            className="filter-select"
+          >
+            <option value="">Todas las categorías</option>
+            {categorias.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.nombre}
+              </option>
+            ))}
+          </select>
+          <i className="bx bx-chevron-down select-icon"></i>
+        </div>
       </div>
 
       {loading ? (

@@ -19,7 +19,6 @@ export interface Producto {
   stock_actual: number;
   stock_minimo: number;
   ubicacion?: string;
-  imagen_url?: string;
   activo: boolean;
   categoria?: Categoria;
   proveedor?: Proveedor;

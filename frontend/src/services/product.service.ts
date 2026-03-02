@@ -45,6 +45,11 @@ export const productService = {
     return data;
   },
 
+  obtenerSiguienteCodigo: async (categoria_id: number): Promise<{ codigo: string }> => {
+    const { data } = await api.get<{ codigo: string }>(`/products/next-code/${categoria_id}`);
+    return data;
+  },
+
   obtenerProductosStockBajo: async (): Promise<{ productos: Producto[] }> => {
     const { data } = await api.get<{ productos: Producto[] }>('/products/stock-bajo');
     return data;

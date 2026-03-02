@@ -89,8 +89,7 @@ export const crearProducto = async (req: Request, res: Response): Promise<void> 
       precio_venta,
       stock_actual,
       stock_minimo,
-      ubicacion,
-      imagen_url
+      ubicacion
     } = req.body;
 
     // Validar campos requeridos
@@ -130,8 +129,7 @@ export const crearProducto = async (req: Request, res: Response): Promise<void> 
       precio_venta: Number(precio_venta),
       stock_actual: stock_actual || 0,
       stock_minimo: stock_minimo || 0,
-      ubicacion,
-      imagen_url
+      ubicacion
     });
 
     const productoCompleto = await Product.findByPk(producto.id, {
@@ -235,6 +233,51 @@ export const eliminarProducto = async (req: Request, res: Response): Promise<voi
   } catch (error) {
     console.error('Error al eliminar producto:', error);
     res.status(500).json({ mensaje: 'Error al eliminar producto' });
+  }
+};
+
+export const obtenerSiguienteCodigo = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { categoria_id } = req.params;
+
+    if (!categoria_id) {
+      res.status(400).json({ mensaje: 'categoria_id requerido' });
+      return;
+    }
+
+    // Buscar la categoría
+    const categoria = await Category.findByPk(categoria_id);
+    if (!categoria) {
+      res.status(404).json({ mensaje: 'Categoría no encontrada' });
+      return;
+    }
+
+    const prefix = categoria.nombre.substring(0, 3).toUpperCase();
+
+    // Buscar códigos existentes para esta categoría
+    const productos = await Product.findAll({
+      where: { categoria_id },
+      attributes: ['codigo']
+    });
+
+    let maxNum = 0;
+    productos.forEach(p => {
+      if (p.codigo.startsWith(prefix)) {
+        const numPart = p.codigo.slice(3);
+        const num = parseInt(numPart, 10);
+        if (!isNaN(num) && num > maxNum) {
+          maxNum = num;
+        }
+      }
+    });
+
+    const nextNum = maxNum + 1;
+    const code = prefix + ('000' + nextNum).slice(-3);
+
+    res.json({ codigo: code });
+  } catch (error) {
+    console.error('Error al obtener siguiente código:', error);
+    res.status(500).json({ mensaje: 'Error al obtener siguiente código' });
   }
 };
 

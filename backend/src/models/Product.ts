@@ -15,7 +15,6 @@ interface ProductAttributes {
   stock_actual: number;
   stock_minimo: number;
   ubicacion?: string;
-  imagen_url?: string;
   activo: boolean;
   createdAt?: Date;
   updatedAt?: Date;
@@ -35,7 +34,6 @@ class Product extends Model<ProductAttributes, ProductCreationAttributes> implem
   public stock_actual!: number;
   public stock_minimo!: number;
   public ubicacion?: string;
-  public imagen_url?: string;
   public activo!: boolean;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -113,10 +111,6 @@ Product.init(
     },
     ubicacion: {
       type: DataTypes.STRING(100),
-      allowNull: true
-    },
-    imagen_url: {
-      type: DataTypes.STRING(500),
       allowNull: true
     },
     activo: {
