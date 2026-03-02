@@ -12,6 +12,7 @@ const Product_1 = __importDefault(require("../models/Product"));
 const MovimientoInventario_1 = __importDefault(require("../models/MovimientoInventario"));
 const Supplier_1 = __importDefault(require("../models/Supplier"));
 const User_1 = __importDefault(require("../models/User"));
+const alertService_1 = require("../services/alertService");
 const obtenerEntradas = async (req, res) => {
     try {
         const { pagina = 1, limite = 10, fecha_desde, fecha_hasta, proveedor_id } = req.query;
@@ -150,6 +151,13 @@ const crearEntrada = async (req, res) => {
             }, { transaction });
         }
         await transaction.commit();
+        // Verificar alertas de sobrestock después de la entrada
+        try {
+            await alertService_1.alertService.checkOverstock();
+        }
+        catch (alertError) {
+            console.error('Error al verificar alertas de sobrestock después de entrada:', alertError);
+        }
         const entradaCompleta = await EntradaInventario_1.default.findByPk(entrada.id, {
             include: [
                 { model: Supplier_1.default, as: 'proveedor' },

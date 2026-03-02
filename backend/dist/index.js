@@ -18,6 +18,7 @@ require("./models/DetalleEntrada");
 require("./models/SalidaInventario");
 require("./models/DetalleSalida");
 require("./models/MovimientoInventario");
+require("./models/Alert");
 // Importar rutas
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const user_routes_1 = __importDefault(require("./routes/user.routes"));
@@ -31,6 +32,8 @@ const analytics_routes_1 = __importDefault(require("./routes/analytics.routes"))
 const twoFactorAuth_routes_1 = __importDefault(require("./routes/twoFactorAuth.routes"));
 const sales_routes_1 = __importDefault(require("./routes/sales.routes"));
 const search_routes_1 = __importDefault(require("./routes/search.routes"));
+const alerts_routes_1 = __importDefault(require("./routes/alerts.routes"));
+const report_routes_1 = __importDefault(require("./routes/report.routes"));
 // Cargar variables de entorno
 dotenv_1.default.config();
 const app = (0, express_1.default)();
@@ -65,6 +68,8 @@ app.use('/api/analytics', analytics_routes_1.default);
 app.use('/api/2fa', twoFactorAuth_routes_1.default);
 app.use('/api/sales', sales_routes_1.default);
 app.use('/api/search', search_routes_1.default);
+app.use('/api/alerts', alerts_routes_1.default);
+app.use('/api/reports', report_routes_1.default);
 // Ruta de salud
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'API funcionando correctamente' });

@@ -17,7 +17,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MovimientoInventario = exports.DetalleSalida = exports.SalidaInventario = exports.DetalleEntrada = exports.EntradaInventario = exports.Supplier = exports.Product = exports.Category = exports.User = void 0;
+exports.Alert = exports.MovimientoInventario = exports.DetalleSalida = exports.SalidaInventario = exports.DetalleEntrada = exports.EntradaInventario = exports.Supplier = exports.Product = exports.Category = exports.User = void 0;
 // Importar modelos
 const User_1 = __importDefault(require("./User"));
 exports.User = User_1.default;
@@ -37,6 +37,8 @@ const DetalleSalida_1 = __importDefault(require("./DetalleSalida"));
 exports.DetalleSalida = DetalleSalida_1.default;
 const MovimientoInventario_1 = __importDefault(require("./MovimientoInventario"));
 exports.MovimientoInventario = MovimientoInventario_1.default;
+const Alert_1 = __importDefault(require("./Alert"));
+exports.Alert = Alert_1.default;
 // Exportar tipos
 __exportStar(require("./User"), exports);
 __exportStar(require("./Category"), exports);
@@ -47,3 +49,7 @@ __exportStar(require("./DetalleEntrada"), exports);
 __exportStar(require("./SalidaInventario"), exports);
 __exportStar(require("./DetalleSalida"), exports);
 __exportStar(require("./MovimientoInventario"), exports);
+__exportStar(require("./Alert"), exports);
+// Definir asociaciones adicionales
+Product_1.default.hasMany(Alert_1.default, { foreignKey: 'product_id', as: 'alerts' });
+User_1.default.hasMany(Alert_1.default, { foreignKey: 'user_id', as: 'alerts' });

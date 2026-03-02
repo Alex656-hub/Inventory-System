@@ -30,6 +30,7 @@ import twoFactorRoutes from './routes/twoFactorAuth.routes';
 import salesRoutes from './routes/sales.routes';
 import searchRoutes from './routes/search.routes';
 import alertsRoutes from './routes/alerts.routes';
+import reportRoutes from './routes/report.routes';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -70,6 +71,7 @@ app.use('/api/2fa', twoFactorRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/alerts', alertsRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Ruta de salud
 app.get('/api/health', (req, res) => {

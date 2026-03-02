@@ -12,6 +12,7 @@ const Product_1 = __importDefault(require("../models/Product"));
 const MovimientoInventario_1 = __importDefault(require("../models/MovimientoInventario"));
 const User_1 = __importDefault(require("../models/User"));
 const sales_1 = require("../models/sales");
+const alertService_1 = require("../services/alertService");
 const obtenerSalidas = async (req, res) => {
     try {
         const { pagina = 1, limite = 10, fecha_desde, fecha_hasta } = req.query;
@@ -185,6 +186,14 @@ const crearSalida = async (req, res) => {
             }
         }
         await transaction.commit();
+        // Verificar alertas después de la salida
+        try {
+            await alertService_1.alertService.checkLowStock();
+            await alertService_1.alertService.checkOverstock();
+        }
+        catch (alertError) {
+            console.error('Error al verificar alertas después de salida:', alertError);
+        }
         const salidaCompleta = await SalidaInventario_1.default.findByPk(salida.id, {
             include: [
                 { model: User_1.default, as: 'usuario', attributes: ['id', 'nombre'] }

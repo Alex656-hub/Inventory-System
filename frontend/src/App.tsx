@@ -11,6 +11,7 @@ import Settings from './components/Settings';
 import ImportSales from './components/ImportSales';
 import SalesList from './components/SalesList';
 import SalesSummaryPage from './components/SalesSummary';
+import ReportSelector from './components/ReportSelector';
 import PrivateRoute from './components/PrivateRoute';
 import { authService } from './services/auth.service';
 import './App.css';
@@ -106,6 +107,16 @@ function App() {
               <PrivateRoute>
                 <Layout>
                   <SalesSummaryPage />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/reportes"
+            element={
+              <PrivateRoute allowedRoles={['gerente']}>
+                <Layout>
+                  <ReportSelector />
                 </Layout>
               </PrivateRoute>
             }

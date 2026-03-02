@@ -9,27 +9,69 @@ const Category_1 = __importDefault(require("../models/Category"));
 const Supplier_1 = __importDefault(require("../models/Supplier"));
 const SalidaInventario_1 = __importDefault(require("../models/SalidaInventario"));
 const sequelize_1 = require("sequelize");
+const searchCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const MAX_CACHE_SIZE = 100; // Maximum cache entries
 const globalSearch = async (req, res) => {
     try {
         const { query } = req.query;
         const limitPerType = Number(req.query.limitPerType) || 5;
-        if (!query || typeof query !== 'string' || query.trim().length === 0) {
+        if (!query || typeof query !== 'string') {
             res.status(400).json({
                 success: false,
-                message: 'El parámetro query es obligatorio y no puede estar vacío'
+                message: 'El parámetro query es obligatorio'
             });
             return;
         }
-        const searchTerm = `%${query.trim()}%`;
-        // Buscar productos
+        const q = query.trim().toLowerCase();
+        if (q.length === 0) {
+            res.status(400).json({
+                success: false,
+                message: 'El parámetro query no puede estar vacío'
+            });
+            return;
+        }
+        const tokens = q.split(/\s+/);
+        // Check cache for short queries (optional performance optimization)
+        const cacheKey = `${q}_${limitPerType}`;
+        if (q.length <= 20 && searchCache.has(cacheKey)) {
+            const cachedEntry = searchCache.get(cacheKey);
+            if (Date.now() - cachedEntry.timestamp < CACHE_TTL) {
+                res.json(cachedEntry.data);
+                return;
+            }
+            else {
+                searchCache.delete(cacheKey);
+            }
+        }
+        // Cache cleanup - remove old entries if cache is too large
+        if (searchCache.size >= MAX_CACHE_SIZE) {
+            const now = Date.now();
+            for (const [key, entry] of searchCache.entries()) {
+                if (now - entry.timestamp > CACHE_TTL) {
+                    searchCache.delete(key);
+                }
+            }
+        }
+        // Función helper para crear condiciones de token
+        const createTokenConditions = (fields) => {
+            return tokens.map(token => ({
+                [sequelize_1.Op.or]: fields.map(field => ({
+                    [field]: { [sequelize_1.Op.iLike]: `%${token}%` }
+                }))
+            }));
+        };
+        // Determinar permisos según rol del usuario
+        const userRole = req.usuario?.rol;
+        const isManager = userRole === 'gerente';
+        const isEmployee = userRole === 'empleado';
+        // Buscar productos (accesible para empleados y gerentes)
+        const productFields = ['codigo', 'nombre', 'descripcion'];
+        const productConditions = createTokenConditions(productFields);
         const productos = await Product_1.default.findAll({
             where: {
                 activo: true,
-                [sequelize_1.Op.or]: [
-                    { codigo: { [sequelize_1.Op.iLike]: searchTerm } },
-                    { nombre: { [sequelize_1.Op.iLike]: searchTerm } },
-                    { descripcion: { [sequelize_1.Op.iLike]: searchTerm } }
-                ]
+                [sequelize_1.Op.and]: productConditions
             },
             include: [
                 { model: Category_1.default, as: 'categoria', attributes: ['id', 'nombre'] }
@@ -37,47 +79,47 @@ const globalSearch = async (req, res) => {
             limit: limitPerType,
             order: [['nombre', 'ASC']]
         });
-        // Buscar ventas (salidas de inventario)
+        // Buscar ventas (accesible para empleados y gerentes, limitado a últimos 180 días)
+        const saleFields = ['numero_documento', 'cliente_nombre', 'cliente_documento', 'observaciones'];
+        const saleConditions = createTokenConditions(saleFields);
+        const sixMonthsAgo = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000);
         const ventas = await SalidaInventario_1.default.findAll({
             where: {
                 estado: 'completado',
-                [sequelize_1.Op.or]: [
-                    { numero_documento: { [sequelize_1.Op.iLike]: searchTerm } },
-                    { cliente_nombre: { [sequelize_1.Op.iLike]: searchTerm } },
-                    { cliente_documento: { [sequelize_1.Op.iLike]: searchTerm } },
-                    { observaciones: { [sequelize_1.Op.iLike]: searchTerm } }
-                ]
+                fecha: { [sequelize_1.Op.gte]: sixMonthsAgo },
+                [sequelize_1.Op.and]: saleConditions
             },
             limit: limitPerType,
             order: [['fecha', 'DESC']]
         });
-        // Buscar categorías
-        const categorias = await Category_1.default.findAll({
-            where: {
-                activa: true,
-                [sequelize_1.Op.or]: [
-                    { nombre: { [sequelize_1.Op.iLike]: searchTerm } },
-                    { descripcion: { [sequelize_1.Op.iLike]: searchTerm } }
-                ]
-            },
-            limit: limitPerType,
-            order: [['nombre', 'ASC']]
-        });
-        // Buscar proveedores
-        const proveedores = await Supplier_1.default.findAll({
-            where: {
-                activo: true,
-                [sequelize_1.Op.or]: [
-                    { nombre: { [sequelize_1.Op.iLike]: searchTerm } },
-                    { ruc_dni: { [sequelize_1.Op.iLike]: searchTerm } },
-                    { contacto_telefono: { [sequelize_1.Op.iLike]: searchTerm } },
-                    { contacto_email: { [sequelize_1.Op.iLike]: searchTerm } },
-                    { direccion: { [sequelize_1.Op.iLike]: searchTerm } }
-                ]
-            },
-            limit: limitPerType,
-            order: [['nombre', 'ASC']]
-        });
+        // Buscar categorías (solo para gerentes)
+        let categorias = [];
+        if (isManager) {
+            const categoryFields = ['nombre', 'descripcion'];
+            const categoryConditions = createTokenConditions(categoryFields);
+            categorias = await Category_1.default.findAll({
+                where: {
+                    activa: true,
+                    [sequelize_1.Op.and]: categoryConditions
+                },
+                limit: limitPerType,
+                order: [['nombre', 'ASC']]
+            });
+        }
+        // Buscar proveedores (solo para gerentes)
+        let proveedores = [];
+        if (isManager) {
+            const supplierFields = ['nombre', 'ruc_dni', 'contacto_telefono', 'contacto_email', 'direccion'];
+            const supplierConditions = createTokenConditions(supplierFields);
+            proveedores = await Supplier_1.default.findAll({
+                where: {
+                    activo: true,
+                    [sequelize_1.Op.and]: supplierConditions
+                },
+                limit: limitPerType,
+                order: [['nombre', 'ASC']]
+            });
+        }
         // Construir respuesta
         const response = {
             productos: productos.map(producto => ({
@@ -109,6 +151,13 @@ const globalSearch = async (req, res) => {
                 resumen: proveedor.contacto_telefono ? `Tel: ${proveedor.contacto_telefono}` : (proveedor.direccion || 'Sin información de contacto')
             }))
         };
+        // Cache the result for short queries (optional performance optimization)
+        if (q.length <= 20) {
+            searchCache.set(cacheKey, {
+                data: response,
+                timestamp: Date.now()
+            });
+        }
         res.json(response);
     }
     catch (error) {
