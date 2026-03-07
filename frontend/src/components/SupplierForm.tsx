@@ -11,6 +11,7 @@ interface SupplierFormProps {
 
 const SupplierForm: React.FC<SupplierFormProps> = ({ proveedor, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
+    id: '',
     nombre: '',
     ruc_dni: '',
     contacto_telefono: '',
@@ -24,6 +25,7 @@ const SupplierForm: React.FC<SupplierFormProps> = ({ proveedor, onClose, onSucce
   useEffect(() => {
     if (proveedor) {
       setFormData({
+        id: proveedor.id?.toString() || '',
         nombre: proveedor.nombre || '',
         ruc_dni: proveedor.ruc_dni || '',
         contacto_telefono: proveedor.contacto_telefono || '',
@@ -121,10 +123,13 @@ const SupplierForm: React.FC<SupplierFormProps> = ({ proveedor, onClose, onSucce
 
     setLoading(true);
     try {
+      const { id, ...data } = formData;
+      const proveedorData: Partial<Proveedor> = data;
+
       if (proveedor) {
-        await supplierService.actualizarProveedor(proveedor.id, formData);
+        await supplierService.actualizarProveedor(proveedor.id, proveedorData);
       } else {
-        await supplierService.crearProveedor(formData);
+        await supplierService.crearProveedor(proveedorData);
       }
       onSuccess();
       onClose();
@@ -169,6 +174,21 @@ const SupplierForm: React.FC<SupplierFormProps> = ({ proveedor, onClose, onSucce
             disabled={loading}
           />
           {errors.nombre && <span className="error-message">{errors.nombre}</span>}
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="id">ID (Auto-generado)</label>
+          <input
+            type="text"
+            id="id"
+            name="id"
+            value={formData.id}
+            onChange={handleChange}
+            className={errors.id ? 'error' : ''}
+            placeholder="Se generará automáticamente"
+            disabled={true}
+          />
+          {errors.id && <span className="error-message">{errors.id}</span>}
         </div>
 
         <div className="form-group">

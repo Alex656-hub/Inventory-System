@@ -10,10 +10,19 @@ export const obtenerProveedores = async (req: Request, res: Response): Promise<v
     const where: any = {};
 
     if (busqueda) {
-      where[Op.or] = [
-        { nombre: { [Op.iLike]: `%${busqueda}%` } },
-        { ruc_dni: { [Op.iLike]: `%${busqueda}%` } }
-      ];
+      const busquedaStr = busqueda as string;
+      const idNum = parseInt(busquedaStr);
+      
+      // If search term is purely numeric, only search by ID
+      if (!isNaN(idNum) && busquedaStr.trim() === idNum.toString()) {
+        where.id = idNum;
+      } else {
+        // Otherwise, search by name and RUC/DNI
+        where[Op.or] = [
+          { nombre: { [Op.iLike]: `%${busquedaStr}%` } },
+          { ruc_dni: { [Op.iLike]: `%${busquedaStr}%` } }
+        ];
+      }
     }
 
     if (activo !== undefined) {
@@ -24,7 +33,7 @@ export const obtenerProveedores = async (req: Request, res: Response): Promise<v
       where,
       limit: Number(limite),
       offset,
-      order: [['nombre', 'ASC']]
+      order: [['id', 'ASC']]
     });
 
     res.json({
@@ -62,7 +71,8 @@ export const obtenerProveedorPorId = async (req: Request, res: Response): Promis
 
 export const crearProveedor = async (req: Request, res: Response): Promise<void> => {
   try {
-    const {
+    let {
+      id,
       nombre,
       ruc_dni,
       contacto_telefono,
@@ -76,14 +86,34 @@ export const crearProveedor = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const proveedor = await Supplier.create({
+    if (!id) {
+      // Find the smallest available ID
+      const existingSuppliers = await Supplier.findAll({
+        attributes: ['id'],
+        order: [['id', 'ASC']]
+      });
+      
+      const existingIds = existingSuppliers.map(s => s.id);
+      let nextId = 1;
+      
+      while (existingIds.includes(nextId)) {
+        nextId++;
+      }
+      
+      id = nextId.toString();
+    }
+
+    const data: any = {
+      id,
       nombre,
       ruc_dni,
       contacto_telefono,
       contacto_email,
       direccion,
       condiciones_pago
-    });
+    };
+
+    const proveedor = await Supplier.create(data);
 
     res.status(201).json({
       mensaje: 'Proveedor creado exitosamente',
@@ -136,7 +166,7 @@ export const actualizarProveedor = async (req: Request, res: Response): Promise<
   }
 };
 
-export const eliminarProveedor = async (req: Request, res: Response): Promise<void> => {
+export const eliminarProveedor = async (req: Request, res: Response):Promise<void> => {
   try {
     const { id } = req.params;
 
@@ -147,8 +177,7 @@ export const eliminarProveedor = async (req: Request, res: Response): Promise<vo
       return;
     }
 
-    // Soft delete: marcar como inactivo
-    await proveedor.update({ activo: false });
+    await proveedor.destroy();
 
     res.json({ mensaje: 'Proveedor eliminado exitosamente' });
   } catch (error) {

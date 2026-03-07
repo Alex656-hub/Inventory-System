@@ -4,16 +4,32 @@ import { Op } from 'sequelize';
 
 export const obtenerCategorias = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { activa } = req.query;
+    const { activa, busqueda } = req.query;
 
     const where: any = {};
     if (activa !== undefined) {
       where.activa = activa === 'true';
     }
 
+    if (busqueda) {
+      const busquedaStr = busqueda as string;
+      const idNum = parseInt(busquedaStr);
+      
+      // If search term is purely numeric, only search by ID
+      if (!isNaN(idNum) && busquedaStr.trim() === idNum.toString()) {
+        where.id = idNum;
+      } else {
+        // Otherwise, search by name and description
+        where[Op.or] = [
+          { nombre: { [Op.iLike]: `%${busquedaStr}%` } },
+          { descripcion: { [Op.iLike]: `%${busquedaStr}%` } }
+        ];
+      }
+    }
+
     const categorias = await Category.findAll({
       where,
-      order: [['nombre', 'ASC']]
+      order: [['id', 'ASC']]
     });
 
     res.json({ categorias });
@@ -43,14 +59,32 @@ export const obtenerCategoriaPorId = async (req: Request, res: Response): Promis
 
 export const crearCategoria = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { nombre, descripcion } = req.body;
+    const { id, nombre, descripcion } = req.body;
 
     if (!nombre) {
       res.status(400).json({ mensaje: 'El nombre es requerido' });
       return;
     }
 
-    const categoria = await Category.create({ nombre, descripcion });
+    let categoryId = id;
+    if (!id) {
+      // Find the smallest available ID
+      const existingCategories = await Category.findAll({
+        attributes: ['id'],
+        order: [['id', 'ASC']]
+      });
+      
+      const existingIds = existingCategories.map(c => c.id);
+      let nextId = 1;
+      
+      while (existingIds.includes(nextId)) {
+        nextId++;
+      }
+      
+      categoryId = nextId;
+    }
+
+    const categoria = await Category.create({ id: categoryId, nombre, descripcion });
 
     res.status(201).json({
       mensaje: 'Categoría creada exitosamente',
@@ -112,6 +146,27 @@ export const eliminarCategoria = async (req: Request, res: Response): Promise<vo
   } catch (error) {
     console.error('Error al eliminar categoría:', error);
     res.status(500).json({ mensaje: 'Error al eliminar categoría' });
+  }
+};
+
+export const eliminarCategoriaHard = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const categoria = await Category.findByPk(id);
+
+    if (!categoria) {
+      res.status(404).json({ mensaje: 'Categoría no encontrada' });
+      return;
+    }
+
+    // Hard delete: eliminar permanentemente
+    await categoria.destroy();
+
+    res.json({ mensaje: 'Categoría eliminada permanentemente' });
+  } catch (error) {
+    console.error('Error al eliminar categoría permanentemente:', error);
+    res.status(500).json({ mensaje: 'Error al eliminar categoría permanentemente' });
   }
 };
 

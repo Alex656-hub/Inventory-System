@@ -2,8 +2,14 @@ import api from '../config/api';
 import { Categoria } from '../types';
 
 export const categoryService = {
-  obtenerCategorias: async (activa?: boolean): Promise<{ categorias: Categoria[] }> => {
-    const params = activa !== undefined ? { activa: activa.toString() } : {};
+  obtenerCategorias: async (activa?: boolean, busqueda?: string): Promise<{ categorias: Categoria[] }> => {
+    const params: any = {};
+    if (activa !== undefined) {
+      params.activa = activa.toString();
+    }
+    if (busqueda) {
+      params.busqueda = busqueda;
+    }
     const { data } = await api.get<{ categorias: Categoria[] }>('/categories', { params });
     return data;
   },
@@ -25,6 +31,11 @@ export const categoryService = {
 
   eliminarCategoria: async (id: number): Promise<{ mensaje: string }> => {
     const { data } = await api.delete<{ mensaje: string }>(`/categories/${id}`);
+    return data;
+  },
+
+  eliminarCategoriaHard: async (id: number): Promise<{ mensaje: string }> => {
+    const { data } = await api.delete<{ mensaje: string }>(`/categories/hard/${id}`);
     return data;
   }
 };

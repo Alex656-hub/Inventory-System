@@ -17,6 +17,49 @@
   margin: 0;
 }
 
+.filters {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.search-input {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+.filter-select {
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  font-size: 16px;
+  min-width: 200px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: var(--color-surface);
+  padding-right: 30px;
+  position: relative;
+}
+
+.select-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.select-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-primary);
+  pointer-events: none;
+  font-size: 16px;
+}
+
 .btn-primary {
   background-color: var(--color-primary);
   color: white;
@@ -127,6 +170,22 @@
 }
 
 .btn-delete:hover {
+  background-color: #f8d7da;
+}
+
+.btn-activate {
+  color: #28a745;
+}
+
+.btn-activate:hover {
+  background-color: #d4edda;
+}
+
+.btn-hard-delete {
+  color: #dc3545;
+}
+
+.btn-hard-delete:hover {
   background-color: #f8d7da;
 }
 

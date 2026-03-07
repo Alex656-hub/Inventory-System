@@ -68,14 +68,14 @@
 
 .btn-primary,
 .btn-secondary {
-  padding: 12px 24px;
+  padding: 8px 16px;
   border: none;
   border-radius: 5px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
-  min-width: 120px;
+  min-width: 100px;
 }
 
 .btn-primary {
@@ -107,6 +107,50 @@
   cursor: not-allowed;
 }
 
+.btn-danger {
+  background-color: #dc3545;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  min-width: 100px;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: #c82333;
+}
+
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-success {
+  background-color: #28a745;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  min-width: 100px;
+}
+
+.btn-success:hover:not(:disabled) {
+  background-color: #218838;
+}
+
+.btn-success:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
   .category-form {
     max-width: 100%;
@@ -117,7 +161,9 @@
   }
   
   .btn-primary,
-  .btn-secondary {
+  .btn-secondary,
+  .btn-danger,
+  .btn-success {
     width: 100%;
   }
 }

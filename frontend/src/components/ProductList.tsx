@@ -236,7 +236,7 @@ const ProductList: React.FC = () => {
                               className="btn-icon btn-delete"
                               title="Eliminar"
                             >
-                              <i className='bx bx-trash'></i>
+                              <i className='bx bx-trash-alt'></i>
                             </button>
                           </div>
                         </td>

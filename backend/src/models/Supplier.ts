@@ -33,7 +33,6 @@ Supplier.init(
   {
     id: {
       type: DataTypes.INTEGER,
-      autoIncrement: true,
       primaryKey: true
     },
     nombre: {

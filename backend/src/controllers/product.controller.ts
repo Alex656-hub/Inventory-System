@@ -105,6 +105,12 @@ export const crearProducto = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
+    // Verificar que la categoría esté activa
+    if (!categoria.activa) {
+      res.status(400).json({ mensaje: 'La categoría está inactiva, no se puede registrar productos en ella.' });
+      return;
+    }
+
     // Verificar que el proveedor existe
     const proveedor = await Supplier.findByPk(proveedor_id);
     if (!proveedor) {
@@ -170,6 +176,12 @@ export const actualizarProducto = async (req: Request, res: Response): Promise<v
       const categoria = await Category.findByPk(datos.categoria_id);
       if (!categoria) {
         res.status(404).json({ mensaje: 'Categoría no encontrada' });
+        return;
+      }
+
+      // Verificar que la categoría esté activa
+      if (!categoria.activa) {
+        res.status(400).json({ mensaje: 'La categoría está inactiva, no se puede registrar productos en ella.' });
         return;
       }
     }

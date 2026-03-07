@@ -10,11 +10,13 @@ import './SupplierList.css';
 const SupplierList: React.FC = () => {
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [busqueda, setBusqueda] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [proveedorEditando, setProveedorEditando] = useState<Proveedor | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [proveedorEliminar, setProveedorEliminar] = useState<Proveedor | null>(null);
-  const [filtroActivo, setFiltroActivo] = useState<'activo' | 'inactivo' | 'todos'>('activo');
+  const [filtroActivo, setFiltroActivo] = useState<'activo' | 'inactivo' | 'todos'>('todos');
   const { usuario } = useAuth();
   const esGerente = usuario?.rol === 'gerente';
 
@@ -26,9 +28,13 @@ const SupplierList: React.FC = () => {
   const suppliersContainerRef = useRef<HTMLDivElement>(null);
 
   const cargarDatos = async () => {
-    setLoading(true);
+    if (!isSearching) setLoading(true);
     try {
       const params: any = { limite: 1000 };
+      
+      if (busqueda) {
+        params.busqueda = busqueda;
+      }
       
       // Solo pasar activo si no es 'todos'
       if (filtroActivo === 'activo') {
@@ -43,13 +49,23 @@ const SupplierList: React.FC = () => {
     } catch (error) {
       console.error('Error al cargar proveedores:', error);
     } finally {
-      setLoading(false);
+      if (!isSearching) setLoading(false);
     }
   };
 
   useEffect(() => {
     cargarDatos();
   }, [filtroActivo]);
+
+  useEffect(() => {
+    setIsSearching(true);
+    const timeoutId = setTimeout(() => {
+      cargarDatos();
+      setIsSearching(false);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [busqueda]);
 
   // Handle proveedorId parameter
   useEffect(() => {
@@ -124,24 +140,33 @@ const SupplierList: React.FC = () => {
         )}
       </div>
 
+      <div className="filters">
+        <input
+          type="text"
+          placeholder="Buscar por ID, nombre..."
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          className="search-input"
+        />
+        <div className="select-wrapper">
+          <select
+            id="filtro-activo"
+            value={filtroActivo}
+            onChange={(e) => setFiltroActivo(e.target.value as 'activo' | 'inactivo' | 'todos')}
+            className="filter-select"
+          >
+            <option value="activo">Solo activos</option>
+            <option value="inactivo">Solo inactivos</option>
+            <option value="todos">Todos</option>
+          </select>
+          <i className="bx bx-chevron-down select-icon"></i>
+        </div>
+      </div>
+
       {loading ? (
         <div className="loading">Cargando proveedores...</div>
       ) : (
         <>
-          <div className="filters">
-            <label htmlFor="filtro-activo">Estado: </label>
-            <select
-              id="filtro-activo"
-              value={filtroActivo}
-              onChange={(e) => setFiltroActivo(e.target.value as 'activo' | 'inactivo' | 'todos')}
-              className="filter-select"
-            >
-              <option value="activo">Solo activos</option>
-              <option value="inactivo">Solo inactivos</option>
-              <option value="todos">Todos</option>
-            </select>
-          </div>
-          
           <div className="table-container">
           <table className="suppliers-table">
             <thead>
@@ -209,7 +234,7 @@ const SupplierList: React.FC = () => {
                             className="btn-icon btn-delete"
                             title="Eliminar proveedor"
                           >
-                            <i className='bx bx-trash'></i>
+                            <i className='bx bx-trash-alt'></i>
                           </button>
                         </div>
                       </td>

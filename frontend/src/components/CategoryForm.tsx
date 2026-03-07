@@ -7,10 +7,12 @@ interface CategoryFormProps {
   categoria?: Categoria | null;
   onClose: () => void;
   onSuccess: () => void;
+  onDeactivate?: () => void;
 }
 
-const CategoryForm: React.FC<CategoryFormProps> = ({ categoria, onClose, onSuccess }) => {
+const CategoryForm: React.FC<CategoryFormProps> = ({ categoria, onClose, onSuccess, onDeactivate }) => {
   const [formData, setFormData] = useState({
+    id: '',
     nombre: '',
     descripcion: ''
   });
@@ -20,6 +22,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ categoria, onClose, onSucce
   useEffect(() => {
     if (categoria) {
       setFormData({
+        id: categoria.id?.toString() || '',
         nombre: categoria.nombre || '',
         descripcion: categoria.descripcion || ''
       });
@@ -51,10 +54,13 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ categoria, onClose, onSucce
 
     setLoading(true);
     try {
+      const { id, ...data } = formData;
+      const categoriaData: Partial<Categoria> = data;
+
       if (categoria) {
-        await categoryService.actualizarCategoria(categoria.id, formData);
+        await categoryService.actualizarCategoria(categoria.id, categoriaData);
       } else {
-        await categoryService.crearCategoria(formData);
+        await categoryService.crearCategoria(categoriaData);
       }
       onSuccess();
       onClose();
@@ -77,6 +83,21 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ categoria, onClose, onSucce
 
   return (
     <form onSubmit={handleSubmit} className="category-form">
+      <div className="form-group">
+        <label htmlFor="id">ID (Auto-generado)</label>
+        <input
+          type="text"
+          id="id"
+          name="id"
+          value={formData.id}
+          onChange={handleChange}
+          className={errors.id ? 'error' : ''}
+          placeholder="Se generará automáticamente"
+          disabled={true}
+        />
+        {errors.id && <span className="error-message">{errors.id}</span>}
+      </div>
+
       <div className="form-group">
         <label htmlFor="nombre">Nombre *</label>
         <input
@@ -113,6 +134,16 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ categoria, onClose, onSucce
         <button type="submit" disabled={loading} className="btn-primary">
           {loading ? 'Guardando...' : categoria ? 'Actualizar' : 'Crear'}
         </button>
+        {categoria && onDeactivate && (
+          <button 
+            type="button" 
+            onClick={onDeactivate} 
+            className={categoria.activa ? "btn-danger" : "btn-success"} 
+            disabled={loading}
+          >
+            {categoria.activa ? 'Desactivar' : 'Activar'}
+          </button>
+        )}
       </div>
     </form>
   );

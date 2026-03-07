@@ -10,10 +10,14 @@ import './CategoryList.css';
 const CategoryList: React.FC = () => {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
+  const [busqueda, setBusqueda] = useState('');
+  const [activoFiltro, setActivoFiltro] = useState<'all' | 'active' | 'inactive'>('all');
   const [showForm, setShowForm] = useState(false);
   const [categoriaEditando, setCategoriaEditando] = useState<Categoria | null>(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [categoriaEliminar, setCategoriaEliminar] = useState<Categoria | null>(null);
+  const [showDesactivarConfirm, setShowDesactivarConfirm] = useState(false);
+  const [categoriaDesactivar, setCategoriaDesactivar] = useState<Categoria | null>(null);
+  const [showEliminarHardConfirm, setShowEliminarHardConfirm] = useState(false);
+  const [categoriaEliminarHard, setCategoriaEliminarHard] = useState<Categoria | null>(null);
   const { usuario } = useAuth();
   const esGerente = usuario?.rol === 'gerente';
 
@@ -27,7 +31,12 @@ const CategoryList: React.FC = () => {
   const cargarDatos = async () => {
     setLoading(true);
     try {
-      const response = await categoryService.obtenerCategorias();
+      let activaParam: boolean | undefined;
+      if (activoFiltro === 'active') activaParam = true;
+      else if (activoFiltro === 'inactive') activaParam = false;
+      // else 'all', undefined
+
+      const response = await categoryService.obtenerCategorias(activaParam, busqueda);
       setCategorias(response.categorias);
     } catch (error) {
       console.error('Error al cargar categorías:', error);
@@ -39,6 +48,18 @@ const CategoryList: React.FC = () => {
   useEffect(() => {
     cargarDatos();
   }, []);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      cargarDatos();
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [busqueda]);
+
+  useEffect(() => {
+    cargarDatos();
+  }, [activoFiltro]);
 
   // Handle categoriaId parameter
   useEffect(() => {
@@ -66,16 +87,38 @@ const CategoryList: React.FC = () => {
     setShowForm(true);
   };
 
-  const handleEliminar = async () => {
-    if (!categoriaEliminar) return;
+  const handleDesactivar = async () => {
+    if (!categoriaDesactivar) return;
     
     try {
-      await categoryService.eliminarCategoria(categoriaEliminar.id);
+      await categoryService.eliminarCategoria(categoriaDesactivar.id);
       cargarDatos();
-      setShowDeleteConfirm(false);
-      setCategoriaEliminar(null);
+      setShowDesactivarConfirm(false);
+      setCategoriaDesactivar(null);
     } catch (error: any) {
-      alert(error.response?.data?.mensaje || 'Error al eliminar categoría');
+      alert(error.response?.data?.mensaje || 'Error al desactivar categoría');
+    }
+  };
+
+  const handleActivar = async (categoria: Categoria) => {
+    try {
+      await categoryService.actualizarCategoria(categoria.id, { activa: true });
+      cargarDatos();
+    } catch (error: any) {
+      alert(error.response?.data?.mensaje || 'Error al activar categoría');
+    }
+  };
+
+  const handleEliminarHard = async () => {
+    if (!categoriaEliminarHard) return;
+    
+    try {
+      await categoryService.eliminarCategoriaHard(categoriaEliminarHard.id);
+      cargarDatos();
+      setShowEliminarHardConfirm(false);
+      setCategoriaEliminarHard(null);
+    } catch (error: any) {
+      alert(error.response?.data?.mensaje || 'Error al eliminar categoría permanentemente');
     }
   };
 
@@ -92,6 +135,28 @@ const CategoryList: React.FC = () => {
             <i className='bx bx-plus'></i> Nueva Categoría
           </button>
         )}
+      </div>
+
+      <div className="filters">
+        <input
+          type="text"
+          placeholder="Buscar por ID, nombre, descripción..."
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          className="search-input"
+        />
+        <div className="select-wrapper">
+          <select
+            value={activoFiltro}
+            onChange={(e) => setActivoFiltro(e.target.value as 'all' | 'active' | 'inactive')}
+            className="filter-select"
+          >
+            <option value="all">Todas las categorías</option>
+            <option value="active">Activas</option>
+            <option value="inactive">Inactivas</option>
+          </select>
+          <i className="bx bx-chevron-down select-icon"></i>
+        </div>
       </div>
 
       {loading ? (
@@ -138,16 +203,29 @@ const CategoryList: React.FC = () => {
                           >
                             <i className='bx bx-edit'></i>
                           </button>
-                          <button 
-                            onClick={() => {
-                              setCategoriaEliminar(categoria);
-                              setShowDeleteConfirm(true);
-                            }}
-                            className="btn-icon btn-delete"
-                            title="Eliminar categoría"
-                          >
-                            <i className='bx bx-trash'></i>
-                          </button>
+                          {categoria.activa ? (
+                            <button 
+                              onClick={() => {
+                                setCategoriaDesactivar(categoria);
+                                setShowDesactivarConfirm(true);
+                              }}
+                              className="btn-icon btn-delete"
+                              title="Desactivar categoría"
+                            >
+                              <i className='bx bx-x'></i>
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={() => {
+                                setCategoriaEliminarHard(categoria);
+                                setShowEliminarHardConfirm(true);
+                              }}
+                              className="btn-icon btn-hard-delete"
+                              title="Eliminar permanentemente"
+                            >
+                              <i className='bx bx-trash-alt'></i>
+                            </button>
+                          )}
                         </div>
                       </td>
                     )}
@@ -175,33 +253,75 @@ const CategoryList: React.FC = () => {
             setCategoriaEditando(null);
           }}
           onSuccess={handleFormSuccess}
+          onDeactivate={() => {
+            if (categoriaEditando?.activa) {
+              // Desactivar categoría activa
+              setShowForm(false);
+              setCategoriaEditando(null);
+              setCategoriaDesactivar(categoriaEditando);
+              setShowDesactivarConfirm(true);
+            } else {
+              // Activar categoría inactiva
+              handleActivar(categoriaEditando!);
+              setShowForm(false);
+              setCategoriaEditando(null);
+            }
+          }}
         />
       </Modal>
 
       <Modal
-        isOpen={showDeleteConfirm}
+        isOpen={showDesactivarConfirm}
         onClose={() => {
-          setShowDeleteConfirm(false);
-          setCategoriaEliminar(null);
+          setShowDesactivarConfirm(false);
+          setCategoriaDesactivar(null);
         }}
-        title="Confirmar Eliminación"
+        title="Confirmar Desactivación"
         size="small"
       >
         <p>
-          ¿Estás seguro de que deseas eliminar la categoría <strong> {categoriaEliminar?.nombre}</strong>?
+          ¿Estás seguro de que deseas desactivar la categoría <strong> {categoriaDesactivar?.nombre}</strong>?
         </p>
         <p className="warning-text">
           Esta acción marcará la categoría como inactiva pero no eliminará los productos asociados.
         </p>
         <div className="form-actions">
           <button onClick={() => {
-            setShowDeleteConfirm(false);
-            setCategoriaEliminar(null);
+            setShowDesactivarConfirm(false);
+            setCategoriaDesactivar(null);
           }} className="btn-secondary">
             Cancelar
           </button>
-          <button onClick={handleEliminar} className="btn-primary" style={{ backgroundColor: '#dc3545' }}>
-            Eliminar
+          <button onClick={handleDesactivar} className="btn-primary" style={{ backgroundColor: '#dc3545' }}>
+            Desactivar
+          </button>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={showEliminarHardConfirm}
+        onClose={() => {
+          setShowEliminarHardConfirm(false);
+          setCategoriaEliminarHard(null);
+        }}
+        title="Confirmar Eliminación Permanente"
+        size="small"
+      >
+        <p>
+          ¿Estás seguro de que deseas eliminar permanentemente la categoría <strong>{categoriaEliminarHard?.nombre}</strong>?
+        </p>
+        <p className="warning-text">
+          Esta acción no se puede deshacer. La categoría será eliminada completamente de la base de datos.
+        </p>
+        <div className="form-actions">
+          <button onClick={() => {
+            setShowEliminarHardConfirm(false);
+            setCategoriaEliminarHard(null);
+          }} className="btn-secondary">
+            Cancelar
+          </button>
+          <button onClick={handleEliminarHard} className="btn-primary" style={{ backgroundColor: '#dc3545' }}>
+            Eliminar Permanentemente
           </button>
         </div>
       </Modal>

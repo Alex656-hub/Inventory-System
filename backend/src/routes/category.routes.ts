@@ -4,7 +4,8 @@ import {
   obtenerCategoriaPorId,
   crearCategoria,
   actualizarCategoria,
-  eliminarCategoria
+  eliminarCategoria,
+  eliminarCategoriaHard
 } from '../controllers/category.controller';
 import { verificarToken, gerenteOEmpleado, soloGerente } from '../middleware/auth.middleware';
 
@@ -21,6 +22,7 @@ router.get('/:id', gerenteOEmpleado, obtenerCategoriaPorId);
 router.post('/', soloGerente, crearCategoria);
 router.put('/:id', soloGerente, actualizarCategoria);
 router.delete('/:id', soloGerente, eliminarCategoria);
+router.delete('/hard/:id', soloGerente, eliminarCategoriaHard);
 
 export default router;
 
