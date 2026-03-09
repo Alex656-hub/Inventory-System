@@ -1,0 +1,376 @@
+/* src/components/Ajustes.css - Estilos para la página de Ajustes */
+
+:root {
+  --color-sky-50: #f0f9ff;
+  --color-sky-100: #dff2fe;
+  --color-sky-200: #b8e6fe;
+  --color-sky-300: #74d4ff;
+  --color-sky-400: #00bcff;
+  --color-sky-500: #00a6f4;
+  --color-sky-600: #0084d1;
+  --color-sky-700: #0069a8;
+  --color-sky-800: #00598a;
+  --color-sky-900: #024a70;
+  --color-sky-950: #052f4a;
+  --primary-color: var(--color-sky-500);
+  --primary-color-light: var(--color-sky-100);
+  --sidebar-color: #FFF;
+  --body-color: var(--color-sky-50);
+  --text-color: #707070;
+}
+
+.ajustes-container {
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.ajustes-header {
+  margin-bottom: 30px;
+}
+
+.ajustes-header h1 {
+  color: var(--primary-color);
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.ajustes-header p {
+  color: var(--text-color);
+  font-size: 16px;
+  opacity: 0.8;
+}
+
+.ajustes-content {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.settings-section {
+  background: var(--sidebar-color);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: var(--tran-05);
+}
+
+.settings-section:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.settings-section h2 {
+  color: var(--primary-color);
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-section h2::before {
+  content: '⚙️';
+  font-size: 24px;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  color: var(--text-color);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.form-input {
+  padding: 12px 16px;
+  border: 2px solid var(--primary-color-light);
+  border-radius: 8px;
+  font-size: 15px;
+  transition: var(--tran-03);
+  background: var(--body-color);
+  color: var(--text-color);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+}
+
+.form-input::placeholder {
+  color: var(--text-color);
+  opacity: 0.5;
+}
+
+/* Estilos para el upload de logo */
+.logo-upload-container {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.logo-preview {
+  width: 120px;
+  height: 120px;
+  border: 2px dashed var(--primary-color-light);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  background: var(--body-color);
+}
+
+.preview-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.logo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.btn-remove-image {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #7f1d1d; /* Rojo oscuro temático */
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: var(--tran-03);
+  z-index: 10;
+}
+
+.btn-remove-image:hover {
+  background: #991b1b;
+  transform: scale(1.1);
+}
+
+.upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text-color);
+  opacity: 0.5;
+}
+
+.upload-placeholder i {
+  font-size: 32px;
+}
+
+.upload-placeholder span {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.upload-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.file-input {
+  display: none;
+}
+
+.btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--tran-03);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--primary-color);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--primary-color-light);
+  color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+}
+
+.btn-secondary {
+  background: var(--primary-color-light);
+  color: var(--primary-color);
+  border: 2px solid var(--primary-color-light);
+}
+
+.btn-secondary:hover {
+  background: var(--primary-color);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+}
+
+.upload-help {
+  color: var(--text-color);
+  font-size: 12px;
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.danger-zone {
+  border: 2px solid #ef4444;
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.danger-zone h2::before {
+  content: '⚠️';
+}
+
+.danger-description {
+  color: #ef4444;
+  font-weight: 500;
+  margin-bottom: 20px;
+  padding: 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 6px;
+  border-left: 4px solid #ef4444;
+}
+
+.danger-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.btn-danger {
+  background: #7f1d1d; /* Rojo oscuro temático */
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #991b1b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(127, 29, 29, 0.3);
+}
+
+.btn-warning {
+  background: #92400e; /* Naranja oscuro temático */
+  color: white;
+}
+
+.btn-warning:hover {
+  background: #b45309;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(146, 64, 14, 0.3);
+}
+
+/* Modo oscuro */
+body.dark {
+  --primary-color: var(--color-sky-600);
+  --sidebar-color: var(--color-sky-900);
+  --body-color: var(--color-sky-950);
+  --text-color: var(--color-sky-100);
+  --primary-color-light: var(--color-sky-800);
+}
+
+body.dark .ajustes-container {
+  color: var(--text-color);
+}
+
+body.dark .settings-section {
+  background: var(--sidebar-color);
+  border: 1px solid var(--primary-color-light);
+}
+
+body.dark .form-input {
+  background: var(--sidebar-color);
+  border-color: var(--primary-color-light);
+  color: var(--text-color);
+}
+
+body.dark .form-input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
+}
+
+body.dark .logo-preview {
+  background: var(--sidebar-color);
+  border-color: var(--primary-color-light);
+}
+
+body.dark .upload-placeholder {
+  color: var(--text-color);
+  opacity: 0.4;
+}
+
+body.dark .danger-zone {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: #ef4444;
+}
+
+body.dark .danger-description {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .ajustes-container {
+    padding: 16px;
+  }
+  
+  .settings-section {
+    padding: 20px;
+  }
+  
+  .logo-upload-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  
+  .logo-preview {
+    width: 150px;
+    height: 150px;
+  }
+  
+  .danger-actions {
+    flex-direction: column;
+  }
+  
+  .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

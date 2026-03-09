@@ -1,4 +1,4 @@
-// src/components/Layout.tsx (versión final corregida - 17 nov 2025)
+// src/components/Layout.tsx - Nuevo diseño moderno de sidebar
 
 import React, { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -6,7 +6,9 @@ import { authService } from '../services/auth.service';
 import { searchService } from '../services/search.service';
 import { alertService } from '../services/alert.service';
 import { GlobalSearchResponse, Alert } from '../types';
+import Ajustes from './Ajustes';
 import './Layout.css';
+import './Ajustes.css';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -17,126 +19,45 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Función auxiliar para saber si una ruta está activa
-  const isActive = (path: string) => location.pathname === path;
-
+  // Estado para el sidebar
   const [sidebarClosed, setSidebarClosed] = useState(false);
-  const [showLogoutMenu, setShowLogoutMenu] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Estado para búsqueda
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<GlobalSearchResponse | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
 
-  // Alert state
+  // Estado para alertas
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [alertCount, setAlertCount] = useState(0);
   const [showAlertDropdown, setShowAlertDropdown] = useState(false);
 
-  // Ref para debounce
+  // Refs
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Refs for UX features
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Responsive: cerrar sidebar en pantallas pequeñas
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth <= 768) {
-        setSidebarClosed(true);
-      } else {
-        setSidebarClosed(false);
-      }
-    };
+  // Función auxiliar para saber si una ruta está activa
+  const isActive = (path: string) => location.pathname === path;
 
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  // Toggle sidebar
+  const toggleSidebar = () => {
+    setSidebarClosed(!sidebarClosed);
+  };
 
-  // Cleanup debounce timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Close dropdown on click outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        searchDropdownRef.current &&
-        !searchDropdownRef.current.contains(event.target as Node) &&
-        searchInputRef.current &&
-        !searchInputRef.current.contains(event.target as Node)
-      ) {
-        setShowResults(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  // Close dropdown on route change
-  useEffect(() => {
-    closeSearch();
-    loadAlerts();
-  }, [location.pathname]);
-
-  // Load alerts on component mount and periodically
-  useEffect(() => {
-    loadAlerts();
-    const interval = setInterval(loadAlerts, 30000); // Refresh every 30 seconds
-    return () => clearInterval(interval);
-  }, []);
-
-  const loadAlerts = async () => {
-    try {
-      const response = await alertService.getAlerts({
-        resolved: false,
-        limite: 10
-      });
-      setAlerts(response.alertas);
-      setAlertCount(response.alertas.length);
-    } catch (error) {
-      console.error('Error loading alerts:', error);
+  // Toggle dark mode
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+    if (!darkMode) {
+      document.body.classList.add('dark');
+    } else {
+      document.body.classList.remove('dark');
     }
   };
 
-  // Keyboard shortcut to focus search bar
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Ctrl+K or / to focus search
-      if ((event.ctrlKey && event.key === 'k') || event.key === '/') {
-        event.preventDefault();
-        if (searchInputRef.current) {
-          searchInputRef.current.focus();
-        }
-      }
-      // Escape to close dropdown
-      if (event.key === 'Escape') {
-        closeSearch();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, []);
-
-  const closeSearch = () => {
-    setSearchTerm('');
-    setSearchResults(null);
-    setShowResults(false);
-  };
-  const toggleSidebar = () => setSidebarClosed(!sidebarClosed);
-
+  // Logout functions
   const handleLogout = async () => {
     await authService.logout();
     navigate('/login');
@@ -149,384 +70,230 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     }
   };
 
-  // Función para realizar búsqueda global
-  const performSearch = async (query: string) => {
-    if (query.trim().length === 0) {
-      setSearchResults(null);
-      setShowResults(false);
-      return;
-    }
-
-    setSearchLoading(true);
-    try {
-      const results = await searchService.busquedaGlobal(query.trim());
-      setSearchResults(results);
-      setShowResults(true);
-    } catch (error) {
-      console.error('Error en búsqueda global:', error);
-      setSearchResults(null);
-      setShowResults(false);
-    } finally {
-      setSearchLoading(false);
-    }
-  };
-
-  // Handler para cambios en el input de búsqueda
-  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchTerm(value);
-
-    // Limpiar timeout anterior
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
-
-    // Si el valor está vacío, limpiar resultados inmediatamente
-    if (value.trim().length === 0) {
-      setSearchResults(null);
-      setShowResults(false);
-      setSearchLoading(false);
-      return;
-    }
-
-    // Establecer nuevo timeout para debounce
-    debounceTimeoutRef.current = setTimeout(() => {
-      performSearch(value);
-    }, 300); // 300ms debounce
-  };
-
   const esGerente = usuario?.rol === 'gerente';
   const esEmpleado = usuario?.rol === 'empleado';
 
-  // Componentes reutilizables para búsqueda
-  const SearchResultsDropdown: React.FC = () => (
-    <>
-      {showResults && searchResults && (
-        <div ref={searchDropdownRef} className="search-dropdown">
-          <div className="search-dropdown-inner">
-            {/* Productos */}
-            {searchResults.productos.length > 0 && (
-              <div className="search-section">
-                <h4>Productos</h4>
-                <ul>
-                  {searchResults.productos.slice(0, 5).map((producto) => (
-                    <li key={producto.id}>
-                      <Link to={`/productos?focusId=${producto.id}`} onClick={() => setShowResults(false)}>
-                        <strong>{producto.nombre}</strong> ({producto.codigo})
-                        {producto.categoria && <span> - {producto.categoria.nombre}</span>}
-                        <br />
-                        <small>{producto.resumen}</small>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Ventas */}
-            {searchResults.ventas.length > 0 && (
-              <div className="search-section">
-                <h4>Ventas</h4>
-                <ul>
-                  {searchResults.ventas.slice(0, 5).map((venta) => (
-                    <li key={venta.id}>
-                      <Link to={`/ventas?ventaId=${venta.id}`} onClick={() => setShowResults(false)}>
-                        <strong>Venta #{venta.numero}</strong> - {venta.fecha}
-                        <br />
-                        <small>{venta.resumen}</small>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Categorías */}
-            {searchResults.categorias.length > 0 && (
-              <div className="search-section">
-                <h4>Categorías</h4>
-                <ul>
-                  {searchResults.categorias.slice(0, 5).map((categoria) => (
-                    <li key={categoria.id}>
-                      <Link to={`/categorias?categoriaId=${categoria.id}`} onClick={() => setShowResults(false)}>
-                        <strong>{categoria.nombre}</strong>
-                        <br />
-                        <small>{categoria.resumen}</small>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Proveedores */}
-            {searchResults.proveedores.length > 0 && (
-              <div className="search-section">
-                <h4>Proveedores</h4>
-                <ul>
-                  {searchResults.proveedores.slice(0, 5).map((proveedor) => (
-                    <li key={proveedor.id}>
-                      <Link to={`/proveedores?proveedorId=${proveedor.id}`} onClick={() => setShowResults(false)}>
-                        <strong>{proveedor.nombre}</strong> - {proveedor.ruc_dni}
-                        <br />
-                        <small>{proveedor.resumen}</small>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Mensaje si no hay resultados */}
-            {searchResults.productos.length === 0 &&
-             searchResults.ventas.length === 0 &&
-             searchResults.categorias.length === 0 &&
-             searchResults.proveedores.length === 0 && (
-              <div className="no-results">
-                No se encontraron resultados para "{searchTerm}"
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-      {/* Indicador de carga */}
-      {searchLoading && (
-        <div className="search-loading">
-          <i className='bx bx-loader-alt bx-spin'></i> Buscando...
-        </div>
-      )}
-    </>
-  );
-
-  // Componente para dropdown de alertas
-  const AlertDropdown: React.FC = () => (
-    <>
-      {showAlertDropdown && (
-        <div className="alert-dropdown">
-          <div className="alert-dropdown-inner">
-            <div className="alert-header">
-              <h4>Alertas Recientes</h4>
-              <Link to="/alertas" onClick={() => setShowAlertDropdown(false)}>
-                Ver todas
-              </Link>
-            </div>
-
-            {alerts.length > 0 ? (
-              <ul>
-                {alerts.slice(0, 5).map((alert) => (
-                  <li key={alert.id} className={`alert-item ${alert.severity}`}>
-                    <div className="alert-content">
-                      <strong>{alert.product?.nombre || 'Producto'}</strong>
-                      <p>{alert.message}</p>
-                      <small>{new Date(alert.created_at).toLocaleDateString()}</small>
-                    </div>
-                    <div className="alert-actions">
-                      {esGerente && !alert.resolved && (
-                        <button
-                          className="btn-sm btn-success"
-                          onClick={async (e) => {
-                            e.preventDefault();
-                            await alertService.resolveAlert(alert.id);
-                            loadAlerts();
-                          }}
-                        >
-                          Resolver
-                        </button>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="no-alerts">
-                No hay alertas activas
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </>
-  );
-
   return (
-    <div className="layout">
+    <div className={`layout ${darkMode ? 'dark' : ''}`}>
       {/* ==================== SIDEBAR ==================== */}
-      <div className={`sidebar ${sidebarClosed ? 'close' : ''}`}>
-        <Link to="/" className="logo">
-          <i className='bx bx-package'></i>
-          <div className="logo-name">
-            <span className="logo-part">Inv</span>
-            <span className="logo-part cred">Cred</span>
+      <nav className={`sidebar ${sidebarClosed ? 'close' : ''}`}>
+        <header>
+          <div className="image-text">
+            <span className="image">
+              <i className='bx bx-package'></i>
+            </span>
+            <div className="text logo-text">
+              <span className="name">InvCred</span>
+            </div>
           </div>
-        </Link>
+          
+          <button 
+            onClick={toggleSidebar}
+            style={{
+              position: 'absolute',
+              top: '50%',
+              right: sidebarClosed ? '-25px' : '5px',
+              transform: 'translateY(-50%)',
+              width: '35px',
+              height: '35px',
+              backgroundColor: '#00a6f4', /* sky-500 */
+              color: 'white',
+              border: '2px solid white',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '18px',
+              zIndex: 1000,
+              boxShadow: 'none',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            <i className='bx bx-chevron-right'></i>
+          </button>
+        </header>
 
-        <ul className="side-menu">
-          <li className={isActive('/') ? 'active' : ''}>
-            <Link to="/">
-              <i className='bx bxs-dashboard'></i> Dashboard
-            </Link>
-          </li>
-          <li className={isActive('/productos') ? 'active' : ''}>
-            <Link to="/productos">
-              <i className='bx bx-store-alt'></i> Productos
-            </Link>
-          </li>
-          {esGerente && (
-            <li className={isActive('/categorias') ? 'active' : ''}>
-              <Link to="/categorias">
-                <i className='bx bx-analyse'></i> Categorías
-              </Link>
+        <div className="menu-bar">
+          <div className="menu">
+            {/* Search Box */}
+            <li className="search-box">
+              <i className='bx bx-search icon'></i>
+              <input
+                type="text"
+                placeholder="Buscar..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                ref={searchInputRef}
+              />
             </li>
-          )}
-          {esGerente && (
-            <li className={isActive('/proveedores') ? 'active' : ''}>
-              <Link to="/proveedores">
-                <i className='bx bx-message-square-dots'></i> Proveedores
-              </Link>
-            </li>
-          )}
-          {(esGerente || esEmpleado) && (
-            <li className={isActive('/ventas') ? 'active' : ''}>
-              <Link to="/ventas">
-                <i className='bx bx-cart-alt'></i> Ventas
-              </Link>
-            </li>
-          )}
-          {(esGerente || esEmpleado) && (
-            <li className={isActive('/ventas/resumen') ? 'active' : ''}>
-              <Link to="/ventas/resumen">
-                <i className='bx bx-bar-chart-alt'></i> Resumen Ventas
-              </Link>
-            </li>
-          )}
-          {esGerente && (
-            <li className={isActive('/importar') ? 'active' : ''}>
-              <Link to="/importar">
-                <i className='bx bx-upload'></i> Importar Excel
-              </Link>
-            </li>
-          )}
-          {esGerente && (
-            <li className={isActive('/usuarios') ? 'active' : ''}>
-              <Link to="/usuarios">
-                <i className='bx bx-group'></i> Usuarios
-              </Link>
-            </li>
-          )}
-          <li className={isActive('/configuraciones') ? 'active' : ''}>
-            <Link to="/configuraciones">
-              <i className='bx bx-cog'></i> Configuraciones
-            </Link>
-          </li>
-        </ul>
-
-        <ul className="side-menu">
-          <li className={`logout-menu ${showLogoutMenu ? 'show' : ''}`}>
-            <a href="#" className="logout" onClick={(e) => { e.preventDefault(); setShowLogoutMenu(!showLogoutMenu); }}>
-              <i className='bx bx-log-out-circle'></i>
-              Salir
-              <i className={`bx bx-chevron-${showLogoutMenu ? 'up' : 'down'} arrow`}></i>
-            </a>
-            <ul className="logout-submenu">
-              <li>
-                <a href="#" onClick={(e) => { e.preventDefault(); handleLogout(); }}>
-                  <i className='bx bx-log-out'></i>
-                  Cerrar sesión actual
-                </a>
+            
+            {/* List of menu links */}
+            <ul className="menu-links">
+              <li className={`nav-link ${isActive('/') ? 'active' : ''}`}>
+                <Link to="/">
+                  <i className='bx bxs-dashboard icon'></i>
+                  <span className="text nav-text">Dashboard</span>
+                </Link>
               </li>
-              <li>
-                <a href="#" onClick={(e) => { e.preventDefault(); handleLogoutAll(); }}>
-                  <i className='bx bx-log-out-circle'></i>
-                  Cerrar todas las sesiones
-                </a>
+              
+              {/* Catálogo Productos */}
+              <li className={`nav-link ${isActive('/productos') ? 'active' : ''}`}>
+                <Link to="/productos">
+                  <i className='bx bx-package icon'></i>
+                  <span className="text nav-text">Catálogo Productos</span>
+                </Link>
               </li>
+              
+              {/* Operaciones Stock */}
+              <li className={`nav-link ${isActive('/operaciones-stock') ? 'active' : ''}`}>
+                <Link to="/operaciones-stock">
+                  <i className='bx bx-transfer icon'></i>
+                  <span className="text nav-text">Operaciones Stock</span>
+                </Link>
+              </li>
+              
+              {/* Historial Kardex */}
+              <li className={`nav-link ${isActive('/historial-kardex') ? 'active' : ''}`}>
+                <Link to="/historial-kardex">
+                  <i className='bx bx-history icon'></i>
+                  <span className="text nav-text">Historial Kardex</span>
+                </Link>
+              </li>
+              
+              {/* Reporte Inventario */}
+              <li className={`nav-link ${isActive('/reporte-inventario') ? 'active' : ''}`}>
+                <Link to="/reporte-inventario">
+                  <i className='bx bx-bar-chart-alt-2 icon'></i>
+                  <span className="text nav-text">Reporte Inventario</span>
+                </Link>
+              </li>
+              
+              {/* Alertas Stock */}
+              <li className={`nav-link ${isActive('/alertas-stock') ? 'active' : ''}`}>
+                <Link to="/alertas-stock">
+                  <i className='bx bx-bell icon'></i>
+                  <span className="text nav-text">Alertas Stock</span>
+                </Link>
+              </li>
+              
+              {/* Sedes y Almacenes */}
+              {esGerente && (
+                <li className={`nav-link ${isActive('/sedes-almacenes') ? 'active' : ''}`}>
+                  <Link to="/sedes-almacenes">
+                    <i className='bx bx-building icon'></i>
+                    <span className="text nav-text">Sedes y Almacenes</span>
+                  </Link>
+                </li>
+              )}
+              
+              {/* Clientes */}
+              {(esGerente || esEmpleado) && (
+                <li className={`nav-link ${isActive('/clientes') ? 'active' : ''}`}>
+                  <Link to="/clientes">
+                    <i className='bx bx-user icon'></i>
+                    <span className="text nav-text">Clientes</span>
+                  </Link>
+                </li>
+              )}
+              
+              {/* Proveedores */}
+              {esGerente && (
+                <li className={`nav-link ${isActive('/proveedores') ? 'active' : ''}`}>
+                  <Link to="/proveedores">
+                    <i className='bx bx-building-house icon'></i>
+                    <span className="text nav-text">Proveedores</span>
+                  </Link>
+                </li>
+              )}
+              
+              {/* Personal */}
+              {esGerente && (
+                <li className={`nav-link ${isActive('/personal') ? 'active' : ''}`}>
+                  <Link to="/personal">
+                    <i className='bx bx-group icon'></i>
+                    <span className="text nav-text">Personal</span>
+                  </Link>
+                </li>
+              )}
+              
+              {/* Categorías */}
+              {esGerente && (
+                <li className={`nav-link ${isActive('/categorias') ? 'active' : ''}`}>
+                  <Link to="/categorias">
+                    <i className='bx bx-category icon'></i>
+                    <span className="text nav-text">Categorías</span>
+                  </Link>
+                </li>
+              )}
+              
+              {/* Unidades */}
+              {esGerente && (
+                <li className={`nav-link ${isActive('/unidades') ? 'active' : ''}`}>
+                  <Link to="/unidades">
+                    <i className='bx bx-ruler icon'></i>
+                    <span className="text nav-text">Unidades</span>
+                  </Link>
+                </li>
+              )}
+              
+              {/* Usuarios y Accesos */}
+              {esGerente && (
+                <li className={`nav-link ${isActive('/usuarios') ? 'active' : ''}`}>
+                  <Link to="/usuarios">
+                    <i className='bx bx-shield icon'></i>
+                    <span className="text nav-text">Usuarios y Accesos</span>
+                  </Link>
+                </li>
+              )}
+              
+              {/* Ajustes */}
+              {esGerente && (
+                <li className={`nav-link ${isActive('/ajustes') ? 'active' : ''}`}>
+                  <Link to="/ajustes">
+                    <i className='bx bx-cog icon'></i>
+                    <span className="text nav-text">Ajustes</span>
+                  </Link>
+                </li>
+              )}
             </ul>
-          </li>
-        </ul>
-      </div>
+          </div>
+
+          {/* Bottom content of the sidebar */}
+          <div className="bottom-content">
+            <li>
+              <a href="#" onClick={(e) => { e.preventDefault(); handleLogout(); }}>
+                <i className='bx bx-log-out icon'></i>
+                <span className="text nav-text">Cerrar sesión</span>
+              </a>
+            </li>
+            {/* Dark mode toggle switch */}
+            <li className="mode">
+              <div className="sun-moon">
+                <i className='bx bx-moon icon moon'></i>
+                <i className='bx bx-sun icon sun'></i>
+              </div>
+              <span className="mode-text text">{darkMode ? 'Light mode' : 'Dark mode'}</span>
+              <div className="toggle-switch" onClick={toggleDarkMode}>
+                <span className="switch"></span>
+              </div>
+            </li>
+          </div>
+        </div>
+      </nav>
 
       {/* ==================== MAIN CONTENT ==================== */}
-      <div className="content">
-        {/* ==================== NAVBAR ==================== */}
+      <section className="content">
+        {/* Navbar */}
         <nav>
-          {/* Menú hamburguesa */}
-          <i className='bx bx-menu' onClick={toggleSidebar}></i>
-
-          {/* Buscador: solo mostrar cuando NO hay búsqueda activa */}
-          {!searchTerm.trim() && (
-            <form action="#" onSubmit={(e) => e.preventDefault()}>
-              <div className="form-input">
-                <input
-                  ref={searchInputRef}
-                  type="search"
-                  placeholder="Buscar..."
-                  value={searchTerm}
-                  onChange={handleSearchInputChange}
-                />
-                <button
-                  className="search-btn"
-                  type="button"
-                >
-                  <i className='bx bx-search'></i>
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* Iconos a la derecha */}
-          <div className="nav-right">
-            <a href="#" className="notif" onClick={(e) => { e.preventDefault(); setShowAlertDropdown(!showAlertDropdown); }}>
-              <i className='bx bx-bell'></i>
-              {alertCount > 0 && <span className="count">{alertCount}</span>}
-            </a>
-            <a href="#" className="notif">
-              <i className='bx bx-refresh'></i>
-            </a>
-            <a href="#" className="profile">
-              <img src="/images/profile.png" alt="Perfil" />
-            </a>
-          </div>
+          {/* Navbar vacía - sin iconos */}
         </nav>
 
-        {/* Overlay oscuro y form flotante cuando hay búsqueda activa */}
-        {searchTerm.trim().length > 0 && (
-          <>
-            {/* Overlay que oscurece TODO */}
-            <div className="search-overlay" onClick={closeSearch} />
-            {/* Botón X fuera del contenedor principal */}
-            <button
-              className="search-close-btn"
-              type="button"
-              onClick={closeSearch}
-            >
-              <i className='bx bx-x'></i>
-            </button>
-            {/* Form flotante con input y dropdown iluminados */}
-            <div className="search-form-floating">
-              <form action="#" onSubmit={(e) => e.preventDefault()}>
-                <div className="form-input">
-                  <input
-                    ref={searchInputRef}
-                    type="search"
-                    placeholder="Buscar..."
-                    value={searchTerm}
-                    onChange={handleSearchInputChange}
-                  />
-                </div>
-                <SearchResultsDropdown />
-              </form>
-            </div>
-          </>
-        )}
-
-        {/* Alert Dropdown */}
-        <AlertDropdown />
-
-        {/* ==================== CONTENIDO PRINCIPAL ==================== */}
+        {/* Main Content */}
         <main>{children}</main>
-      </div>
+      </section>
     </div>
   );
-} // Added the missing closing brace for the Layout function
+};
 
-  export default Layout;
+export default Layout;

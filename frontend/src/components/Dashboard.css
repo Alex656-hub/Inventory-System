@@ -18,7 +18,7 @@
 }
 
 .stat-card {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+  background: linear-gradient(135deg, var(--color-sky-500) 0%, var(--color-sky-700) 100%);
   color: white;
   padding: 25px;
   border-radius: 10px;
@@ -26,7 +26,7 @@
 }
 
 .stat-card.warning {
-  background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%);
+  background: linear-gradient(135deg, var(--color-sky-700) 0%, var(--color-sky-500) 100%);
 }
 
 .stat-card h3 {
@@ -57,8 +57,8 @@
 }
 
 .alerta-item {
-  background-color: var(--color-primary-lighter);
-  border: 1px solid var(--color-border);
+  background-color: var(--color-sky-50);
+  border: 1px solid var(--color-sky-200);
   border-radius: 8px;
   padding: 15px;
   display: flex;
@@ -67,11 +67,11 @@
 }
 
 .alerta-item strong {
-  color: var(--color-primary-dark);
+  color: var(--color-sky-800);
 }
 
 .codigo {
-  color: var(--color-text-muted);
+  color: var(--color-sky-600);
   font-size: 14px;
   margin-left: 10px;
 }
@@ -79,7 +79,7 @@
 .stock-info {
   display: flex;
   gap: 20px;
-  color: var(--color-primary);
+  color: var(--color-sky-500);
   font-weight: 600;
 }
 

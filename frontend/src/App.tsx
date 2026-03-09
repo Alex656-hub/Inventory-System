@@ -1,25 +1,23 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider } from './contexts/ThemeContext';
 import Login from './components/Login';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import ProductList from './components/ProductList';
 import CategoryList from './components/CategoryList';
 import SupplierList from './components/SupplierList';
-import Settings from './components/Settings';
 import ImportSales from './components/ImportSales';
 import SalesList from './components/SalesList';
 import SalesSummaryPage from './components/SalesSummary';
 import ReportSelector from './components/ReportSelector';
+import Ajustes from './components/Ajustes';
 import PrivateRoute from './components/PrivateRoute';
 import { authService } from './services/auth.service';
 import './App.css';
 
 function App() {
   return (
-    <ThemeProvider>
-      <BrowserRouter>
+    <BrowserRouter>
         <Routes>
           <Route
             path="/login"
@@ -72,16 +70,6 @@ function App() {
             }
           />
           <Route
-            path="/configuraciones"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <Settings />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
-          <Route
             path="/importar"
             element={
               <PrivateRoute>
@@ -121,9 +109,18 @@ function App() {
               </PrivateRoute>
             }
           />
+          <Route
+            path="/ajustes"
+            element={
+              <PrivateRoute allowedRoles={['gerente']}>
+                <Layout>
+                  <Ajustes />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
         </Routes>
       </BrowserRouter>
-    </ThemeProvider>
   );
 }
 

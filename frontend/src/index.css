@@ -1,8 +1,21 @@
 :root {
+  /* Paleta de colores cian del login */
+  --color-cyan-50: #ecfeff;
+  --color-cyan-100: #cffafe;
+  --color-cyan-200: #a5f3fc;
+  --color-cyan-300: #67e8f9;
+  --color-cyan-400: #22d3ee;
+  --color-cyan-500: #06b6d4;
+  --color-cyan-600: #0891b2;
+  --color-cyan-700: #0e7490;
+  --color-cyan-800: #155e75;
+  --color-cyan-900: #164e63;
+  --color-cyan-950: #083344;
+
   /* Colores base del ejemplo */
   --light: #f6f6f9;
-  --primary: var(--color-primary);
-  --light-primary: var(--color-primary-light);
+  --primary: var(--color-cyan-500);
+  --light-primary: var(--color-cyan-300);
   --grey: #eee;
   --dark-grey: #AAAAAA;
   --dark: #363949;
@@ -19,13 +32,13 @@
   --color-text-light: #ffffff;
   
   /* Colores primarios y variantes */
-  --color-primary: #4a90e2;
-  --color-primary-dark: #357abd;
-  --color-primary-light: #6ba3e5;
-  --color-primary-lighter: #e8f2fd;
+  --color-primary: var(--color-cyan-500);
+  --color-primary-dark: var(--color-cyan-700);
+  --color-primary-light: var(--color-cyan-300);
+  --color-primary-lighter: var(--color-cyan-100);
   
   /* Colores de fondo */
-  --color-background: #f5f5f5;
+  --color-background: var(--color-cyan-100);
   --color-surface: #ffffff;
   
   /* Bordes */

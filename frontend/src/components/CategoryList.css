@@ -1,3 +1,25 @@
+:root {
+  --color-sky-50: #f0f9ff;
+  --color-sky-100: #dff2fe;
+  --color-sky-200: #b8e6fe;
+  --color-sky-300: #74d4ff;
+  --color-sky-400: #00bcff;
+  --color-sky-500: #00a6f4;
+  --color-sky-600: #0084d1;
+  --color-sky-700: #0069a8;
+  --color-sky-800: #00598a;
+  --color-sky-900: #024a70;
+  --color-sky-950: #052f4a;
+  --color-primary: var(--color-sky-500);
+  --color-primary-dark: var(--color-sky-700);
+  --color-primary-light: var(--color-sky-100);
+  --color-primary-lighter: var(--color-sky-50);
+  --color-surface: #FFF;
+  --color-border: #e5e7eb;
+  --color-text: #374151;
+  --color-text-muted: #9ca3af;
+}
+
 .category-list {
   background: var(--color-surface);
   border-radius: 10px;
