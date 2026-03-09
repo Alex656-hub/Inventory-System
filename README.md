@@ -1,6 +1,6 @@
 # Sistema de Gestión de Inventario - CREDISA
 
-Sistema web de gestión de inventario con capacidades de análisis financiero predictivo desarrollado para Comercial CREDISA en Bagua, Perú.
+Sistema web de gestión de inventario con capacidades de análisis financiero predictivo
 
 ## Stack Tecnológico
 
