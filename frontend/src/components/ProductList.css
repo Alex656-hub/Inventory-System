@@ -199,28 +199,45 @@
 }
 
 .btn-icon {
-  background: none;
-  border: none;
-  font-size: 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  padding: 8px;
+  border-radius: 6px;
   cursor: pointer;
-  padding: 5px 10px;
-  border-radius: 5px;
-  transition: all 0.3s;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
 }
 
 .btn-edit {
-  color: var(--color-primary);
+  color: var(--color-text);
 }
 
 .btn-edit:hover {
-  background-color: var(--color-primary-lighter);
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 166, 244, 0.2);
+}
+
+.btn-edit:hover i {
+  color: var(--color-primary-dark);
 }
 
 .btn-delete {
-  color: #dc3545;
+  color: var(--color-text);
 }
 
 .btn-delete:hover {
-  background-color: #f8d7da;
+  background: #fee2e2;
+  border-color: #fca5a5;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
+}
+
+.btn-delete:hover i {
+  color: #dc2626;
 }
 

@@ -1,0 +1,662 @@
+/* src/components/UserAccess.css - Estilos para la página de Usuarios y Accesos */
+
+:root {
+  --color-sky-50: #f0f9ff;
+  --color-sky-100: #dff2fe;
+  --color-sky-200: #b8e6fe;
+  --color-sky-300: #74d4ff;
+  --color-sky-400: #00bcff;
+  --color-sky-500: #00a6f4;
+  --color-sky-600: #0084d1;
+  --color-sky-700: #0069a8;
+  --color-sky-800: #00598a;
+  --color-sky-900: #024a70;
+  --color-sky-950: #052f4a;
+  --color-primary: var(--color-sky-500);
+  --color-primary-dark: var(--color-sky-700);
+  --color-primary-light: var(--color-sky-100);
+  --color-primary-lighter: var(--color-sky-50);
+  --color-surface: #FFF;
+  --color-border: #e5e7eb;
+  --color-text: #374151;
+}
+
+.user-access-container {
+  padding: 24px;
+  min-height: 100vh;
+}
+
+.user-access-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+}
+
+.user-access-header h1 {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--color-sky-800);
+  margin: 0 0 8px 0;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.new-user-btn {
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.new-user-btn:hover {
+  background: var(--color-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 166, 244, 0.15);
+}
+
+.new-user-btn i {
+  font-size: 18px;
+}
+
+.users-table-container {
+  background: var(--color-surface);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.users-table th {
+  background: var(--color-primary-lighter);
+  padding: 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-text);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.users-table td {
+  padding: 16px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 14px;
+}
+
+.users-table tr:hover {
+  background: var(--color-primary-lighter);
+}
+
+.username-cell {
+  font-weight: 500;
+  color: var(--color-sky-800);
+}
+
+.nombre-cell {
+  color: var(--color-text);
+}
+
+.rol-cell {
+  text-align: center;
+}
+
+.users-table th:nth-child(3) {
+  text-align: center;
+}
+
+.users-table th:nth-child(4) {
+  text-align: center;
+}
+
+.rol-tag {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-block;
+  border: 1px solid;
+}
+
+.rol-tag.admin {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary-dark);
+}
+
+.rol-tag.personalizado {
+  background: var(--color-sky-600);
+  color: white;
+  border-color: var(--color-sky-700);
+}
+
+.estado-cell {
+  text-align: center;
+}
+
+/* Switch Toggle */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: .4s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: var(--color-primary);
+}
+
+input:checked + .slider:before {
+  transform: translateX(24px);
+}
+
+.acciones-cell {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn i {
+  font-size: 16px;
+  color: var(--color-text);
+}
+
+.edit-btn:hover {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 166, 244, 0.2);
+}
+
+.edit-btn:hover i {
+  color: var(--color-primary-dark);
+}
+
+.delete-btn:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
+}
+
+.delete-btn:hover i {
+  color: #dc2626;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: var(--color-surface);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 780px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-sky-800);
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background: var(--color-primary-lighter);
+  color: var(--color-text);
+}
+
+.user-form {
+  padding: 24px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--color-text);
+}
+
+.form-group label i {
+  margin-right: 8px;
+  color: var(--color-primary);
+}
+
+.required {
+  color: #dc3545;
+  font-size: 12px;
+  margin-left: 8px;
+  font-weight: 400;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 166, 244, 0.1);
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.cancel-btn,
+.submit-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.cancel-btn {
+  background: var(--color-primary-lighter);
+  color: var(--color-text);
+}
+
+.cancel-btn:hover {
+  background: var(--color-border);
+}
+
+.submit-btn {
+  background: var(--color-primary);
+  color: white;
+}
+
+.submit-btn:hover {
+  background: var(--color-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 166, 244, 0.15);
+}
+
+/* Permissions Section Styles */
+.permissions-section {
+  margin: 24px 0;
+  padding: 20px;
+  background: var(--color-primary-lighter);
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+}
+
+.permissions-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.permissions-header i {
+  font-size: 20px;
+  color: var(--color-primary);
+}
+
+.permissions-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-sky-800);
+}
+
+.permissions-grid {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.permission-column {
+  flex: 1;
+  min-width: 0;
+}
+
+.permission-column h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-sky-700);
+  margin: 0 0 16px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.permission-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.permission-item:last-child {
+  border-bottom: none;
+}
+
+.permission-item span {
+  font-size: 14px;
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.global-config-section {
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+  margin-top: 16px;
+}
+
+.global-config-section .permission-item {
+  background: var(--color-surface);
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  font-weight: 600;
+}
+
+.global-config-section .permission-item span {
+  color: var(--color-sky-700);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .user-access-container {
+    padding: 16px;
+  }
+  
+  .user-access-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+  
+  .new-user-btn {
+    justify-content: center;
+  }
+  
+  .users-table-container {
+    overflow-x: auto;
+  }
+  
+  .users-table {
+    min-width: 600px;
+  }
+  
+  .modal-content {
+    width: 95%;
+    margin: 16px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .permissions-grid {
+    flex-direction: column;
+    gap: 24px;
+  }
+}
+
+/* Modo oscuro */
+body.dark .user-access-header h1 {
+  color: var(--color-sky-300);
+}
+
+body.dark .subtitle {
+  color: var(--color-sky-400);
+}
+
+body.dark .users-table-container {
+  background: var(--color-sky-900);
+}
+
+body.dark .users-table th {
+  background: var(--color-sky-800);
+  color: var(--color-sky-200);
+  border-bottom-color: var(--color-sky-700);
+}
+
+body.dark .users-table td {
+  border-bottom-color: var(--color-sky-800);
+  color: var(--color-sky-100);
+}
+
+body.dark .users-table tr:hover {
+  background: var(--color-sky-800);
+}
+
+body.dark .username-cell {
+  color: var(--color-sky-200);
+}
+
+body.dark .nombre-cell {
+  color: var(--color-sky-300);
+}
+
+body.dark .modal-content {
+  background: var(--color-sky-900);
+}
+
+body.dark .modal-header {
+  border-bottom-color: var(--color-sky-700);
+}
+
+body.dark .modal-header h2 {
+  color: var(--color-sky-200);
+}
+
+body.dark .close-btn {
+  color: var(--color-sky-400);
+}
+
+body.dark .close-btn:hover {
+  background: var(--color-sky-800);
+  color: var(--color-sky-200);
+}
+
+body.dark .form-group label {
+  color: var(--color-sky-300);
+}
+
+body.dark .form-group input,
+body.dark .form-group select {
+  background: var(--color-sky-950);
+  border-color: var(--color-sky-700);
+  color: var(--color-sky-100);
+}
+
+body.dark .form-group input:focus,
+body.dark .form-group select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 166, 244, 0.2);
+}
+
+body.dark .cancel-btn {
+  background: var(--color-sky-800);
+  color: var(--color-sky-200);
+}
+
+body.dark .cancel-btn:hover {
+  background: var(--color-sky-700);
+}
+
+body.dark .edit-btn:hover {
+  background: var(--color-sky-800);
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 8px rgba(0, 166, 244, 0.3);
+}
+
+body.dark .edit-btn:hover i {
+  color: var(--color-sky-300);
+}
+
+body.dark .delete-btn:hover {
+  background: #7f1d1d;
+  border-color: #991b1b;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+}
+
+body.dark .delete-btn:hover i {
+  color: #f87171;
+}
+
+/* Dark mode for permissions section */
+body.dark .permissions-section {
+  background: var(--color-sky-800);
+  border-color: var(--color-sky-700);
+}
+
+body.dark .permissions-header {
+  border-bottom-color: var(--color-sky-700);
+}
+
+body.dark .permissions-header h3 {
+  color: var(--color-sky-200);
+}
+
+body.dark .permission-column h4 {
+  color: var(--color-sky-300);
+}
+
+body.dark .permission-item {
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+body.dark .permission-item span {
+  color: var(--color-sky-100);
+}
+
+body.dark .global-config-section {
+  border-top-color: var(--color-sky-700);
+}
+
+body.dark .global-config-section .permission-item {
+  background: var(--color-sky-900);
+  border-color: var(--color-sky-700);
+}
+
+body.dark .global-config-section .permission-item span {
+  color: var(--color-sky-300);
+}
+
+body.dark .form-group label i {
+  color: var(--color-sky-400);
+}
