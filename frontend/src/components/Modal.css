@@ -26,7 +26,7 @@
 
 .modal-small {
   width: 90%;
-  max-width: 400px;
+  max-width: 350px;
 }
 
 .modal-medium {
@@ -37,6 +37,18 @@
 .modal-large {
   width: 90%;
   max-width: 800px;
+}
+
+.modal-small .modal-header {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.modal-small .modal-body {
+  padding: 16px 20px;
 }
 
 .modal-header {

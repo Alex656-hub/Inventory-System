@@ -207,6 +207,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </li>
               )}
               
+              {/* Unidades de Medida */}
+              {esGerente && (
+                <li className={`nav-link ${isActive('/unidades') ? 'active' : ''}`}>
+                  <Link to="/unidades">
+                    <i className='bx bx-ruler icon'></i>
+                    <span className="text nav-text">Unidades</span>
+                  </Link>
+                </li>
+              )}
+              
               {/* Personal */}
               {esGerente && (
                 <li className={`nav-link ${isActive('/personal') ? 'active' : ''}`}>
@@ -223,16 +233,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <Link to="/categorias">
                     <i className='bx bx-category icon'></i>
                     <span className="text nav-text">Categorías</span>
-                  </Link>
-                </li>
-              )}
-              
-              {/* Unidades */}
-              {esGerente && (
-                <li className={`nav-link ${isActive('/unidades') ? 'active' : ''}`}>
-                  <Link to="/unidades">
-                    <i className='bx bx-ruler icon'></i>
-                    <span className="text nav-text">Unidades</span>
                   </Link>
                 </li>
               )}

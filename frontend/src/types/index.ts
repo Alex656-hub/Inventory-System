@@ -48,6 +48,15 @@ export interface Proveedor {
   updatedAt?: string;
 }
 
+export interface UnidadMedida {
+  id: number;
+  nombre: string;
+  abreviatura: string;
+  estado: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface LoginRequest {
   email: string;
   password: string;

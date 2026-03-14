@@ -6,6 +6,7 @@ import Dashboard from './components/Dashboard';
 import ProductList from './components/ProductList';
 import CategoryList from './components/CategoryList';
 import SupplierList from './components/SupplierList';
+import UnitList from './components/UnitList';
 import ImportSales from './components/ImportSales';
 import SalesList from './components/SalesList';
 import SalesSummaryPage from './components/SalesSummary';
@@ -66,6 +67,16 @@ function App() {
               <PrivateRoute>
                 <Layout>
                   <SupplierList />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/unidades"
+            element={
+              <PrivateRoute>
+                <Layout>
+                  <UnitList />
                 </Layout>
               </PrivateRoute>
             }
