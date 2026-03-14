@@ -10,6 +10,7 @@ import DetalleSalida from './DetalleSalida';
 import MovimientoInventario from './MovimientoInventario';
 import Alert from './Alert';
 import UnidadMedida from './UnidadMedida';
+import ConfiguracionSistema from './ConfiguracionSistema';
 
 // Exportar modelos
 export {
@@ -23,7 +24,8 @@ export {
   DetalleSalida,
   MovimientoInventario,
   Alert,
-  UnidadMedida
+  UnidadMedida,
+  ConfiguracionSistema
 };
 
 // Exportar tipos
@@ -38,6 +40,7 @@ export * from './DetalleSalida';
 export * from './MovimientoInventario';
 export * from './Alert';
 export * from './UnidadMedida';
+export * from './ConfiguracionSistema';
 
 // Definir asociaciones adicionales
 Product.hasMany(Alert, { foreignKey: 'product_id', as: 'alerts' });

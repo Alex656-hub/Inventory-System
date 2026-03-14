@@ -1,8 +1,9 @@
 // src/components/Ajustes.tsx - Página de Ajustes del Sistema
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/auth.service';
+import { ajustesService, ConfiguracionSistema } from '../services/ajustes.service';
 import './Ajustes.css';
 
 interface AjustesProps {}
@@ -16,6 +17,28 @@ const Ajustes: React.FC<AjustesProps> = () => {
   const [direccion, setDireccion] = useState('');
   const [logoEmpresa, setLogoEmpresa] = useState<File | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [loadingConfig, setLoadingConfig] = useState(true);
+
+  // Cargar configuración existente
+  useEffect(() => {
+    const cargarConfiguracion = async () => {
+      try {
+        const config = await ajustesService.obtenerConfiguracion();
+        setRuc(config.ruc || '');
+        setDireccion(config.direccion || '');
+        if (config.logo) {
+          setPreviewImage(config.logo);
+        }
+      } catch (error) {
+        console.error('Error al cargar configuración:', error);
+      } finally {
+        setLoadingConfig(false);
+      }
+    };
+
+    cargarConfiguracion();
+  }, []);
 
   // Funciones de manejo
   const handleLogout = async () => {
@@ -30,13 +53,41 @@ const Ajustes: React.FC<AjustesProps> = () => {
     }
   };
 
+  const handleRucChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Solo permitir números y limitar a 11 dígitos
+    const numericValue = value.replace(/\D/g, '').slice(0, 11);
+    setRuc(numericValue);
+  };
+
   const handleImportExcel = () => {
     alert('Función de importar Excel en desarrollo');
   };
 
-  const handleSaveSettings = () => {
-    console.log('Guardando configuración:', { ruc, direccion, logoEmpresa });
-    alert('Configuración guardada exitosamente');
+  const handleSaveSettings = async () => {
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('ruc', ruc);
+      formData.append('direccion', direccion);
+      
+      if (logoEmpresa) {
+        formData.append('logo', logoEmpresa);
+      }
+
+      const response = await ajustesService.guardarConfiguracion(formData);
+      alert(response.mensaje);
+      
+      // Si se guardó un nuevo logo, actualizar el preview
+      if (response.configuracion.logo) {
+        setPreviewImage(response.configuracion.logo);
+      }
+    } catch (error) {
+      console.error('Error al guardar configuración:', error);
+      alert('Error al guardar la configuración');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -60,12 +111,23 @@ const Ajustes: React.FC<AjustesProps> = () => {
     }
   };
 
-  const handleRemoveImage = () => {
-    setLogoEmpresa(null);
-    setPreviewImage(null);
+  const handleRemoveImage = async () => {
+    try {
+      await ajustesService.eliminarLogo();
+      setLogoEmpresa(null);
+      setPreviewImage(null);
+      alert('Logo eliminado exitosamente');
+    } catch (error) {
+      console.error('Error al eliminar logo:', error);
+      alert('Error al eliminar el logo');
+    }
   };
 
   const esGerente = usuario?.rol === 'gerente';
+
+  if (loadingConfig) {
+    return <div className="ajustes-container">Cargando configuración...</div>;
+  }
 
   return (
     <div className="ajustes-container">
@@ -131,9 +193,12 @@ const Ajustes: React.FC<AjustesProps> = () => {
                   type="text"
                   id="ruc"
                   value={ruc}
-                  onChange={(e) => setRuc(e.target.value)}
-                  placeholder="Ingrese el RUC de la empresa"
+                  onChange={handleRucChange}
+                  placeholder="Ingrese el RUC de la empresa (11 dígitos)"
                   className="form-input"
+                  maxLength={11}
+                  pattern="[0-9]{11}"
+                  inputMode="numeric"
                 />
               </div>
 
@@ -149,8 +214,12 @@ const Ajustes: React.FC<AjustesProps> = () => {
                 />
               </div>
 
-              <button className="btn btn-primary btn-save" onClick={handleSaveSettings}>
-                Guardar Cambios
+              <button 
+                className="btn btn-primary btn-save" 
+                onClick={handleSaveSettings}
+                disabled={loading}
+              >
+                {loading ? 'Guardando...' : 'Guardar Cambios'}
               </button>
             </div>
           </div>

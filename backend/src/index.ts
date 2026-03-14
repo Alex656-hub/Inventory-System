@@ -3,19 +3,18 @@ import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import { sequelize } from './config/database';
-
-// Importar modelos para que Sequelize los registre
-import './models/User';
-import './models/Category';
-import './models/Supplier';
-import './models/Product';
-import './models/UnidadMedida';
+import User from './models/User';
+import Category from './models/Category';
+import Product from './models/Product';
+import Supplier from './models/Supplier';
+import Alert from './models/Alert';
+import UnidadMedida from './models/UnidadMedida';
+import ConfiguracionSistema from './models/ConfiguracionSistema';
 import './models/EntradaInventario';
 import './models/DetalleEntrada';
 import './models/SalidaInventario';
 import './models/DetalleSalida';
 import './models/MovimientoInventario';
-import './models/Alert';
 
 // Importar rutas
 import authRoutes from './routes/auth.routes';
@@ -33,6 +32,7 @@ import salesRoutes from './routes/sales.routes';
 import searchRoutes from './routes/search.routes';
 import alertsRoutes from './routes/alerts.routes';
 import reportRoutes from './routes/report.routes';
+import configuracionRoutes from './routes/configuracion.routes';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -75,6 +75,7 @@ app.use('/api/sales', salesRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/alerts', alertsRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/configuracion', configuracionRoutes);
 
 // Ruta de salud
 app.get('/api/health', (req, res) => {
@@ -90,6 +91,19 @@ const startServer = async () => {
     // Sincronizar modelos (crear tablas si no existen)
     await sequelize.sync({ alter: true });
     console.log('✅ Modelos sincronizados con la base de datos.');
+    
+    // Crear configuración por defecto si no existe
+    try {
+      await ConfiguracionSistema.findOrCreate({
+        where: {},
+        defaults: {
+          ruc: '',
+          direccion: '',
+        }
+      });
+    } catch (error) {
+      console.log('⚠️ Error al crear configuración por defecto:', error);
+    }
     
     app.listen(PORT, () => {
       console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
