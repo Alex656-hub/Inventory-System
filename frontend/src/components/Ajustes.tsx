@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/auth.service';
-import './Layout.css';
+import './Ajustes.css';
 
 interface AjustesProps {}
 
@@ -31,12 +31,10 @@ const Ajustes: React.FC<AjustesProps> = () => {
   };
 
   const handleImportExcel = () => {
-    // Lógica para importar Excel
     alert('Función de importar Excel en desarrollo');
   };
 
   const handleSaveSettings = () => {
-    // Lógica para guardar configuración
     console.log('Guardando configuración:', { ruc, direccion, logoEmpresa });
     alert('Configuración guardada exitosamente');
   };
@@ -44,19 +42,14 @@ const Ajustes: React.FC<AjustesProps> = () => {
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Validar que sea una imagen
       if (!file.type.startsWith('image/')) {
         alert('Por favor, selecciona un archivo de imagen válido');
         return;
       }
-
-      // Validar tamaño (máximo 5MB)
       if (file.size > 5 * 1024 * 1024) {
         alert('La imagen no debe superar los 5MB');
         return;
       }
-
-      // Crear preview
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
@@ -76,120 +69,120 @@ const Ajustes: React.FC<AjustesProps> = () => {
 
   return (
     <div className="ajustes-container">
+      {/* Header */}
       <div className="ajustes-header">
         <h1>Ajustes del Sistema</h1>
         <p>Configuración general y preferencias del sistema</p>
       </div>
 
       <div className="ajustes-content">
-        {/* Logo de la Empresa */}
-        <div className="settings-section">
-          <h2>Logo de la Empresa</h2>
-          <div className="settings-form">
-            <div className="form-group">
-              <div className="logo-upload-container">
-                <div className="logo-preview">
-                  {previewImage ? (
-                    <div className="preview-wrapper">
-                      <img src={previewImage} alt="Logo de la empresa" className="logo-image" />
-                      <button 
-                        type="button" 
-                        className="btn-remove-image" 
-                        onClick={handleRemoveImage}
-                        title="Eliminar imagen"
-                      >
-                        <i className='bx bx-x'></i>
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="upload-placeholder">
-                      <i className='bx bx-image'></i>
-                      <span>Sin logo</span>
-                    </div>
-                  )}
-                </div>
-                <div className="upload-controls">
-                  <input
-                    type="file"
-                    id="logo"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="file-input"
-                  />
-                  <label htmlFor="logo" className="btn btn-secondary">
-                    <i className='bx bx-upload'></i>
-                    Subir Logo
-                  </label>
-                  <small className="upload-help">
-                    Formatos: JPG, PNG, GIF. Máximo 5MB
-                  </small>
-                </div>
+
+        {/* ── Fila superior: Logo (izq) + Información Fiscal (der) ── */}
+        <div className="ajustes-top-row">
+
+          {/* Bloque Logo */}
+          <div className="settings-section">
+            <h2>Logotipo</h2>
+            <div className="logo-section-body">
+              {/* Preview */}
+              <div className="logo-preview">
+                {previewImage ? (
+                  <div className="preview-wrapper">
+                    <img src={previewImage} alt="Logo de la empresa" className="logo-image" />
+                    <button
+                      type="button"
+                      className="btn-remove-image"
+                      onClick={handleRemoveImage}
+                      title="Eliminar imagen"
+                    >
+                      <i className='bx bx-x'></i>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="upload-placeholder">
+                    <i className='bx bx-image'></i>
+                    <span>Sin logo</span>
+                  </div>
+                )}
               </div>
-            </div>
 
-            <button className="btn btn-primary" onClick={handleSaveSettings}>
-              Guardar Logo
-            </button>
+              {/* Input file oculto + botón estilizado */}
+              <input
+                type="file"
+                id="logo"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="file-input"
+              />
+              <label htmlFor="logo" className="btn-upload-logo">
+                <i className='bx bx-upload'></i>
+                Subir Imagen
+              </label>
+            </div>
+          </div>
+
+          {/* Bloque Información Fiscal / Detalles Generales */}
+          <div className="settings-section">
+            <h2>Detalles Generales</h2>
+            <div className="settings-form">
+              <div className="form-group">
+                <label htmlFor="ruc">RUC</label>
+                <input
+                  type="text"
+                  id="ruc"
+                  value={ruc}
+                  onChange={(e) => setRuc(e.target.value)}
+                  placeholder="Ingrese el RUC de la empresa"
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="direccion">Dirección</label>
+                <input
+                  type="text"
+                  id="direccion"
+                  value={direccion}
+                  onChange={(e) => setDireccion(e.target.value)}
+                  placeholder="Ingrese la dirección de la empresa"
+                  className="form-input"
+                />
+              </div>
+
+              <button className="btn btn-primary btn-save" onClick={handleSaveSettings}>
+                Guardar Cambios
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Información Fiscal */}
-        <div className="settings-section">
-          <h2>Información Fiscal</h2>
-          <div className="settings-form">
-            <div className="form-group">
-              <label htmlFor="ruc">RUC</label>
-              <input
-                type="text"
-                id="ruc"
-                value={ruc}
-                onChange={(e) => setRuc(e.target.value)}
-                placeholder="Ingrese el RUC de la empresa"
-                className="form-input"
-              />
-            </div>
-            
-            <div className="form-group">
-              <label htmlFor="direccion">Dirección</label>
-              <input
-                type="text"
-                id="direccion"
-                value={direccion}
-                onChange={(e) => setDireccion(e.target.value)}
-                placeholder="Ingrese la dirección de la empresa"
-                className="form-input"
-              />
-            </div>
+        {/* ── Bloque inferior: Zona de Peligro/Datos (fondo blanco) ── */}
+        <div className="danger-zone">
+          <h2>
+            <span>⚠️</span> Zona de Peligro / Datos
+          </h2>
+          <p className="danger-subtitle">Gestiona tus copias de seguridad y sesiones activas.</p>
 
-            <button className="btn btn-primary" onClick={handleSaveSettings}>
-              Guardar Información Fiscal
-            </button>
-          </div>
-        </div>
-
-        {/* Zona de Peligro/Datos */}
-        <div className="settings-section danger-zone">
-          <h2>Zona de Peligro/Datos</h2>
-          <p className="danger-description">
-            Estas acciones son irreversibles y pueden afectar gravemente el funcionamiento del sistema.
-          </p>
-          
           <div className="danger-actions">
-            <button className="btn btn-danger" onClick={handleLogout}>
-              Cerrar Sesión Actual
+            <button className="btn-backup" onClick={handleLogout}>
+              <i className='bx bx-cloud-upload'></i>
+              Crear Respaldo
             </button>
-            
+
             {esGerente && (
-              <button className="btn btn-danger" onClick={handleLogoutAll}>
-                Cerrar Todas las Sesiones
+              <button className="btn-restore" onClick={handleLogoutAll}>
+                <i className='bx bx-cloud-download'></i>
+                Restaurar
               </button>
             )}
-            
-            <button className="btn btn-warning" onClick={handleImportExcel}>
+
+            <button className="btn-warning" onClick={handleImportExcel}>
+              <i className='bx bx-import'></i>
               Importar Excel
             </button>
           </div>
         </div>
+
       </div>
     </div>
   );
