@@ -78,11 +78,13 @@
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow-x: auto;
 }
 
 .unit-table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 600px;
 }
 
 .unit-table thead tr {

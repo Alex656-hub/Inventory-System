@@ -42,6 +42,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   // Función auxiliar para saber si una ruta está activa
   const isActive = (path: string) => location.pathname === path;
 
+  // En móvil, cerrar el sidebar automáticamente al navegar
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const isMobile = window.matchMedia('(max-width: 576px)').matches;
+    if (isMobile && !sidebarClosed) {
+      setSidebarClosed(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
   // Toggle sidebar
   const toggleSidebar = () => {
     setSidebarClosed(!sidebarClosed);
@@ -75,6 +85,29 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className={`layout ${darkMode ? 'dark' : ''}`}>
+      {/* TopBar (solo móvil) */}
+      <div className="mobile-topbar">
+        <button
+          className="mobile-menu-btn"
+          onClick={toggleSidebar}
+          aria-label={sidebarClosed ? 'Abrir menú lateral' : 'Cerrar menú lateral'}
+          aria-expanded={!sidebarClosed}
+          type="button"
+        >
+          <i className='bx bx-menu'></i>
+        </button>
+        <div className="mobile-topbar-title">InvCred</div>
+      </div>
+
+      {/* Overlay para cerrar el drawer (solo móvil) */}
+      {!sidebarClosed && (
+        <div
+          className="mobile-drawer-overlay"
+          onClick={() => setSidebarClosed(true)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* ==================== SIDEBAR ==================== */}
       <nav className={`sidebar ${sidebarClosed ? 'close' : ''}`}>
         <header>
@@ -87,30 +120,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
           </div>
           
-          <button 
+          <button
+            className="sidebar-toggle-btn"
             onClick={toggleSidebar}
-            style={{
-              position: 'absolute',
-              top: '50%',
-              right: sidebarClosed ? '-25px' : '5px',
-              transform: 'translateY(-50%)',
-              width: '35px',
-              height: '35px',
-              backgroundColor: '#00a6f4', /* sky-500 */
-              color: 'white',
-              border: '2px solid white',
-              borderRadius: '50%',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '18px',
-              zIndex: 1000,
-              boxShadow: 'none',
-              transition: 'all 0.3s ease'
-            }}
+            aria-label={sidebarClosed ? 'Abrir menú lateral' : 'Cerrar menú lateral'}
+            type="button"
           >
-            <i className='bx bx-chevron-right'></i>
+            <i className='bx bx-menu'></i>
           </button>
         </header>
 

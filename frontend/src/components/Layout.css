@@ -114,6 +114,76 @@ body.dark {
   padding-right: 20px; /* espacio para que el toggle sobresalga */
 }
 
+.sidebar-toggle-btn {
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  transform: translateY(-50%);
+  width: 35px;
+  height: 35px;
+  background-color: #00a6f4; /* sky-500 */
+  color: white;
+  border: 2px solid white;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  z-index: 1000;
+  box-shadow: none;
+  transition: var(--tran-05);
+}
+
+.sidebar.close .sidebar-toggle-btn {
+  right: -25px;
+}
+
+/* TopBar móvil (solo móvil) */
+.mobile-topbar {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  padding: 0 14px;
+  background: var(--sidebar-color);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  z-index: 3500;
+  align-items: center;
+  gap: 12px;
+}
+
+.mobile-menu-btn {
+  width: 40px;
+  height: 40px;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  background: var(--primary-color);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+.mobile-topbar-title {
+  font-weight: 700;
+  color: var(--primary-color);
+  font-size: 16px;
+  letter-spacing: 0.2px;
+}
+
+.mobile-drawer-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 1800;
+}
+
 .sidebar header .image-text {
   display: flex;
   align-items: center;
@@ -423,24 +493,51 @@ body.dark .home .text {
 }
 
 @media screen and (max-width: 576px) {
+  /* Mostrar TopBar en móvil */
+  .mobile-topbar {
+    display: flex;
+  }
+
+  .mobile-drawer-overlay {
+    display: block;
+  }
+
+  /* En móvil el sidebar no debe "comerse" ancho: se comporta como drawer */
   .sidebar {
-    width: 60px;
+    width: 250px;
+    transform: translateX(0);
+    transition: transform 0.3s ease;
+    z-index: 2000;
   }
+
   .sidebar.close {
-    width: 0;
+    width: 250px; /* mantener el ancho para animar */
+    transform: translateX(-100%);
   }
+
+  /* Contenido siempre full width */
   .content {
-    width: calc(100% - 60px);
-    left: 60px;
+    width: 100%;
+    left: 0;
   }
+
   .sidebar.close ~ .content {
     width: 100%;
     left: 0;
   }
-  .content nav {
-    left: 60px;
-  }
+
+  .content nav,
   .sidebar.close ~ .content nav {
     left: 0;
+  }
+
+  /* El botón dentro del sidebar no hace falta en móvil */
+  .sidebar-toggle-btn {
+    display: none;
+  }
+
+  /* Evitar que el contenido quede debajo de la TopBar */
+  .content main {
+    padding-top: 76px; /* 56px topbar + 20px espacio */
   }
 }
