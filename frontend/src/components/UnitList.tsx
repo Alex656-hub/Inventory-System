@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { unidadmedidaService } from '../services/unidadmedida.service';
 import { UnidadMedida } from '../types';
 import { useAuth } from '../hooks/useAuth';
-import UnitModal from './UnitModal';
+import Modal from './Modal';
 import UnitForm from './UnitForm';
 import './UnitList.css';
 
@@ -162,22 +162,24 @@ const UnitList: React.FC = () => {
       </div>
 
       {/* Modal para crear/editar */}
-      <UnitModal
+      <Modal
         isOpen={showForm}
         onClose={handleFormClose}
         title={unidadEditando ? 'Editar Unidad de Medida' : 'Nueva Unidad de Medida'}
+        size="xs"
       >
         <UnitForm
           unidad={unidadEditando}
           onClose={handleFormClose}
         />
-      </UnitModal>
+      </Modal>
 
       {/* Modal de confirmación para eliminar permanentemente */}
-      <UnitModal
+      <Modal
         isOpen={showEliminarHardConfirm}
         onClose={() => setShowEliminarHardConfirm(false)}
         title="Eliminar Unidad Permanentemente"
+        size="xs"
       >
         <div className="confirm-modal">
           <p>
@@ -198,7 +200,7 @@ const UnitList: React.FC = () => {
             </button>
           </div>
         </div>
-      </UnitModal>
+      </Modal>
     </div>
   );
 };

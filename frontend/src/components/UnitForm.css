@@ -12,6 +12,12 @@
   font-family: 'Outfit', sans-serif;
 }
 
+/* Cuando el formulario vive dentro del Modal global "xs",
+   permitir que el contenedor se ajuste al ancho compacto. */
+.modal-xs .unit-form-container {
+  max-width: 100%;
+}
+
 .unit-form-header {
   display: flex;
   justify-content: space-between;

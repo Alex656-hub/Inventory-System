@@ -24,6 +24,30 @@
   margin: auto;
 }
 
+.modal-content.modal-xs {
+  width: 90%;
+  max-width: 320px;
+}
+
+.modal-content.modal-xs .modal-header {
+  padding: 14px 18px;
+}
+
+.modal-content.modal-xs .modal-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.modal-content.modal-xs .modal-close {
+  width: 28px;
+  height: 28px;
+  font-size: 20px;
+}
+
+.modal-content.modal-xs .modal-body {
+  padding: 14px 18px;
+}
+
 .modal-small {
   width: 90%;
   max-width: 350px;
@@ -125,6 +149,7 @@
   }
   
   .modal-small,
+  .modal-xs,
   .modal-medium,
   .modal-large {
     max-width: 100%;
