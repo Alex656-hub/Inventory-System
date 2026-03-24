@@ -13,8 +13,14 @@ const UnitList: React.FC = () => {
   const [unidadEditando, setUnidadEditando] = useState<UnidadMedida | null>(null);
   const [showEliminarHardConfirm, setShowEliminarHardConfirm] = useState(false);
   const [unidadEliminarHard, setUnidadEliminarHard] = useState<UnidadMedida | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const { usuario } = useAuth();
   const esGerente = usuario?.rol === 'gerente';
+
+  const filteredUnidades = unidades.filter(unidad => 
+    unidad.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    unidad.abreviatura.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const cargarDatos = async () => {
     setLoading(true);
@@ -90,12 +96,23 @@ const UnitList: React.FC = () => {
           <h1>Unidades de Medida</h1>
           <p className="subtitle">Gestión de unidades (Kilos, Litros, Cajas).</p>
         </div>
-        {esGerente && (
-          <button className="new-user-btn" onClick={handleCrear}>
-            <i className='bx bx-plus'></i>
-            Nueva Unidad
-          </button>
-        )}
+        <div className="unit-list-actions">
+          <div className="unit-search">
+            <i className='bx bx-search'></i>
+            <input
+              type="text"
+              placeholder="Buscar por nombre o abreviatura..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          {esGerente && (
+            <button className="new-user-btn" onClick={handleCrear}>
+              <i className='bx bx-plus'></i>
+              Nueva Unidad
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="unit-table-container">
@@ -109,7 +126,7 @@ const UnitList: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {unidades.map((unidad) => (
+            {filteredUnidades.map((unidad) => (
               <tr key={unidad.id} className={!unidad.estado ? 'inactive' : ''}>
                 <td className="unit-name">
                   <span className="unit-icon">📏</span>
@@ -119,15 +136,20 @@ const UnitList: React.FC = () => {
                   <span className="abbr-badge">{unidad.abreviatura}</span>
                 </td>
                 <td className="unit-status">
-                  <label className="switch">
-                    <input
-                      type="checkbox"
-                      checked={unidad.estado}
-                      onChange={() => toggleEstado(unidad)}
-                      disabled={!esGerente}
-                    />
-                    <span className="slider"></span>
-                  </label>
+                  <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'}}>
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={unidad.estado}
+                        onChange={() => toggleEstado(unidad)}
+                        disabled={!esGerente}
+                      />
+                      <span className="slider"></span>
+                    </label>
+                    <span className={`status-text ${unidad.estado ? 'active' : 'inactive'}`}>
+                      {unidad.estado ? 'Activo' : 'Inactivo'}
+                    </span>
+                  </div>
                 </td>
                 <td className="unit-actions">
                   {esGerente && (

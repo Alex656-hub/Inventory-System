@@ -33,6 +33,48 @@
   margin-bottom: 32px;
 }
 
+.user-access-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: 8px;
+  padding: 0 10px;
+  height: 38px;
+}
+
+.user-search i {
+  color: var(--color-text);
+  font-size: 16px;
+}
+
+.user-search input {
+  border: none;
+  outline: none;
+  background: transparent;
+  min-width: 220px;
+  font-size: 14px;
+  color: inherit;
+}
+
+.user-search:focus-within {
+  border-color: var(--color-primary);
+  outline: 2px solid var(--color-primary);
+  outline-offset: -1px;
+}
+
+.user-search input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
 .user-access-header h1 {
   font-size: 28px;
   font-weight: 600;
@@ -132,19 +174,19 @@
   font-size: 12px;
   font-weight: 500;
   display: inline-block;
-  border: 1px solid;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
 }
 
 .rol-tag.admin {
-  background: var(--color-primary);
-  color: white;
   border-color: var(--color-primary-dark);
+  color: var(--color-primary-dark);
 }
 
 .rol-tag.personalizado {
-  background: var(--color-sky-600);
-  color: white;
   border-color: var(--color-sky-700);
+  color: var(--color-sky-700);
 }
 
 .estado-cell {
@@ -485,6 +527,15 @@ input:checked + .slider:before {
     flex-direction: column;
     gap: 16px;
     align-items: stretch;
+  }
+
+  .user-access-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .user-search input {
+    min-width: 160px;
   }
   
   .new-user-btn {

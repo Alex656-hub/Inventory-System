@@ -1,25 +1,5 @@
 /* UnitList.css - Estilos basados en UserAccess.css */
 
-:root {
-  --color-sky-50: #f0f9ff;
-  --color-sky-100: #dff2fe;
-  --color-sky-200: #b8e6fe;
-  --color-sky-300: #74d4ff;
-  --color-sky-400: #00bcff;
-  --color-sky-500: #00a6f4;
-  --color-sky-600: #0084d1;
-  --color-sky-700: #0069a8;
-  --color-sky-800: #00598a;
-  --color-sky-900: #024a70;
-  --color-sky-950: #052f4a;
-  --color-primary: var(--color-sky-500);
-  --color-primary-dark: var(--color-sky-700);
-  --color-primary-light: var(--color-sky-100);
-  --color-primary-lighter: var(--color-sky-50);
-  --color-surface: #FFF;
-  --color-border: #e5e7eb;
-  --color-text: #374151;
-}
 
 .unit-list-container {
   padding: 24px;
@@ -32,6 +12,48 @@
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 32px;
+}
+
+.unit-list-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.unit-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: 8px;
+  padding: 0 10px;
+  height: 38px;
+}
+
+.unit-search i {
+  color: var(--color-text);
+  font-size: 16px;
+}
+
+.unit-search input {
+  border: none;
+  outline: none;
+  background: transparent;
+  min-width: 220px;
+  font-size: 14px;
+  color: inherit;
+}
+
+.unit-search:focus-within {
+  border-color: var(--color-primary);
+  outline: 2px solid var(--color-primary);
+  outline-offset: -1px;
+}
+
+.unit-search input:focus {
+  outline: none;
+  box-shadow: none;
 }
 
 .unit-list-header h1 {
@@ -164,15 +186,20 @@
   font-size: 12px;
   font-weight: 500;
   display: inline-block;
-  border: 1px solid;
-  background: var(--color-primary);
-  color: white;
-  border-color: var(--color-primary-dark);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
 }
 
 /* Status cell */
 .unit-status {
   text-align: center;
+}
+
+.unit-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
 }
 
 .switch {
@@ -362,8 +389,17 @@ input:disabled + .slider {
 
   .unit-list-header {
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
     align-items: stretch;
+  }
+
+  .unit-list-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .unit-search input {
+    min-width: 160px;
   }
 
   .unit-table th,

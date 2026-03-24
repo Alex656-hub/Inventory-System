@@ -7,13 +7,13 @@ const Login: React.FC = () => {
   // Estado para controlar qué formulario se muestra (false = login, true = registro)
   const [isActive, setIsActive] = useState(false);
   
-  // Asegurar que el tema del login sea siempre cian
+  // Asegurar que el tema del login sea siempre sky azul
   useEffect(() => {
-    // Aplicar tema cian al cargar el componente
+    // Aplicar tema sky al cargar el componente
     const root = document.documentElement;
-    root.style.setProperty('--color-primary', 'var(--color-cyan-500)');
-    root.style.setProperty('--color-primary-dark', 'var(--color-cyan-700)');
-    root.style.setProperty('--color-primary-light', 'var(--color-cyan-300)');
+    root.style.setProperty('--color-primary', 'var(--color-sky-500)');
+    root.style.setProperty('--color-primary-dark', 'var(--color-sky-700)');
+    root.style.setProperty('--color-primary-light', 'var(--color-sky-300)');
     root.style.setProperty('--color-text-on-primary', '#ffffff');
     
     return () => {

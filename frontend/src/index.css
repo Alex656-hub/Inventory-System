@@ -1,21 +1,21 @@
 :root {
-  /* Paleta de colores cian del login */
-  --color-cyan-50: #ecfeff;
-  --color-cyan-100: #cffafe;
-  --color-cyan-200: #a5f3fc;
-  --color-cyan-300: #67e8f9;
-  --color-cyan-400: #22d3ee;
-  --color-cyan-500: #06b6d4;
-  --color-cyan-600: #0891b2;
-  --color-cyan-700: #0e7490;
-  --color-cyan-800: #155e75;
-  --color-cyan-900: #164e63;
-  --color-cyan-950: #083344;
+  /* Paleta de colores sky azul */
+  --color-sky-50: #f0f9ff;
+  --color-sky-100: #dff2fe;
+  --color-sky-200: #b8e6fe;
+  --color-sky-300: #74d4ff;
+  --color-sky-400: #00bcff;
+  --color-sky-500: #00a6f4;
+  --color-sky-600: #0084d1;
+  --color-sky-700: #0069a8;
+  --color-sky-800: #00598a;
+  --color-sky-900: #024a70;
+  --color-sky-950: #052f4a;
 
   /* Colores base del ejemplo */
   --light: #f6f6f9;
-  --primary: var(--color-cyan-500);
-  --light-primary: var(--color-cyan-300);
+  --primary: var(--color-sky-500);
+  --light-primary: var(--color-sky-300);
   --grey: #eee;
   --dark-grey: #AAAAAA;
   --dark: #363949;
@@ -32,13 +32,13 @@
   --color-text-light: #ffffff;
   
   /* Colores primarios y variantes */
-  --color-primary: var(--color-cyan-500);
-  --color-primary-dark: var(--color-cyan-700);
-  --color-primary-light: var(--color-cyan-300);
-  --color-primary-lighter: var(--color-cyan-100);
+  --color-primary: var(--color-sky-500);
+  --color-primary-dark: var(--color-sky-700);
+  --color-primary-light: var(--color-sky-300);
+  --color-primary-lighter: var(--color-sky-100);
   
   /* Colores de fondo */
-  --color-background: var(--color-cyan-100);
+  --color-background: var(--color-sky-100);
   --color-surface: #ffffff;
   
   /* Bordes */

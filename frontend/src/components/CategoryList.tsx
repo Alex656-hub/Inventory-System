@@ -19,7 +19,12 @@ const CategoryList: React.FC = () => {
   const [categoryEditando, setCategoryEditando] = useState<Category | null>(null);
   const [showEliminarHardConfirm, setShowEliminarHardConfirm] = useState(false);
   const [categoryEliminarHard, setCategoryEliminarHard] = useState<Category | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const esGerente = true; // Temporal, deberías usar useAuth
+
+  const filteredCategories = categories.filter(category => 
+    category.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const cargarDatos = async () => {
     setLoading(true);
@@ -98,72 +103,94 @@ const CategoryList: React.FC = () => {
           <h1>Categorías</h1>
           <p className="subtitle">Agrupa tus productos para organizar el inventario.</p>
         </div>
-        {esGerente && (
-          <button className="new-user-btn" onClick={handleCrear}>
-            <i className='bx bx-plus'></i>
-            Nueva Categoría
-          </button>
-        )}
-      </div>
-
-      <div className="unit-table-container">
-        <table className="unit-table">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {categories.map((category) => (
-              <tr key={category.id} className={!category.estado ? 'inactive' : ''}>
-                <td className="unit-name">
-                  <i className='bx bx-category unit-icon'></i>
-                  {category.nombre}
-                </td>
-                <td className="unit-status">
-                  <label className="switch">
-                    <input
-                      type="checkbox"
-                      checked={category.estado}
-                      onChange={() => toggleEstado(category)}
-                      disabled={!esGerente}
-                    />
-                    <span className="slider"></span>
-                  </label>
-                </td>
-                <td className="unit-actions">
-                  {esGerente && (
-                    <>
-                      <button
-                        className="action-btn edit-btn"
-                        onClick={() => handleEditar(category)}
-                        title="Editar"
-                      >
-                        <i className='bx bx-edit'></i>
-                      </button>
-                      <button
-                        className="action-btn delete-btn"
-                        onClick={() => handleEliminarHard(category)}
-                        title="Eliminar permanentemente"
-                      >
-                        <i className='bx bx-trash'></i>
-                      </button>
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {categories.length === 0 && (
-          <div className="no-data">
-            <p>No se encontraron categorías</p>
+        <div className="unit-list-actions">
+          <div className="unit-search">
+            <i className='bx bx-search'></i>
+            <input
+              type="text"
+              placeholder="Buscar por nombre..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-        )}
+          {esGerente && (
+            <button className="new-user-btn" onClick={handleCrear}>
+              <i className='bx bx-plus'></i>
+              Nueva Categoría
+            </button>
+          )}
+        </div>
       </div>
+
+      {loading ? (
+        <div style={{textAlign: 'center', padding: '40px', color: '#666'}}>
+          Cargando categorías...
+        </div>
+      ) : (
+        <div className="unit-table-container">
+          <table className="unit-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredCategories.map((category) => (
+                <tr key={category.id} className={!category.estado ? 'inactive' : ''}>
+                  <td className="unit-name">
+                    <i className='bx bx-category unit-icon'></i>
+                    {category.nombre}
+                  </td>
+                  <td className="unit-status">
+                    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'}}>
+                      <label className="switch">
+                        <input
+                          type="checkbox"
+                          checked={category.estado}
+                          onChange={() => toggleEstado(category)}
+                          disabled={!esGerente}
+                        />
+                        <span className="slider"></span>
+                      </label>
+                      <span className={`status-text ${category.estado ? 'active' : 'inactive'}`}>
+                        {category.estado ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="unit-actions">
+                    {esGerente && (
+                      <>
+                        <button
+                          className="action-btn edit-btn"
+                          onClick={() => handleEditar(category)}
+                          title="Editar"
+                        >
+                          <i className='bx bx-edit'></i>
+                        </button>
+                        <button
+                          className="action-btn delete-btn"
+                          onClick={() => handleEliminarHard(category)}
+                          title="Eliminar permanentemente"
+                        >
+                          <i className='bx bx-trash'></i>
+                        </button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {categories.length === 0 && (
+            <div className="no-data">
+              <p>No se encontraron categorías</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Modal para crear/editar */}
       <Modal

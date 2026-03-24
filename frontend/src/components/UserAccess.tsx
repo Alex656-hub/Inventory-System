@@ -43,6 +43,13 @@ const UserAccess: React.FC = () => {
     }
   ]);
 
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredUsers = users.filter(user => 
+    user.username.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    user.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [accessLevel, setAccessLevel] = useState<'admin' | 'custom'>('custom');
@@ -153,10 +160,21 @@ const UserAccess: React.FC = () => {
           <h1>Usuarios y Accesos</h1>
           <p className="subtitle">Controla quién puede ver qué módulo.</p>
         </div>
-        <button className="new-user-btn" onClick={handleNewUser}>
-          <i className='bx bx-plus'></i>
-          Nuevo Usuario
-        </button>
+        <div className="user-access-actions">
+          <div className="user-search">
+            <i className='bx bx-search'></i>
+            <input
+              type="text"
+              placeholder="Buscar por usuario o nombre..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <button className="new-user-btn" onClick={handleNewUser}>
+            <i className='bx bx-plus'></i>
+            Nuevo Usuario
+          </button>
+        </div>
       </div>
 
       <div className="users-table-container">
@@ -171,7 +189,7 @@ const UserAccess: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {users.map(user => (
+            {filteredUsers.map(user => (
               <tr key={user.id}>
                 <td className="username-cell">{user.username}</td>
                 <td className="nombre-cell">{user.nombre}</td>
@@ -181,14 +199,19 @@ const UserAccess: React.FC = () => {
                   </span>
                 </td>
                 <td className="estado-cell">
-                  <label className="switch">
-                    <input
-                      type="checkbox"
-                      checked={user.estado}
-                      onChange={() => handleToggleStatus(user.id)}
-                    />
-                    <span className="slider"></span>
-                  </label>
+                  <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'}}>
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={user.estado}
+                        onChange={() => handleToggleStatus(user.id)}
+                      />
+                      <span className="slider"></span>
+                    </label>
+                    <span className={`status-text ${user.estado ? 'active' : 'inactive'}`}>
+                      {user.estado ? 'Activo' : 'Inactivo'}
+                    </span>
+                  </div>
                 </td>
                 <td className="acciones-cell">
                   <button 
