@@ -1,11 +1,11 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supplierService } from '../services/supplier.service';
 import { Proveedor } from '../types';
 import { useAuth } from '../hooks/useAuth';
+import './SupplierList.css';
 import Modal from './Modal';
 import SupplierForm from './SupplierForm';
-import './SupplierList.css';
 
 const SupplierList: React.FC = () => {
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
@@ -16,7 +16,6 @@ const SupplierList: React.FC = () => {
   const [proveedorEditando, setProveedorEditando] = useState<Proveedor | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [proveedorEliminar, setProveedorEliminar] = useState<Proveedor | null>(null);
-  const [filtroActivo, setFiltroActivo] = useState<'activo' | 'inactivo' | 'todos'>('todos');
   const { usuario } = useAuth();
   const esGerente = usuario?.rol === 'gerente';
 
@@ -24,10 +23,7 @@ const SupplierList: React.FC = () => {
   const [searchParams] = useSearchParams();
   const proveedorId = searchParams.get('proveedorId');
 
-  // Ref for scrolling to focused supplier
-  const suppliersContainerRef = useRef<HTMLDivElement>(null);
-
-  const cargarDatos = async () => {
+  const cargarDatos = useCallback(async () => {
     if (!isSearching) setLoading(true);
     try {
       const params: any = { limite: 1000 };
@@ -36,14 +32,6 @@ const SupplierList: React.FC = () => {
         params.busqueda = busqueda;
       }
       
-      // Solo pasar activo si no es 'todos'
-      if (filtroActivo === 'activo') {
-        params.activo = true;
-      } else if (filtroActivo === 'inactivo') {
-        params.activo = false;
-      }
-      // Si es 'todos', no enviamos activo
-      
       const response = await supplierService.obtenerProveedores(params);
       setProveedores(response.proveedores);
     } catch (error) {
@@ -51,11 +39,11 @@ const SupplierList: React.FC = () => {
     } finally {
       if (!isSearching) setLoading(false);
     }
-  };
+  }, [busqueda, isSearching]);
 
   useEffect(() => {
     cargarDatos();
-  }, [filtroActivo]);
+  }, [cargarDatos]);
 
   useEffect(() => {
     setIsSearching(true);
@@ -65,7 +53,7 @@ const SupplierList: React.FC = () => {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [busqueda]);
+  }, [busqueda, cargarDatos]);
 
   // Handle proveedorId parameter
   useEffect(() => {
@@ -130,36 +118,28 @@ const SupplierList: React.FC = () => {
   };
 
   return (
-    <div className="supplier-list">
-      <div className="page-header">
-        <h1>Gestión de Proveedores</h1>
-        {esGerente && (
-          <button onClick={handleNuevo} className="btn-primary">
-            <i className='bx bx-plus'></i> Nuevo Proveedor
-          </button>
-        )}
-      </div>
-
-      <div className="filters">
-        <input
-          type="text"
-          placeholder="Buscar por ID, nombre..."
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-          className="search-input"
-        />
-        <div className="select-wrapper">
-          <select
-            id="filtro-activo"
-            value={filtroActivo}
-            onChange={(e) => setFiltroActivo(e.target.value as 'activo' | 'inactivo' | 'todos')}
-            className="filter-select"
-          >
-            <option value="activo">Solo activos</option>
-            <option value="inactivo">Solo inactivos</option>
-            <option value="todos">Todos</option>
-          </select>
-          <i className="bx bx-chevron-down select-icon"></i>
+    <div className="supplier-list-container">
+      <div className="supplier-header">
+        <div>
+          <h1>Proveedores</h1>
+          <p className="supplier-subtitle">Gestión de abastecedores y compras.</p>
+        </div>
+        <div className="supplier-header-actions">
+          <div className="supplier-search">
+            <i className="bx bx-search" />
+            <input
+              type="text"
+              placeholder="Buscar por nombre o RUC..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+            />
+          </div>
+          {esGerente && (
+            <button type="button" className="supplier-new-btn" onClick={handleNuevo}>
+              <i className="bx bx-plus" />
+              Nuevo
+            </button>
+          )}
         </div>
       </div>
 
@@ -167,15 +147,13 @@ const SupplierList: React.FC = () => {
         <div className="loading">Cargando proveedores...</div>
       ) : (
         <>
-          <div className="table-container">
+          <div className="supplier-table-wrapper">
           <table className="suppliers-table">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>RUC/DNI</th>
-                <th>Teléfono</th>
-                <th>Email</th>
+                <th>Razón Social / Nombre</th>
+                <th>Documento</th>
+                <th>Contacto</th>
                 <th>Estado</th>
                 {esGerente && <th>Acciones</th>}
               </tr>
@@ -183,58 +161,72 @@ const SupplierList: React.FC = () => {
             <tbody>
               {proveedores.length === 0 ? (
                 <tr>
-                  <td colSpan={esGerente ? 7 : 6} className="no-data">
+                  <td colSpan={esGerente ? 5 : 4} className="no-data">
                     No se encontraron proveedores
                   </td>
                 </tr>
               ) : (
                 proveedores.map((proveedor) => (
                   <tr key={proveedor.id} id={`supplier-${proveedor.id}`}>
-                    <td>{proveedor.id}</td>
-                    <td className="nombre-cell">{proveedor.nombre}</td>
-                    <td className="ruc-dni-cell">{formatRUCDNI(proveedor.ruc_dni)}</td>
-                    <td className="contacto-cell">
-                      {proveedor.contacto_telefono ? (
-                        <a href={`tel:${proveedor.contacto_telefono}`} className="contact-link">
-                          {formatPhone(proveedor.contacto_telefono)}
-                        </a>
-                      ) : (
-                        <span className="no-contact">Sin teléfono</span>
-                      )}
+                    <td className="nombre-cell">
+                      <div className="supplier-name">
+                        <span className="supplier-avatar-icon">
+                          <i className="bx bx-building-house" />
+                        </span>
+                        {proveedor.nombre}
+                      </div>
+                    </td>
+                    <td className="documento-cell">
+                      <div className="documento-info">
+                        <i className='bx bx-file document-icon'></i>
+                        {formatRUCDNI(proveedor.ruc_dni)}
+                      </div>
                     </td>
                     <td className="contacto-cell">
-                      {proveedor.contacto_email ? (
-                        <a href={`mailto:${proveedor.contacto_email}`} className="contact-link">
-                          {proveedor.contacto_email}
-                        </a>
-                      ) : (
-                        <span className="no-contact">Sin email</span>
-                      )}
+                      <div className="contacto-info">
+                        <i className='bx bx-phone phone-icon'></i>
+                        {proveedor.contacto_telefono ? formatPhone(proveedor.contacto_telefono) : 'Sin teléfono'}
+                      </div>
                     </td>
-                    <td>
-                      <span className={`badge ${proveedor.activo ? 'success' : 'inactive'}`}>
-                        {proveedor.activo ? 'Activo' : 'Inactivo'}
-                      </span>
+                    <td className="estado-cell">
+                      <div className="supplier-estado-wrap">
+                        <label className="switch">
+                          <input
+                            type="checkbox"
+                            checked={proveedor.activo}
+                            onChange={() => {}}
+                            disabled={true}
+                          />
+                          <span className="slider" />
+                        </label>
+                        <span
+                          className={`estado-label ${proveedor.activo ? 'activo' : 'inactivo'}`}
+                        >
+                          {proveedor.activo ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </div>
                     </td>
                     {esGerente && (
                       <td>
-                        <div className="action-buttons">
-                          <button 
+                        <div className="supplier-acciones-cell">
+                          <button
+                            type="button"
                             onClick={() => handleEditar(proveedor)}
-                            className="btn-icon btn-edit"
+                            className="supplier-action-btn supplier-edit-btn"
                             title="Editar proveedor"
                           >
-                            <i className='bx bx-edit'></i>
+                            <i className="bx bx-pencil" />
                           </button>
-                          <button 
+                          <button
+                            type="button"
                             onClick={() => {
                               setProveedorEliminar(proveedor);
                               setShowDeleteConfirm(true);
                             }}
-                            className="btn-icon btn-delete"
+                            className="supplier-action-btn supplier-delete-btn"
                             title="Eliminar proveedor"
                           >
-                            <i className='bx bx-trash-alt'></i>
+                            <i className="bx bx-trash" />
                           </button>
                         </div>
                       </td>

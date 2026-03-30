@@ -78,16 +78,18 @@ const PersonalForm: React.FC<PersonalFormProps> = ({ item, onClose, onSave }) =>
         </div>
 
         <div className="personal-form-row">
-          <div className="personal-form-group">
+          <div className="personal-form-group cargo-field">
             <label htmlFor="cargo">Rol / Cargo</label>
-            <input
-              id="cargo"
-              name="cargo"
-              type="text"
-              value={formData.cargo}
-              onChange={handleChange}
-              placeholder="Ejm. Almacenero"
-            />
+            <div className="cargo-input-wrapper">
+              <input
+                id="cargo"
+                name="cargo"
+                type="text"
+                value={formData.cargo}
+                onChange={handleChange}
+                placeholder="Ejm. Almacenero"
+              />
+            </div>
           </div>
           <div className="personal-form-group">
             <label htmlFor="telefono">Teléfono</label>

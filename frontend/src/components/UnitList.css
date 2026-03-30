@@ -43,6 +43,9 @@
   min-width: 220px;
   font-size: 14px;
   color: inherit;
+  text-overflow: ellipsis; /* 👈 mostrar puntos suspensivos */
+  white-space: nowrap; /* 👈 evitar saltos de línea */
+  overflow: hidden; /* 👈 ocultar texto excedente */
 }
 
 .unit-search:focus-within {

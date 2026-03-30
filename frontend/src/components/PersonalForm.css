@@ -37,6 +37,11 @@
   margin-bottom: 10px;
 }
 
+/* 👇 Bajar solo el input de Rol/Cargo para alinear con Teléfono */
+.cargo-input-wrapper {
+  margin-top: -8px; /* 👈 aumentar margen negativo para subir más */
+}
+
 .personal-form-group label {
   display: block;
   margin-bottom: 6px;

@@ -160,9 +160,9 @@ const SupplierForm: React.FC<SupplierFormProps> = ({ proveedor, onClose, onSucce
 
   return (
     <form onSubmit={handleSubmit} className="supplier-form">
-      <div className="form-grid">
+      <div className="form-content">
         <div className="form-group">
-          <label htmlFor="nombre">Nombre *</label>
+          <label htmlFor="nombre">Nombre / Razón Social *</label>
           <input
             type="text"
             id="nombre"
@@ -170,101 +170,75 @@ const SupplierForm: React.FC<SupplierFormProps> = ({ proveedor, onClose, onSucce
             value={formData.nombre}
             onChange={handleChange}
             className={errors.nombre ? 'error' : ''}
-            placeholder="Ej: Distribuidora del Norte S.A."
+            placeholder="Nombre o razón social"
             disabled={loading}
           />
           {errors.nombre && <span className="error-message">{errors.nombre}</span>}
         </div>
 
-        <div className="form-group">
-          <label htmlFor="id">ID (Auto-generado)</label>
-          <input
-            type="text"
-            id="id"
-            name="id"
-            value={formData.id}
-            onChange={handleChange}
-            className={errors.id ? 'error' : ''}
-            placeholder="Se generará automáticamente"
-            disabled={true}
-          />
-          {errors.id && <span className="error-message">{errors.id}</span>}
+        <div className="supplier-form-row">
+          <div className="supplier-form-col">
+            <label className="supplier-form-row__label" htmlFor="ruc_dni">
+              RUC / DNI
+            </label>
+            <div className="form-group supplier-form-row__field">
+              <div className="input-with-icon">
+                <input
+                  type="text"
+                  id="ruc_dni"
+                  name="ruc_dni"
+                  value={formData.ruc_dni}
+                  onChange={handleChange}
+                  className={errors.ruc_dni ? 'error' : ''}
+                  placeholder=""
+                  maxLength={11}
+                  disabled={loading}
+                />
+              </div>
+              {errors.ruc_dni && <span className="error-message">{errors.ruc_dni}</span>}
+            </div>
+          </div>
+
+          <div className="supplier-form-col">
+            <label className="supplier-form-row__label" htmlFor="contacto_telefono">
+              Teléfono
+            </label>
+            <div className="form-group supplier-form-row__field telefono-field">
+              <div className="input-with-icon">
+                <input
+                  type="tel"
+                  id="contacto_telefono"
+                  name="contacto_telefono"
+                  value={formData.contacto_telefono}
+                  onChange={handleChange}
+                  className={errors.contacto_telefono ? 'error' : ''}
+                  placeholder=""
+                  maxLength={9}
+                  disabled={loading}
+                />
+              </div>
+              {errors.contacto_telefono && (
+                <span className="error-message">{errors.contacto_telefono}</span>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="form-group">
-          <label htmlFor="ruc_dni">RUC/DNI *</label>
-          <input
-            type="text"
-            id="ruc_dni"
-            name="ruc_dni"
-            value={formData.ruc_dni}
-            onChange={handleChange}
-            className={errors.ruc_dni ? 'error' : ''}
-            placeholder="Ej: 20123456789 (RUC), 10123456789 (RUC PN), 12345678 (DNI)"
-            maxLength={11}
-            disabled={loading}
-          />
-          {errors.ruc_dni && <span className="error-message">{errors.ruc_dni}</span>}
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="contacto_telefono">Teléfono de Contacto</label>
-          <input
-            type="tel"
-            id="contacto_telefono"
-            name="contacto_telefono"
-            value={formData.contacto_telefono}
-            onChange={handleChange}
-            className={errors.contacto_telefono ? 'error' : ''}
-            placeholder="Ej: 987654321"
-            maxLength={9}
-            disabled={loading}
-          />
-          {errors.contacto_telefono && <span className="error-message">{errors.contacto_telefono}</span>}
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="contacto_email">Email de Contacto</label>
-          <input
-            type="email"
-            id="contacto_email"
-            name="contacto_email"
-            value={formData.contacto_email}
-            onChange={handleChange}
-            className={errors.contacto_email ? 'error' : ''}
-            placeholder="Ej: contacto@proveedor.com"
-            disabled={loading}
-          />
+          <label htmlFor="contacto_email">Email</label>
+          <div className="input-with-icon">
+            <input
+              type="email"
+              id="contacto_email"
+              name="contacto_email"
+              value={formData.contacto_email}
+              onChange={handleChange}
+              className={errors.contacto_email ? 'error' : ''}
+              placeholder=""
+              disabled={loading}
+            />
+          </div>
           {errors.contacto_email && <span className="error-message">{errors.contacto_email}</span>}
-        </div>
-
-        <div className="form-group full-width">
-          <label htmlFor="direccion">Dirección</label>
-          <input
-            type="text"
-            id="direccion"
-            name="direccion"
-            value={formData.direccion}
-            onChange={handleChange}
-            className={errors.direccion ? 'error' : ''}
-            placeholder="Ej: Av. Principal 123, Bagua"
-            disabled={loading}
-          />
-          {errors.direccion && <span className="error-message">{errors.direccion}</span>}
-        </div>
-
-        <div className="form-group full-width">
-          <label htmlFor="condiciones_pago">Condiciones de Pago</label>
-          <textarea
-            id="condiciones_pago"
-            name="condiciones_pago"
-            value={formData.condiciones_pago}
-            onChange={handleChange}
-            rows={3}
-            placeholder="Ej: Pago a 30 días, 50% anticipo, etc."
-            disabled={loading}
-          />
-          {errors.condiciones_pago && <span className="error-message">{errors.condiciones_pago}</span>}
         </div>
       </div>
 
@@ -273,7 +247,7 @@ const SupplierForm: React.FC<SupplierFormProps> = ({ proveedor, onClose, onSucce
           Cancelar
         </button>
         <button type="submit" disabled={loading} className="btn-primary">
-          {loading ? 'Guardando...' : proveedor ? 'Actualizar' : 'Crear'}
+          Guardar
         </button>
       </div>
     </form>
