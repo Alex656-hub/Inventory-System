@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { productService } from '../services/product.service';
 import { categoryService } from '../services/category.service';
@@ -13,6 +13,7 @@ const ProductList: React.FC = () => {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
+  const [busquedaDebounced, setBusquedaDebounced] = useState('');
   const [categoriaFiltro, setCategoriaFiltro] = useState<number | ''>('');
   const [pagina, setPagina] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
@@ -22,17 +23,16 @@ const ProductList: React.FC = () => {
   const [productoEliminar, setProductoEliminar] = useState<Producto | null>(null);
   const { usuario } = useAuth();
   const esGerente = usuario?.rol === 'gerente';
+  const firstLoadRef = useRef(true);
 
   // URL search params
   const [searchParams] = useSearchParams();
   const focusId = searchParams.get('focusId');
   const urlBusqueda = searchParams.get('busqueda');
 
-  // Ref for scrolling to focused product
-  const productsContainerRef = useRef<HTMLDivElement>(null);
-
-  const cargarDatos = async () => {
-    setLoading(true);
+  const cargarDatos = useCallback(async (opts?: { showLoading?: boolean }) => {
+    const showLoading = opts?.showLoading ?? true;
+    if (showLoading) setLoading(true);
     try {
       const params: any = {
         pagina,
@@ -40,8 +40,8 @@ const ProductList: React.FC = () => {
         activo: true
       };
 
-      if (busqueda) {
-        params.busqueda = busqueda;
+      if (busquedaDebounced) {
+        params.busqueda = busquedaDebounced;
       }
 
       if (categoriaFiltro) {
@@ -51,15 +51,24 @@ const ProductList: React.FC = () => {
       const response = await productService.obtenerProductos(params);
       setProductos(response.productos);
       setTotalPaginas(response.paginacion.totalPaginas);
-
-      const catsResponse = await categoryService.obtenerCategorias(true);
-      setCategorias(catsResponse.categorias);
     } catch (error) {
       console.error('Error al cargar productos:', error);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
-  };
+  }, [pagina, busquedaDebounced, categoriaFiltro]);
+
+  useEffect(() => {
+    // Cargar categorías una vez
+    (async () => {
+      try {
+        const catsResponse = await categoryService.obtenerCategorias(true);
+        setCategorias(catsResponse.categorias);
+      } catch (error) {
+        console.error('Error al cargar categorías:', error);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     // Handle URL parameters
@@ -82,27 +91,22 @@ const ProductList: React.FC = () => {
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (pagina === 1) {
-        cargarDatos();
-      } else {
-        setPagina(1);
-      }
+      setBusquedaDebounced(busqueda);
     }, 500);
 
     return () => clearTimeout(timeoutId);
   }, [busqueda]);
 
   useEffect(() => {
-    if (pagina === 1) {
-      cargarDatos();
-    } else {
-      setPagina(1);
-    }
-  }, [categoriaFiltro]);
+    // Al cambiar filtros/búsqueda, volver a página 1 (sin recargar aquí)
+    setPagina(1);
+  }, [busquedaDebounced, categoriaFiltro]);
 
   useEffect(() => {
-    cargarDatos();
-  }, [pagina]);
+    // Carga inicial con indicador; posteriores cambios mantienen la tabla visible
+    cargarDatos({ showLoading: firstLoadRef.current });
+    firstLoadRef.current = false;
+  }, [cargarDatos]);
 
   const hayStockBajo = (producto: Producto) => {
     return producto.stock_actual <= producto.stock_minimo;
@@ -123,7 +127,7 @@ const ProductList: React.FC = () => {
     
     try {
       await productService.eliminarProducto(productoEliminar.id);
-      cargarDatos();
+      await cargarDatos({ showLoading: true });
       setShowDeleteConfirm(false);
       setProductoEliminar(null);
     } catch (error: any) {
@@ -132,7 +136,7 @@ const ProductList: React.FC = () => {
   };
 
   const handleFormSuccess = () => {
-    cargarDatos();
+    cargarDatos({ showLoading: true });
   };
 
   return (

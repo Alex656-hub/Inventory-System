@@ -11,13 +11,41 @@ interface ModalProps {
 
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 'medium' }) => {
   useEffect(() => {
+    const body = document.body;
+    const prevPosition = body.style.position;
+    const prevTop = body.style.top;
+    const prevLeft = body.style.left;
+    const prevRight = body.style.right;
+    const prevWidth = body.style.width;
+    const prevOverflowY = body.style.overflowY;
+    const prevScrollBehavior = document.documentElement.style.scrollBehavior;
+    const scrollY = window.scrollY;
+
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
+      // Bloquea el scroll del fondo SIN remover el scrollbar (evita “shift” lateral).
+      // Técnica: fijar el body y compensar con top negativo.
+      document.documentElement.style.scrollBehavior = 'auto';
+      body.style.position = 'fixed';
+      body.style.top = `-${scrollY}px`;
+      body.style.left = '0';
+      body.style.right = '0';
+      body.style.width = '100%';
+      body.style.overflowY = 'scroll';
     }
+
     return () => {
-      document.body.style.overflow = '';
+      const top = body.style.top;
+      body.style.position = prevPosition;
+      body.style.top = prevTop;
+      body.style.left = prevLeft;
+      body.style.right = prevRight;
+      body.style.width = prevWidth;
+      body.style.overflowY = prevOverflowY;
+      document.documentElement.style.scrollBehavior = prevScrollBehavior;
+
+      // Restaurar scroll previo
+      const y = top ? Math.abs(parseInt(top, 10)) : scrollY;
+      window.scrollTo(0, y);
     };
   }, [isOpen]);
 

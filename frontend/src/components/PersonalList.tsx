@@ -106,7 +106,7 @@ const PersonalList: React.FC = () => {
           </div>
           <button className="personal-new-btn" onClick={handleCrear}>
             <i className="bx bx-plus" />
-            Nuevo
+            Nuevo Personal
           </button>
         </div>
       </div>

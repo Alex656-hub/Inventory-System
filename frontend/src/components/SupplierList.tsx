@@ -11,7 +11,6 @@ const SupplierList: React.FC = () => {
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [proveedorEditando, setProveedorEditando] = useState<Proveedor | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -23,13 +22,14 @@ const SupplierList: React.FC = () => {
   const [searchParams] = useSearchParams();
   const proveedorId = searchParams.get('proveedorId');
 
-  const cargarDatos = useCallback(async () => {
-    if (!isSearching) setLoading(true);
+  const cargarDatos = useCallback(async (q: string, opts?: { showLoading?: boolean }) => {
+    const showLoading = opts?.showLoading ?? true;
+    if (showLoading) setLoading(true);
     try {
       const params: any = { limite: 1000 };
       
-      if (busqueda) {
-        params.busqueda = busqueda;
+      if (q) {
+        params.busqueda = q;
       }
       
       const response = await supplierService.obtenerProveedores(params);
@@ -37,19 +37,19 @@ const SupplierList: React.FC = () => {
     } catch (error) {
       console.error('Error al cargar proveedores:', error);
     } finally {
-      if (!isSearching) setLoading(false);
+      if (showLoading) setLoading(false);
     }
-  }, [busqueda, isSearching]);
+  }, []);
 
   useEffect(() => {
-    cargarDatos();
+    // Carga inicial con indicador de carga
+    cargarDatos('', { showLoading: true });
   }, [cargarDatos]);
 
   useEffect(() => {
-    setIsSearching(true);
+    // Búsqueda con debounce; no ocultar/mostrar la tabla (evita “parpadeo”)
     const timeoutId = setTimeout(() => {
-      cargarDatos();
-      setIsSearching(false);
+      cargarDatos(busqueda, { showLoading: false });
     }, 500);
 
     return () => clearTimeout(timeoutId);
@@ -86,7 +86,7 @@ const SupplierList: React.FC = () => {
     
     try {
       await supplierService.eliminarProveedor(proveedorEliminar.id);
-      cargarDatos();
+      cargarDatos(busqueda, { showLoading: true });
       setShowDeleteConfirm(false);
       setProveedorEliminar(null);
     } catch (error: any) {
@@ -95,7 +95,7 @@ const SupplierList: React.FC = () => {
   };
 
   const handleFormSuccess = () => {
-    cargarDatos();
+    cargarDatos(busqueda, { showLoading: true });
   };
 
   const formatRUCDNI = (rucDni: string): string => {
@@ -137,7 +137,7 @@ const SupplierList: React.FC = () => {
           {esGerente && (
             <button type="button" className="supplier-new-btn" onClick={handleNuevo}>
               <i className="bx bx-plus" />
-              Nuevo
+              Nuevo Proveedor
             </button>
           )}
         </div>
