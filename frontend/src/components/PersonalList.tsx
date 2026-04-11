@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
 import PersonalForm from './PersonalForm';
 import './PersonalList.css';
+import '../styles/moduleBase.css';
 
 interface PersonalItem {
   id: number;
@@ -84,18 +85,18 @@ const PersonalList: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="personal-list-container">Cargando...</div>;
+    return <div className="module-page personal-list-container">Cargando...</div>;
   }
 
   return (
-    <div className="personal-list-container">
-      <div className="personal-header">
+    <div className="module-page personal-list-container">
+      <div className="module-page-header personal-header">
         <div>
-          <h1>Personal</h1>
-          <p>Empleados y responsables de almacén.</p>
+          <h1 className="module-title">Personal</h1>
+          <p className="module-subtitle">Empleados y responsables de almacén.</p>
         </div>
-        <div className="personal-header-actions">
-          <div className="personal-search">
+        <div className="module-toolbar personal-header-actions">
+          <div className="module-search personal-search">
             <i className="bx bx-search" />
             <input
               type="text"
@@ -104,15 +105,15 @@ const PersonalList: React.FC = () => {
               onChange={(e) => setBusqueda(e.target.value)}
             />
           </div>
-          <button className="personal-new-btn" onClick={handleCrear}>
+          <button className="module-primary-btn personal-new-btn" onClick={handleCrear}>
             <i className="bx bx-plus" />
             Nuevo Personal
           </button>
         </div>
       </div>
 
-      <div className="personal-table-wrapper">
-        <table className="personal-table">
+      <div className="module-card personal-table-wrapper">
+        <table className="module-table personal-table">
           <thead>
             <tr>
               <th>Nombre Completo</th>

@@ -2,6 +2,7 @@ import { Op } from 'sequelize';
 import jwt from 'jsonwebtoken';
 import RefreshToken from '../models/RefreshToken';
 import User from '../models/User';
+import { getJwtExpiresIn, getJwtSecret } from '../config/env';
 
 export interface TokenResponse {
   accessToken: string;
@@ -29,8 +30,8 @@ class RefreshTokenService {
       twoFactorEnabled: user.twoFactorEnabled || false
     };
 
-    const secret: string = process.env.JWT_SECRET || 'secret';
-    const expiresIn: string = process.env.JWT_EXPIRE || '15m'; // Access token de corta duración
+    const secret: string = getJwtSecret();
+    const expiresIn: string = getJwtExpiresIn('15m'); // Access token de corta duración
 
     return jwt.sign(payload, secret, {
       expiresIn: expiresIn

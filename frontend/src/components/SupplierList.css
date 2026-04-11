@@ -1,142 +1,18 @@
-/* Proveedores — layout y colores alineados con Personal / Usuarios y Accesos */
-
-.supplier-list-container {
-  padding: 24px;
-  min-height: 100vh;
-}
-
-.supplier-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-.supplier-header h1 {
-  margin: 0 0 8px 0;
-  font-size: 28px;
-  font-weight: 600;
-  color: var(--color-sky-800);
-}
-
+/* Proveedores — estilos específicos (base en moduleBase.css) */
 .supplier-subtitle {
-  margin: 0;
-  font-size: 14px;
-  color: var(--color-text);
-}
-
-.supplier-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.supplier-search {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  border-radius: 8px;
-  padding: 0 10px;
-  height: 38px;
-}
-
-.supplier-search i {
-  color: var(--color-text);
-  font-size: 16px;
+  /* Se mantiene por compatibilidad; la base ya define `.module-subtitle`. */
 }
 
 .supplier-search input {
-  border: none;
-  outline: none;
-  background: transparent;
-  min-width: 220px;
-  font-size: 14px;
-  color: inherit;
-}
-
-.supplier-search:focus-within {
-  border-color: var(--color-primary);
-  outline: 2px solid var(--color-primary);
-  outline-offset: -1px;
-}
-
-.supplier-search input:focus {
-  outline: none;
-  box-shadow: none;
-}
-
-.supplier-new-btn {
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 12px 20px;
-  font-size: 14px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.supplier-new-btn:hover {
-  background: var(--color-primary-dark);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 166, 244, 0.15);
-}
-
-.supplier-new-btn i {
-  font-size: 18px;
+  min-width: 220px; /* respeta el ancho anterior */
 }
 
 .supplier-table-wrapper {
-  background: var(--color-surface);
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   overflow-x: auto;
 }
 
 .suppliers-table {
-  width: 100%;
-  border-collapse: collapse;
   min-width: 720px;
-}
-
-.suppliers-table thead tr {
-  background: transparent;
-  border-bottom: 1.5px solid #e9eef5;
-}
-
-.suppliers-table th {
-  background: var(--color-primary-lighter);
-  padding: 16px;
-  text-align: left;
-  font-weight: 600;
-  font-size: 13px;
-  color: var(--color-text);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.suppliers-table td {
-  padding: 16px;
-  border-bottom: 1px solid var(--color-border);
-  font-size: 14px;
-  vertical-align: middle;
-}
-
-.suppliers-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.suppliers-table tbody tr:hover {
-  background: var(--color-primary-lighter);
 }
 
 .suppliers-table th:nth-child(2),
@@ -160,7 +36,7 @@
   align-items: center;
   gap: 12px;
   font-weight: 500;
-  color: var(--color-sky-800);
+  color: var(--color-text);
 }
 
 .supplier-avatar-icon {
@@ -230,7 +106,7 @@
   color: #f43f5e;
 }
 
-/* Switch — mismo patrón que Personal */
+/* Switch */
 .switch {
   position: relative;
   display: inline-block;
@@ -323,18 +199,6 @@ input:disabled + .slider {
   color: #dc2626;
 }
 
-.no-data {
-  text-align: center;
-  padding: 40px;
-  color: var(--color-text-muted);
-}
-
-.loading {
-  text-align: center;
-  padding: 40px;
-  color: var(--color-text-muted);
-}
-
 .warning-text {
   color: #856404;
   font-size: 14px;
@@ -382,29 +246,12 @@ input:disabled + .slider {
 }
 
 @media (max-width: 768px) {
-  .supplier-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .supplier-header-actions {
-    flex-wrap: wrap;
-  }
-
   .supplier-search input {
     min-width: 160px;
-  }
-
-  .supplier-new-btn {
-    justify-content: center;
   }
 }
 
 @media (max-width: 480px) {
-  .suppliers-table {
-    font-size: 14px;
-  }
-
   .suppliers-table th,
   .suppliers-table td {
     padding: 10px;

@@ -88,9 +88,16 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log('✅ Conexión a la base de datos establecida correctamente.');
     
-    // Sincronizar modelos (crear tablas si no existen)
-    await sequelize.sync({ alter: true });
-    console.log('✅ Modelos sincronizados con la base de datos.');
+    // En producción, evita alterar el esquema automáticamente.
+    // Usa migraciones; en dev puedes habilitar sync con un flag explícito.
+    const enableDbSync = process.env.ENABLE_DB_SYNC === 'true';
+    if (enableDbSync) {
+      const alter = process.env.DB_SYNC_ALTER === 'true';
+      await sequelize.sync({ alter });
+      console.log(`✅ Modelos sincronizados con la base de datos (alter=${alter}).`);
+    } else {
+      console.log('ℹ️  DB sync deshabilitado (ENABLE_DB_SYNC!=true).');
+    }
     
     // Crear configuración por defecto si no existe
     try {

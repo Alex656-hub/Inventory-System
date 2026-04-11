@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
 import CategoryForm from './CategoryForm';
 import './CategoryList.css';
+import '../styles/moduleBase.css';
 
 interface Category {
   id: number;
@@ -97,14 +98,14 @@ const CategoryList: React.FC = () => {
   };
 
   return (
-    <div className="unit-list-container">
-      <div className="unit-list-header">
+    <div className="module-page unit-list-container">
+      <div className="module-page-header unit-list-header">
         <div>
-          <h1>Categorías</h1>
-          <p className="subtitle">Agrupa tus productos para organizar el inventario.</p>
+          <h1 className="module-title">Categorías</h1>
+          <p className="module-subtitle subtitle">Agrupa tus productos para organizar el inventario.</p>
         </div>
-        <div className="unit-list-actions">
-          <div className="unit-search">
+        <div className="module-toolbar unit-list-actions">
+          <div className="module-search unit-search">
             <i className='bx bx-search'></i>
             <input
               type="text"
@@ -114,7 +115,7 @@ const CategoryList: React.FC = () => {
             />
           </div>
           {esGerente && (
-            <button className="new-user-btn" onClick={handleCrear}>
+            <button className="module-primary-btn new-user-btn" onClick={handleCrear}>
               <i className='bx bx-plus'></i>
               Nueva Categoría
             </button>
@@ -123,12 +124,12 @@ const CategoryList: React.FC = () => {
       </div>
 
       {loading ? (
-        <div style={{textAlign: 'center', padding: '40px', color: '#666'}}>
+        <div className="module-loading" style={{textAlign: 'center'}}>
           Cargando categorías...
         </div>
       ) : (
-        <div className="unit-table-container">
-          <table className="unit-table">
+        <div className="module-card unit-table-container">
+          <table className="module-table unit-table">
             <thead>
               <tr>
                 <th>Nombre</th>

@@ -1,132 +1,17 @@
 .personal-list-container {
-  padding: 24px;
-  min-height: 100vh;
-}
-
-.personal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-.personal-header h1 {
-  margin: 0 0 8px 0;
-  font-size: 28px;
-  font-weight: 600;
-  color: var(--color-sky-800);
-}
-
-.personal-header p {
-  margin: 0;
-  font-size: 14px;
-  color: var(--color-text);
-}
-
-.personal-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.personal-search {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  border-radius: 8px;
-  padding: 0 10px;
-  height: 38px;
+  /* Base en moduleBase.css */
 }
 
 .personal-search input {
-  border: none;
-  outline: none;
-  background: transparent;
   min-width: 220px;
-  font-size: 14px;
-  color: inherit;
-}
-
-.personal-search:focus-within {
-  border-color: var(--color-primary);
-  outline: 2px solid var(--color-primary);
-  outline-offset: -1px;
-}
-
-.personal-search input:focus {
-  outline: none;
-  box-shadow: none;
-}
-
-.personal-new-btn {
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 12px 20px;
-  font-size: 14px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.personal-new-btn:hover {
-  background: var(--color-primary-dark);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 166, 244, 0.15);
-}
-
-.personal-new-btn i {
-  font-size: 18px;
 }
 
 .personal-table-wrapper {
-  background: var(--color-surface);
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  /* Card base en moduleBase.css */
 }
 
 .personal-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.personal-table th {
-  background: var(--color-primary-lighter);
-  padding: 16px;
-  text-align: left;
-  font-weight: 600;
-  font-size: 13px;
-  color: var(--color-text);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.personal-table td {
-  padding: 16px;
-  border-bottom: 1px solid var(--color-border);
-  font-size: 14px;
-}
-
-.personal-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.personal-table tr:hover {
-  background: var(--color-primary-lighter);
-}
-
-.personal-table thead tr {
-  background: transparent;
-  border-bottom: 1.5px solid #e9eef5;
+  /* Table base en moduleBase.css */
 }
 
 .personal-table th:nth-child(2),
@@ -148,7 +33,7 @@
   align-items: center;
   gap: 12px;
   font-weight: 500;
-  color: var(--color-sky-800);
+  color: var(--color-text);
 }
 
 .avatar-icon {
@@ -199,6 +84,7 @@
   color: #f43f5e;
 }
 
+/* Switch y acciones son específicos de este módulo (no están en la base) */
 .switch {
   position: relative;
   display: inline-block;
@@ -292,15 +178,6 @@ input:checked + .slider:before {
 }
 
 @media (max-width: 768px) {
-  .personal-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .personal-header-actions {
-    flex-wrap: wrap;
-  }
-
   .personal-search input {
     min-width: 160px;
   }

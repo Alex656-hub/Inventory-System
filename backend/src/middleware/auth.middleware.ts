@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
+import { getJwtSecret } from '../config/env';
 
 // Extender interfaz Request para incluir usuario
 declare global {
@@ -41,7 +42,7 @@ export const verificarToken = async (
     }
 
     const token = authHeader.split(' ')[1];
-    const secret = process.env.JWT_SECRET || 'secret';
+    const secret = getJwtSecret();
 
     // Verificar y decodificar el token
     const decoded = jwt.verify(token, secret) as DecodedToken;
@@ -122,7 +123,7 @@ export const verificarToken2FA = async (
       return;
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as DecodedToken;
+    const decoded = jwt.verify(token, getJwtSecret()) as DecodedToken;
     
     // Verificar que sea un token temporal
     if (!('temp' in decoded) || decoded.temp !== true) {

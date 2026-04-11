@@ -5,6 +5,7 @@ import * as QRCode from 'qrcode';
 import User from '../models/User';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import RefreshTokenService from '../services/refreshToken.service';
+import { getJwtExpiresIn, getJwtSecret } from '../config/env';
 
 // Extender la interfaz Request para incluir la propiedad user
 declare global {
@@ -39,7 +40,7 @@ const generarTokenTemporal = (usuario: User): string => {
     exp: Math.floor(Date.now() / 1000) + (5 * 60) // Expira en 5 minutos
   };
 
-  const secret = process.env.JWT_SECRET || 'secret';
+  const secret = getJwtSecret();
   return jwt.sign(payload, secret, { algorithm: 'HS256' } as SignOptions);
 };
 
@@ -250,8 +251,8 @@ const generarToken = (user: User): string => {
     rol: user.rol
   };
 
-  const secret = process.env.JWT_SECRET || 'secret';
-  const expiresIn = process.env.JWT_EXPIRE || '7d';
+  const secret = getJwtSecret();
+  const expiresIn = getJwtExpiresIn('7d');
 
   return jwt.sign(payload, secret, { expiresIn } as SignOptions);
 };

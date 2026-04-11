@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User';
 import { JWTPayload, TempJWTPayload } from '../middleware/auth.middleware';
 import RefreshTokenService, { TokenResponse } from '../services/refreshToken.service';
+import { getJwtExpiresIn, getJwtSecret } from '../config/env';
 
 // Función para generar token JWT normal
 const generarToken = (usuario: User): string => {
@@ -13,8 +14,8 @@ const generarToken = (usuario: User): string => {
     twoFactorEnabled: usuario.twoFactorEnabled || false
   };
 
-  const secret: string = process.env.JWT_SECRET || 'secret';
-  const expiresIn: string = process.env.JWT_EXPIRE || '7d';
+  const secret: string = getJwtSecret();
+  const expiresIn: string = getJwtExpiresIn('7d');
 
   return jwt.sign(payload, secret, {
     expiresIn: expiresIn
@@ -31,7 +32,7 @@ export const generarTokenTemporal = (usuario: User): string => {
     exp: Math.floor(Date.now() / 1000) + (5 * 60) // Expira en 5 minutos
   };
 
-  const secret: string = process.env.JWT_SECRET || 'secret';
+  const secret: string = getJwtSecret();
   
   return jwt.sign(payload, secret);
 };

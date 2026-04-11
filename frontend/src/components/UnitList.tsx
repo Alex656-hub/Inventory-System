@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import Modal from './Modal';
 import UnitForm from './UnitForm';
 import './UnitList.css';
+import '../styles/moduleBase.css';
 
 const UnitList: React.FC = () => {
   const [unidades, setUnidades] = useState<UnidadMedida[]>([]);
@@ -86,18 +87,18 @@ const UnitList: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="loading">Cargando unidades de medida...</div>;
+    return <div className="module-page unit-list-container">Cargando unidades de medida...</div>;
   }
 
   return (
-    <div className="unit-list-container">
-      <div className="unit-list-header">
+    <div className="module-page unit-list-container">
+      <div className="module-page-header unit-list-header">
         <div>
-          <h1>Unidades de Medida</h1>
-          <p className="subtitle">Gestión de unidades (Kilos, Litros, Cajas).</p>
+          <h1 className="module-title">Unidades de Medida</h1>
+          <p className="module-subtitle subtitle">Gestión de unidades (Kilos, Litros, Cajas).</p>
         </div>
-        <div className="unit-list-actions">
-          <div className="unit-search">
+        <div className="module-toolbar unit-list-actions">
+          <div className="module-search unit-search">
             <i className='bx bx-search'></i>
             <input
               type="text"
@@ -107,7 +108,7 @@ const UnitList: React.FC = () => {
             />
           </div>
           {esGerente && (
-            <button className="new-user-btn" onClick={handleCrear}>
+            <button className="module-primary-btn new-user-btn" onClick={handleCrear}>
               <i className='bx bx-plus'></i>
               Nueva Unidad
             </button>
@@ -115,8 +116,8 @@ const UnitList: React.FC = () => {
         </div>
       </div>
 
-      <div className="unit-table-container">
-        <table className="unit-table">
+      <div className="module-card unit-table-container">
+        <table className="module-table unit-table">
           <thead>
             <tr>
               <th>Nombre</th>

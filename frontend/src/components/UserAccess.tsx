@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import './UserAccess.css';
+import '../styles/moduleBase.css';
+import Modal from './Modal';
 
 interface User {
   id: number;
@@ -154,14 +156,14 @@ const UserAccess: React.FC = () => {
   };
 
   return (
-    <div className="user-access-container">
-      <div className="user-access-header">
+    <div className="module-page user-access-container">
+      <div className="module-page-header user-access-header">
         <div>
-          <h1>Usuarios y Accesos</h1>
-          <p className="subtitle">Controla quién puede ver qué módulo.</p>
+          <h1 className="module-title">Usuarios y Accesos</h1>
+          <p className="module-subtitle subtitle">Controla quién puede ver qué módulo.</p>
         </div>
-        <div className="user-access-actions">
-          <div className="user-search">
+        <div className="module-toolbar user-access-actions">
+          <div className="module-search user-search">
             <i className='bx bx-search'></i>
             <input
               type="text"
@@ -170,15 +172,15 @@ const UserAccess: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <button className="new-user-btn" onClick={handleNewUser}>
+          <button className="module-primary-btn new-user-btn" onClick={handleNewUser}>
             <i className='bx bx-plus'></i>
             Nuevo Usuario
           </button>
         </div>
       </div>
 
-      <div className="users-table-container">
-        <table className="users-table">
+      <div className="module-card users-table-container">
+        <table className="module-table users-table">
           <thead>
             <tr>
               <th>Usuario</th>
@@ -237,19 +239,13 @@ const UserAccess: React.FC = () => {
         </table>
       </div>
 
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h2>{editingUser ? 'Editar Usuario' : 'Nuevo Usuario'}</h2>
-              <button 
-                className="close-btn"
-                onClick={() => setShowModal(false)}
-              >
-                <i className='bx bx-x'></i>
-              </button>
-            </div>
-            <form onSubmit={handleSubmit} className="user-form">
+      <Modal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title={editingUser ? 'Editar Usuario' : 'Nuevo Usuario'}
+        size="large"
+      >
+        <form onSubmit={handleSubmit} className="user-form">
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="username">Usuario (Login)</label>
@@ -443,10 +439,8 @@ const UserAccess: React.FC = () => {
                   {editingUser ? 'Actualizar Usuario' : 'Guardar Usuario'}
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+        </form>
+      </Modal>
     </div>
   );
 };

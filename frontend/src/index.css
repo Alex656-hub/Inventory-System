@@ -53,6 +53,11 @@
   --transition-fast: 0.15s ease-in-out;
   --transition-normal: 0.3s ease-in-out;
   --transition-slow: 0.5s ease-in-out;
+
+  /* Theme: degradados (para botones y focus en inputs) */
+  --gradient-primary: linear-gradient(135deg, var(--color-sky-500) 0%, var(--color-sky-700) 100%);
+  --gradient-primary-hover: linear-gradient(135deg, var(--color-sky-600) 0%, var(--color-sky-800) 100%);
+  --gradient-accent: linear-gradient(to right, var(--color-sky-400), var(--color-sky-600));
 }
 
 * {

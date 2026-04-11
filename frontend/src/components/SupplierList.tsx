@@ -4,6 +4,7 @@ import { supplierService } from '../services/supplier.service';
 import { Proveedor } from '../types';
 import { useAuth } from '../hooks/useAuth';
 import './SupplierList.css';
+import '../styles/moduleBase.css';
 import Modal from './Modal';
 import SupplierForm from './SupplierForm';
 
@@ -118,14 +119,14 @@ const SupplierList: React.FC = () => {
   };
 
   return (
-    <div className="supplier-list-container">
-      <div className="supplier-header">
+    <div className="module-page supplier-list-container">
+      <div className="module-page-header supplier-header">
         <div>
-          <h1>Proveedores</h1>
-          <p className="supplier-subtitle">Gestión de abastecedores y compras.</p>
+          <h1 className="module-title">Proveedores</h1>
+          <p className="module-subtitle supplier-subtitle">Gestión de abastecedores y compras.</p>
         </div>
-        <div className="supplier-header-actions">
-          <div className="supplier-search">
+        <div className="module-toolbar supplier-header-actions">
+          <div className="module-search supplier-search">
             <i className="bx bx-search" />
             <input
               type="text"
@@ -135,7 +136,7 @@ const SupplierList: React.FC = () => {
             />
           </div>
           {esGerente && (
-            <button type="button" className="supplier-new-btn" onClick={handleNuevo}>
+            <button type="button" className="module-primary-btn supplier-new-btn" onClick={handleNuevo}>
               <i className="bx bx-plus" />
               Nuevo Proveedor
             </button>
@@ -144,11 +145,11 @@ const SupplierList: React.FC = () => {
       </div>
 
       {loading ? (
-        <div className="loading">Cargando proveedores...</div>
+        <div className="module-loading loading">Cargando proveedores...</div>
       ) : (
         <>
-          <div className="supplier-table-wrapper">
-          <table className="suppliers-table">
+          <div className="module-card supplier-table-wrapper">
+          <table className="module-table suppliers-table">
             <thead>
               <tr>
                 <th>Razón Social / Nombre</th>
