@@ -102,7 +102,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validate()) {
       return;
     }
@@ -137,146 +137,164 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    // Limpiar error del campo cuando el usuario empieza a escribir
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="product-form">
+    <form onSubmit={handleSubmit} className="mf-form product-form">
       <div className="form-grid">
-        <div className="form-group">
+        <div className="mf-group">
           <label htmlFor="categoria_id">Categoría *</label>
-          <select
-            id="categoria_id"
-            name="categoria_id"
-            value={formData.categoria_id}
-            onChange={handleChange}
-            className={errors.categoria_id ? 'error' : ''}
-          >
-            <option value="">Seleccionar categoría</option>
-            {categorias.map(cat => (
-              <option key={cat.id} value={cat.id}>{cat.nombre}</option>
-            ))}
-          </select>
-          {errors.categoria_id && <span className="error-message">{errors.categoria_id}</span>}
+          <div className="mf-field-wrap">
+            <select
+              id="categoria_id"
+              name="categoria_id"
+              value={formData.categoria_id}
+              onChange={handleChange}
+              className={`mf-select ${errors.categoria_id ? 'error' : ''}`}
+            >
+              <option value="">Seleccionar categoría</option>
+              {categorias.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+              ))}
+            </select>
+          </div>
+          {errors.categoria_id && <span className="mf-field-error">{errors.categoria_id}</span>}
         </div>
 
-        <div className="form-group">
+        <div className="mf-group">
           <label htmlFor="proveedor_id">Proveedor *</label>
-          <select
-            id="proveedor_id"
-            name="proveedor_id"
-            value={formData.proveedor_id}
-            onChange={handleChange}
-            className={errors.proveedor_id ? 'error' : ''}
-          >
-            <option value="">Seleccionar proveedor</option>
-            {proveedores.map(prov => (
-              <option key={prov.id} value={prov.id}>{prov.nombre}</option>
-            ))}
-          </select>
-          {errors.proveedor_id && <span className="error-message">{errors.proveedor_id}</span>}
+          <div className="mf-field-wrap">
+            <select
+              id="proveedor_id"
+              name="proveedor_id"
+              value={formData.proveedor_id}
+              onChange={handleChange}
+              className={`mf-select ${errors.proveedor_id ? 'error' : ''}`}
+            >
+              <option value="">Seleccionar proveedor</option>
+              {proveedores.map(prov => (
+                <option key={prov.id} value={prov.id}>{prov.nombre}</option>
+              ))}
+            </select>
+          </div>
+          {errors.proveedor_id && <span className="mf-field-error">{errors.proveedor_id}</span>}
         </div>
 
-        <div className="form-group">
+        <div className="mf-group">
           <label htmlFor="codigo">Código *</label>
-          <input
-            type="text"
-            id="codigo"
-            name="codigo"
-            value={formData.codigo}
-            onChange={handleChange}
-            className={errors.codigo ? 'error' : ''}
-            disabled={!producto}
-          />
-          {errors.codigo && <span className="error-message">{errors.codigo}</span>}
+          <div className="mf-field-wrap">
+            <input
+              type="text"
+              id="codigo"
+              name="codigo"
+              value={formData.codigo}
+              onChange={handleChange}
+              className={`mf-field ${errors.codigo ? 'error' : ''}`}
+              disabled={!producto}
+            />
+          </div>
+          {errors.codigo && <span className="mf-field-error">{errors.codigo}</span>}
         </div>
 
-        <div className="form-group">
+        <div className="mf-group">
           <label htmlFor="nombre">Nombre *</label>
-          <input
-            type="text"
-            id="nombre"
-            name="nombre"
-            value={formData.nombre}
-            onChange={handleChange}
-            className={errors.nombre ? 'error' : ''}
-          />
-          {errors.nombre && <span className="error-message">{errors.nombre}</span>}
+          <div className="mf-field-wrap">
+            <input
+              type="text"
+              id="nombre"
+              name="nombre"
+              value={formData.nombre}
+              onChange={handleChange}
+              className={`mf-field ${errors.nombre ? 'error' : ''}`}
+            />
+          </div>
+          {errors.nombre && <span className="mf-field-error">{errors.nombre}</span>}
         </div>
 
-        <div className="form-group">
+        <div className="mf-group">
           <label htmlFor="precio_compra">Precio Compra (S/) *</label>
-          <input
-            type="number"
-            id="precio_compra"
-            name="precio_compra"
-            value={formData.precio_compra}
-            onChange={handleChange}
-            step="0.01"
-            min="0"
-            className={errors.precio_compra ? 'error' : ''}
-          />
-          {errors.precio_compra && <span className="error-message">{errors.precio_compra}</span>}
+          <div className="mf-field-wrap">
+            <input
+              type="number"
+              id="precio_compra"
+              name="precio_compra"
+              value={formData.precio_compra}
+              onChange={handleChange}
+              step="0.01"
+              min="0"
+              className={`mf-field ${errors.precio_compra ? 'error' : ''}`}
+            />
+          </div>
+          {errors.precio_compra && <span className="mf-field-error">{errors.precio_compra}</span>}
         </div>
 
-        <div className="form-group">
+        <div className="mf-group">
           <label htmlFor="precio_venta">Precio Venta (S/) *</label>
-          <input
-            type="number"
-            id="precio_venta"
-            name="precio_venta"
-            value={formData.precio_venta}
-            onChange={handleChange}
-            step="0.01"
-            min="0"
-            className={errors.precio_venta ? 'error' : ''}
-          />
-          {errors.precio_venta && <span className="error-message">{errors.precio_venta}</span>}
+          <div className="mf-field-wrap">
+            <input
+              type="number"
+              id="precio_venta"
+              name="precio_venta"
+              value={formData.precio_venta}
+              onChange={handleChange}
+              step="0.01"
+              min="0"
+              className={`mf-field ${errors.precio_venta ? 'error' : ''}`}
+            />
+          </div>
+          {errors.precio_venta && <span className="mf-field-error">{errors.precio_venta}</span>}
         </div>
 
-        <div className="form-group">
+        <div className="mf-group">
           <label htmlFor="stock_actual">Stock Actual</label>
-          <input
-            type="number"
-            id="stock_actual"
-            name="stock_actual"
-            value={formData.stock_actual}
-            onChange={handleChange}
-            min="0"
-            className={errors.stock_actual ? 'error' : ''}
-          />
-          {errors.stock_actual && <span className="error-message">{errors.stock_actual}</span>}
+          <div className="mf-field-wrap">
+            <input
+              type="number"
+              id="stock_actual"
+              name="stock_actual"
+              value={formData.stock_actual}
+              onChange={handleChange}
+              min="0"
+              className={`mf-field ${errors.stock_actual ? 'error' : ''}`}
+            />
+          </div>
+          {errors.stock_actual && <span className="mf-field-error">{errors.stock_actual}</span>}
         </div>
 
-        <div className="form-group">
+        <div className="mf-group">
           <label htmlFor="stock_minimo">Stock Mínimo</label>
-          <input
-            type="number"
-            id="stock_minimo"
-            name="stock_minimo"
-            value={formData.stock_minimo}
-            onChange={handleChange}
-            min="0"
-            className={errors.stock_minimo ? 'error' : ''}
-          />
-          {errors.stock_minimo && <span className="error-message">{errors.stock_minimo}</span>}
+          <div className="mf-field-wrap">
+            <input
+              type="number"
+              id="stock_minimo"
+              name="stock_minimo"
+              value={formData.stock_minimo}
+              onChange={handleChange}
+              min="0"
+              className={`mf-field ${errors.stock_minimo ? 'error' : ''}`}
+            />
+          </div>
+          {errors.stock_minimo && <span className="mf-field-error">{errors.stock_minimo}</span>}
         </div>
 
-        <div className="form-group">
+        <div className="mf-group">
           <label htmlFor="ubicacion">Ubicación Opcional*</label>
-          <input
-            type="text"
-            id="ubicacion"
-            name="ubicacion"
-            value={formData.ubicacion}
-            onChange={handleChange}
-          />
+          <div className="mf-field-wrap">
+            <input
+              type="text"
+              id="ubicacion"
+              name="ubicacion"
+              value={formData.ubicacion}
+              onChange={handleChange}
+              className="mf-field"
+            />
+          </div>
         </div>
 
-        <div className="form-group full-width">
+        <div className="mf-group mf-group--full">
           <label htmlFor="descripcion">Descripción</label>
           <textarea
             id="descripcion"
@@ -284,15 +302,16 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
             value={formData.descripcion}
             onChange={handleChange}
             rows={3}
+            className="mf-textarea"
           />
         </div>
       </div>
 
-      <div className="form-actions">
-        <button type="button" onClick={onClose} className="btn-secondary">
+      <div className="mf-actions">
+        <button type="button" onClick={onClose} className="mf-btn mf-btn--ghost">
           Cancelar
         </button>
-        <button type="submit" disabled={loading} className="btn-primary">
+        <button type="submit" disabled={loading} className="mf-btn mf-btn--primary">
           {loading ? 'Guardando...' : producto ? 'Actualizar' : 'Crear'}
         </button>
       </div>

@@ -26,26 +26,22 @@
 .form-content {
   display: flex;
   flex-direction: column;
-  gap: 8px; /* 👈 reducir espacio general al mínimo */
+  gap: 8px;
 }
 
-/*
-  Dos columnas reales (.supplier-form-col): etiqueta + input en la misma pila.
-  align-items: center en el grid anterior centraba ítems en celdas altas y desalineaba columnas.
-*/
 .supplier-form-row {
   display: flex;
   gap: 16px;
   align-items: flex-start;
-  margin-bottom: 8px; /* 👈 reducir espacio con campo siguiente */
+  margin-bottom: 8px;
 }
 
 .supplier-form-col {
-  flex: 1; /* 👈 ocupar espacio igual */
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 2px; /* 👈 reducir espacio al mínimo */
+  gap: 2px;
   min-width: 0;
 }
 
@@ -56,14 +52,12 @@
   font-weight: 600;
   color: var(--color-text);
   font-size: 14px;
-  letter-spacing: 0;
-  line-height: 1.2; /* 👈 altura de línea más ajustada */
+  line-height: 1.2;
   flex-shrink: 0;
-  white-space: normal;
   overflow-wrap: anywhere;
 }
 
-.supplier-form-row .form-group.supplier-form-row__field {
+.supplier-form-row .mf-group.supplier-form-row__field {
   margin-bottom: 0;
 }
 
@@ -74,239 +68,23 @@
   min-width: 0;
 }
 
-/* 👇 Bajar solo el input de Teléfono para alinear con RUC/DNI */
 .telefono-field {
-  margin-top: 8px; /* 👈 1px más abajo */
+  margin-top: 8px;
 }
 
-.supplier-form-row__field .input-with-icon {
-  width: 100%;
-}
-
-.supplier-form-row__field .input-with-icon input {
-  width: 100%;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 0;
-}
-
-.form-group label {
-  margin-bottom: 6px;
-  font-weight: 600;
-  color: var(--color-text);
-  font-size: 14px;
-  letter-spacing: 0;
-}
-
-.input-with-icon {
-  position: relative;
-}
-
-.input-icon {
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #666;
-  font-size: 18px;
-  z-index: 1;
-}
-
-.form-group input,
-.form-group textarea {
-  padding: 4px 10px; /* 👈 reducir aún más padding vertical */
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  font-size: 14px;
-  font-family: inherit;
-  transition: all 0.2s ease;
-  background-color: var(--color-surface);
-  height: 32px; /* 👈 reducir aún más altura */
-  box-sizing: border-box;
-  color: var(--color-text);
-}
-
-.form-group input:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  background: var(--color-surface);
-  box-shadow: 0 0 0 3px rgba(0, 166, 244, 0.1);
-}
-
-.input-with-icon input {
-  padding-left: 32px; /* 👈 ajustar para altura ultra reducida */
-}
-
-.input-icon {
-  color: var(--color-text);
-}
-
-.form-group input.error,
-.form-group textarea.error {
-  border-color: #dc3545;
-  background-color: #fff5f5;
-}
-
-.form-group input:disabled,
-.form-group textarea:disabled {
-  background-color: #f8f9fa;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.form-group textarea {
-  resize: vertical;
-  min-height: 80px;
-}
-
-.error-message {
-  color: #dc3545;
-  font-size: 12px;
-  margin-top: 4px;
-  display: block;
-}
-
-/*
-  Debe ir bajo .supplier-form: SupplierList.css se importa después y pisaba
-  .form-actions / .btn-* globales (misma especificidad → ganaba el último archivo).
-*/
-.supplier-form .form-actions {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 12px;
-  margin-top: 8px; /* 👈 reducir margen al mínimo */
+.supplier-form-actions {
+  margin-top: 8px;
   padding-top: 0;
   border-top: none;
-  width: 100%;
-  box-sizing: border-box;
 }
 
-.supplier-form .form-actions .btn-primary,
-.supplier-form .form-actions .btn-secondary {
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  width: auto;
-  max-width: none;
-  min-width: 108px;
-  height: 30px; /* 👈 altura ultra compacta */
-  min-height: 30px;
-  padding: 0 16px;
-  margin: 0;
-  border-radius: 8px;
-  border: none;
-  font-size: 14px;
-  font-weight: 600;
-  font-family: inherit;
-  line-height: 1.2;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.supplier-form .form-actions .btn-primary {
-  background-color: var(--color-primary);
-  color: white;
-}
-
-.supplier-form .form-actions .btn-primary:hover:not(:disabled) {
-  background-color: var(--color-primary-dark);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 166, 244, 0.2);
-}
-
-.supplier-form .form-actions .btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.supplier-form .form-actions .btn-secondary {
-  background: var(--color-primary-lighter);
-  color: var(--color-text);
-}
-
-.supplier-form .form-actions .btn-secondary:hover:not(:disabled) {
-  background: var(--color-border);
-}
-
-.supplier-form .form-actions .btn-secondary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* Ayudas visuales para los campos */
-.form-group input::placeholder {
-  color: #9aa7ba;
-  opacity: 0.8;
-}
-
-.form-group textarea::placeholder {
-  color: #999;
-  opacity: 0.8;
-}
-
-/* Responsive */
 @media (max-width: 768px) {
   .supplier-form {
     max-width: 100%;
   }
 
-  /* Una columna: primero RUC, luego Teléfono (cada .supplier-form-col es un bloque) */
   .supplier-form-row {
-    display: flex;
     flex-direction: column;
     gap: 16px;
-  }
-
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .supplier-form .form-actions {
-    flex-direction: row;
-    justify-content: flex-end;
-    align-items: center;
-  }
-
-  .supplier-form .form-actions .btn-primary,
-  .supplier-form .form-actions .btn-secondary {
-    width: auto;
-  }
-}
-
-/* Móvil pequeño (≤576px) */
-@media (max-width: 576px) {
-  .form-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-  
-  .form-group input,
-  .form-group textarea {
-    padding: 14px; /* área táctil mínima recomendada */
-    font-size: 16px; /* evita zoom en iOS */
-  }
-  
-  .supplier-form .form-actions {
-    flex-direction: row;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .supplier-form .form-actions .btn-primary,
-  .supplier-form .form-actions .btn-secondary {
-    width: auto;
-    padding: 0 16px;
-    min-height: 44px;
-    height: auto;
   }
 }

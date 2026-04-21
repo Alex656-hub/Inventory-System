@@ -40,40 +40,42 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ category, onClose }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.nombre.trim()) {
       alert('El nombre de la categoría es obligatorio');
       return;
     }
 
-    // Aquí iría la lógica para guardar
     console.log('Guardando categoría:', formData);
     onClose();
   };
 
   return (
-    <form onSubmit={handleSubmit} className="unit-form">
-      <div className="form-group">
+    <form onSubmit={handleSubmit} className="mf-form category-unit-form">
+      <div className="mf-group">
         <label htmlFor="nombre">
           Nombre de la Categoría
-          <span className="required">*</span>
+          <span className="mf-required"> *</span>
         </label>
-        <input
-          type="text"
-          id="nombre"
-          name="nombre"
-          value={formData.nombre}
-          onChange={handleChange}
-          placeholder="Ej: Bebidas, Limpieza, Electrónica..."
-          required
-        />
+        <div className="mf-field-wrap">
+          <input
+            type="text"
+            id="nombre"
+            name="nombre"
+            value={formData.nombre}
+            onChange={handleChange}
+            placeholder="Ej: Bebidas, Limpieza, Electrónica..."
+            className="mf-field"
+            required
+          />
+        </div>
       </div>
 
-      <div className="form-actions">
-        <button type="button" className="cancel-btn" onClick={onClose}>
+      <div className="mf-actions category-form-actions">
+        <button type="button" className="mf-btn mf-btn--ghost" onClick={onClose}>
           Cancelar
         </button>
-        <button type="submit" className="submit-btn">
+        <button type="submit" className="mf-btn mf-btn--primary">
           {category ? 'Guardar' : 'Guardar'}
         </button>
       </div>

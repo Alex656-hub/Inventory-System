@@ -27,7 +27,7 @@ const UnitForm: React.FC<UnitFormProps> = ({ unidad, onClose }) => {
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.nombre.trim()) {
       newErrors.nombre = 'El nombre es requerido';
     } else if (formData.nombre.trim().length < 2) {
@@ -35,7 +35,7 @@ const UnitForm: React.FC<UnitFormProps> = ({ unidad, onClose }) => {
     } else if (formData.nombre.trim().length > 100) {
       newErrors.nombre = 'El nombre no puede exceder 100 caracteres';
     }
-    
+
     if (!formData.abreviatura.trim()) {
       newErrors.abreviatura = 'La abreviatura es requerida';
     } else if (formData.abreviatura.trim().length < 1) {
@@ -43,14 +43,14 @@ const UnitForm: React.FC<UnitFormProps> = ({ unidad, onClose }) => {
     } else if (formData.abreviatura.trim().length > 10) {
       newErrors.abreviatura = 'La abreviatura no puede exceder 10 caracteres';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validate()) {
       return;
     }
@@ -87,8 +87,7 @@ const UnitForm: React.FC<UnitFormProps> = ({ unidad, onClose }) => {
       ...prev,
       [name]: value
     }));
-    
-    // Limpiar error del campo cuando el usuario empieza a escribir
+
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -99,52 +98,56 @@ const UnitForm: React.FC<UnitFormProps> = ({ unidad, onClose }) => {
 
   return (
     <div className="unit-form-container">
-      <form onSubmit={handleSubmit} className="unit-form">
+      <form onSubmit={handleSubmit} className="mf-form unit-form">
         {errors.general && (
-          <div className="error-message general-error">
+          <div className="unit-general-error">
             {errors.general}
           </div>
         )}
 
-        <div className="form-group">
+        <div className="mf-group">
           <label htmlFor="nombre">Nombre *</label>
-          <input
-            type="text"
-            id="nombre"
-            name="nombre"
-            value={formData.nombre}
-            onChange={handleChange}
-            placeholder="Ej: Kilogramo, Litro, Caja"
-            className={errors.nombre ? 'error' : ''}
-            disabled={loading}
-          />
+          <div className="mf-field-wrap">
+            <input
+              type="text"
+              id="nombre"
+              name="nombre"
+              value={formData.nombre}
+              onChange={handleChange}
+              placeholder="Ej: Kilogramo, Litro, Caja"
+              className={`mf-field ${errors.nombre ? 'error' : ''}`}
+              disabled={loading}
+            />
+          </div>
           {errors.nombre && (
-            <span className="error-message">{errors.nombre}</span>
+            <span className="mf-field-error">{errors.nombre}</span>
           )}
         </div>
 
-        <div className="form-group">
+        <div className="mf-group">
           <label htmlFor="abreviatura">Abreviatura *</label>
-          <input
-            type="text"
-            id="abreviatura"
-            name="abreviatura"
-            value={formData.abreviatura}
-            onChange={handleChange}
-            placeholder="Ej: Kg, Lt, Cj"
-            className={errors.abreviatura ? 'error' : ''}
-            disabled={loading}
-            maxLength={10}
-          />
+          <div className="mf-field-wrap">
+            <input
+              type="text"
+              id="abreviatura"
+              name="abreviatura"
+              value={formData.abreviatura}
+              onChange={handleChange}
+              placeholder="Ej: Kg, Lt, Cj"
+              className={`mf-field ${errors.abreviatura ? 'error' : ''}`}
+              disabled={loading}
+              maxLength={10}
+            />
+          </div>
           {errors.abreviatura && (
-            <span className="error-message">{errors.abreviatura}</span>
+            <span className="mf-field-error">{errors.abreviatura}</span>
           )}
         </div>
 
-        <div className="form-actions">
+        <div className="mf-actions unit-form-actions">
           <button
             type="button"
-            className="btn btn-secondary"
+            className="mf-btn mf-btn--ghost"
             onClick={onClose}
             disabled={loading}
           >
@@ -152,7 +155,7 @@ const UnitForm: React.FC<UnitFormProps> = ({ unidad, onClose }) => {
           </button>
           <button
             type="submit"
-            className="btn btn-primary"
+            className="mf-btn mf-btn--primary"
             disabled={loading}
           >
             {loading ? 'Guardando...' : (unidad ? 'Actualizar' : 'Crear')}

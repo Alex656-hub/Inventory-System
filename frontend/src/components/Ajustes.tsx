@@ -187,31 +187,35 @@ const Ajustes: React.FC<AjustesProps> = () => {
           <div className="settings-section">
             <h2>Detalles Generales</h2>
             <div className="settings-form">
-              <div className="form-group">
+              <div className="mf-group">
                 <label htmlFor="ruc">RUC</label>
-                <input
-                  type="text"
-                  id="ruc"
-                  value={ruc}
-                  onChange={handleRucChange}
-                  placeholder="Ingrese el RUC de la empresa (11 dígitos)"
-                  className="form-input"
-                  maxLength={11}
-                  pattern="[0-9]{11}"
-                  inputMode="numeric"
-                />
+                <div className="mf-field-wrap">
+                  <input
+                    type="text"
+                    id="ruc"
+                    value={ruc}
+                    onChange={handleRucChange}
+                    placeholder="Ingrese el RUC de la empresa (11 dígitos)"
+                    className="mf-field"
+                    maxLength={11}
+                    pattern="[0-9]{11}"
+                    inputMode="numeric"
+                  />
+                </div>
               </div>
 
-              <div className="form-group">
+              <div className="mf-group">
                 <label htmlFor="direccion">Dirección</label>
-                <input
-                  type="text"
-                  id="direccion"
-                  value={direccion}
-                  onChange={(e) => setDireccion(e.target.value)}
-                  placeholder="Ingrese la dirección de la empresa"
-                  className="form-input"
-                />
+                <div className="mf-field-wrap">
+                  <input
+                    type="text"
+                    id="direccion"
+                    value={direccion}
+                    onChange={(e) => setDireccion(e.target.value)}
+                    placeholder="Ingrese la dirección de la empresa"
+                    className="mf-field"
+                  />
+                </div>
               </div>
 
               <button 

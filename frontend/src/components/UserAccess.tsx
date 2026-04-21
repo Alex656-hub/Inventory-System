@@ -245,56 +245,68 @@ const UserAccess: React.FC = () => {
         title={editingUser ? 'Editar Usuario' : 'Nuevo Usuario'}
         size="large"
       >
-        <form onSubmit={handleSubmit} className="user-form">
+        <form onSubmit={handleSubmit} className="mf-form user-form">
               <div className="form-row">
-                <div className="form-group">
+                <div className="mf-group">
                   <label htmlFor="username">Usuario (Login)</label>
-                  <input
-                    type="text"
-                    id="username"
-                    value={formData.username}
-                    onChange={(e) => setFormData({...formData, username: e.target.value})}
-                    required
-                  />
+                  <div className="mf-field-wrap">
+                    <input
+                      type="text"
+                      id="username"
+                      className="mf-field"
+                      value={formData.username}
+                      onChange={(e) => setFormData({...formData, username: e.target.value})}
+                      required
+                    />
+                  </div>
                 </div>
-                <div className="form-group">
+                <div className="mf-group">
                   <label htmlFor="nombre">Nombre Completo</label>
-                  <input
-                    type="text"
-                    id="nombre"
-                    value={formData.nombre}
-                    onChange={(e) => setFormData({...formData, nombre: e.target.value})}
-                    required
-                  />
+                  <div className="mf-field-wrap">
+                    <input
+                      type="text"
+                      id="nombre"
+                      className="mf-field"
+                      value={formData.nombre}
+                      onChange={(e) => setFormData({...formData, nombre: e.target.value})}
+                      required
+                    />
+                  </div>
                 </div>
               </div>
               
               <div className="form-row">
-                <div className="form-group">
+                <div className="mf-group">
                   <label htmlFor="accessLevel">Nivel de Acceso</label>
-                  <select
-                    id="accessLevel"
-                    value={accessLevel}
-                    onChange={(e) => setAccessLevel(e.target.value as 'admin' | 'custom')}
-                  >
-                    <option value="admin">Administrador Total</option>
-                    <option value="custom">Personalizado (Elegir módulos)</option>
-                  </select>
+                  <div className="mf-field-wrap">
+                    <select
+                      id="accessLevel"
+                      className="mf-select"
+                      value={accessLevel}
+                      onChange={(e) => setAccessLevel(e.target.value as 'admin' | 'custom')}
+                    >
+                      <option value="admin">Administrador Total</option>
+                      <option value="custom">Personalizado (Elegir módulos)</option>
+                    </select>
+                  </div>
                 </div>
 
                 {!editingUser && (
-                  <div className="form-group">
+                  <div className="mf-group">
                     <label htmlFor="password">
                       <i className='bx bx-lock-alt'></i> Contraseña
-                      <span className="required">Obligatorio</span>
+                      <span className="mf-required"> Obligatorio</span>
                     </label>
-                    <input
-                      type="password"
-                      id="password"
-                      value={formData.password}
-                      onChange={(e) => setFormData({...formData, password: e.target.value})}
-                      required
-                    />
+                    <div className="mf-field-wrap">
+                      <input
+                        type="password"
+                        id="password"
+                        className="mf-field"
+                        value={formData.password}
+                        onChange={(e) => setFormData({...formData, password: e.target.value})}
+                        required
+                      />
+                    </div>
                   </div>
                 )}
               </div>
@@ -431,11 +443,11 @@ const UserAccess: React.FC = () => {
                 </div>
               )}
 
-              <div className="form-actions">
-                <button type="button" className="cancel-btn" onClick={() => setShowModal(false)}>
+              <div className="mf-actions user-form-actions">
+                <button type="button" className="mf-btn mf-btn--ghost" onClick={() => setShowModal(false)}>
                   Cancelar
                 </button>
-                <button type="submit" className="submit-btn">
+                <button type="submit" className="mf-btn mf-btn--primary">
                   {editingUser ? 'Actualizar Usuario' : 'Guardar Usuario'}
                 </button>
               </div>

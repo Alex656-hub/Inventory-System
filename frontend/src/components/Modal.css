@@ -128,7 +128,7 @@
   box-shadow: 0 0 0 4px rgba(0, 166, 244, 0.12);
 }
 
-/* Móvil estándar (���576px) */
+/* Móvil estándar (≤576px) */
 @media (max-width: 576px) {
   .modal-overlay {
     padding: 12px;

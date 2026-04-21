@@ -8,98 +8,12 @@
   gap: 20px;
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
+.form-grid .mf-group {
+  margin-bottom: 0;
 }
 
-.form-group.full-width {
-  grid-column: 1 / -1;
-}
-
-.form-group label {
-  margin-bottom: 8px;
+.form-grid .mf-group > label {
   font-weight: 600;
-  color: var(--color-text);
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-  padding: 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 5px;
-  font-size: 16px;
-  font-family: inherit;
-  transition: border-color 0.3s;
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: var(--color-primary);
-}
-
-.form-group input.error,
-.form-group select.error,
-.form-group textarea.error {
-  border-color: #dc3545;
-}
-
-.form-group textarea {
-  resize: vertical;
-  min-height: 80px;
-}
-
-.error-message {
-  color: #dc3545;
-  font-size: 14px;
-  margin-top: 5px;
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 15px;
-  margin-top: 30px;
-  padding-top: 20px;
-  border-top: 1px solid var(--color-border);
-}
-
-.btn-primary,
-.btn-secondary {
-  padding: 12px 24px;
-  border: none;
-  border-radius: 5px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.btn-primary {
-  background-color: var(--color-primary);
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background-color: var(--color-primary-dark);
-}
-
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.btn-secondary {
-  background-color: var(--color-surface);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
-}
-
-.btn-secondary:hover {
-  background-color: var(--color-primary-lighter);
 }
 
 @media (max-width: 768px) {
@@ -108,29 +22,8 @@
   }
 }
 
-/* Móvil pequeño (≤576px) */
 @media (max-width: 576px) {
   .form-grid {
-    grid-template-columns: 1fr;
     gap: 16px;
-  }
-  
-  .form-group input,
-  .form-group select,
-  .form-group textarea {
-    padding: 14px; /* área táctil mínima recomendada */
-    font-size: 16px; /* evita zoom en iOS */
-  }
-  
-  .form-actions {
-    flex-direction: column;
-    gap: 12px;
-  }
-  
-  .btn-primary,
-  .btn-secondary {
-    width: 100%;
-    padding: 14px 20px;
-    min-height: 44px; /* mínimo recomendado para tocar */
   }
 }

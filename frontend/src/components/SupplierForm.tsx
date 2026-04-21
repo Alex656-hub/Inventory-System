@@ -37,8 +37,6 @@ const SupplierForm: React.FC<SupplierFormProps> = ({ proveedor, onClose, onSucce
   }, [proveedor]);
 
   const validateRUC = (ruc: string): boolean => {
-    // RUC peruano: 11 dígitos, prefijos válidos
-    // 10: persona natural, 15/16/17: extranjeros, 20: persona jurídica
     if (ruc.length !== 11) return false;
     const validPrefixes = ['10', '15', '16', '17', '20'];
     const prefix = ruc.substring(0, 2);
@@ -46,7 +44,6 @@ const SupplierForm: React.FC<SupplierFormProps> = ({ proveedor, onClose, onSucce
   };
 
   const validateDNI = (dni: string): boolean => {
-    // DNI peruano: exactamente 8 dígitos
     return /^\d{8}$/.test(dni);
   };
 
@@ -56,7 +53,6 @@ const SupplierForm: React.FC<SupplierFormProps> = ({ proveedor, onClose, onSucce
   };
 
   const validatePhone = (phone: string): boolean => {
-    // Validación básica de teléfono peruano (9 dígitos empezando con 9)
     const phoneRegex = /^9\d{8}$/;
     return phoneRegex.test(phone);
   };
@@ -64,7 +60,6 @@ const SupplierForm: React.FC<SupplierFormProps> = ({ proveedor, onClose, onSucce
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    // Validación nombre
     if (!formData.nombre.trim()) {
       newErrors.nombre = 'El nombre es requerido';
     } else if (formData.nombre.trim().length < 3) {
@@ -73,7 +68,6 @@ const SupplierForm: React.FC<SupplierFormProps> = ({ proveedor, onClose, onSucce
       newErrors.nombre = 'El nombre no puede exceder 100 caracteres';
     }
 
-    // Validación RUC/DNI
     if (!formData.ruc_dni.trim()) {
       newErrors.ruc_dni = 'El RUC/DNI es requerido';
     } else {
@@ -91,17 +85,14 @@ const SupplierForm: React.FC<SupplierFormProps> = ({ proveedor, onClose, onSucce
       }
     }
 
-    // Validación teléfono (opcional pero si se ingresa debe ser válido)
     if (formData.contacto_telefono && !validatePhone(formData.contacto_telefono)) {
       newErrors.contacto_telefono = 'El teléfono debe tener 9 dígitos empezando con 9';
     }
 
-    // Validación email (opcional pero si se ingresa debe ser válido)
     if (formData.contacto_email && !validateEmail(formData.contacto_email)) {
       newErrors.contacto_email = 'El email no tiene un formato válido';
     }
 
-    // Validaciones de longitud para campos opcionales
     if (formData.direccion && formData.direccion.length > 200) {
       newErrors.direccion = 'La dirección no puede exceder 200 caracteres';
     }
@@ -116,7 +107,7 @@ const SupplierForm: React.FC<SupplierFormProps> = ({ proveedor, onClose, onSucce
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validate()) {
       return;
     }
@@ -143,37 +134,40 @@ const SupplierForm: React.FC<SupplierFormProps> = ({ proveedor, onClose, onSucce
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
-    // Para RUC/DNI y teléfono, solo permitir números
+
     if (name === 'ruc_dni' || name === 'contacto_telefono') {
       const numericValue = value.replace(/\D/g, '');
       setFormData(prev => ({ ...prev, [name]: numericValue }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
-    
-    // Limpiar error del campo cuando el usuario empieza a escribir
+
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
+  const fieldClass = (name: string) =>
+    `mf-field ${errors[name] ? 'error' : ''}`;
+
   return (
-    <form onSubmit={handleSubmit} className="supplier-form">
+    <form onSubmit={handleSubmit} className="mf-form supplier-form">
       <div className="form-content">
-        <div className="form-group">
+        <div className="mf-group">
           <label htmlFor="nombre">Nombre / Razón Social *</label>
-          <input
-            type="text"
-            id="nombre"
-            name="nombre"
-            value={formData.nombre}
-            onChange={handleChange}
-            className={errors.nombre ? 'error' : ''}
-            placeholder="Nombre o razón social"
-            disabled={loading}
-          />
-          {errors.nombre && <span className="error-message">{errors.nombre}</span>}
+          <div className="mf-field-wrap">
+            <input
+              type="text"
+              id="nombre"
+              name="nombre"
+              value={formData.nombre}
+              onChange={handleChange}
+              className={fieldClass('nombre')}
+              placeholder="Nombre o razón social"
+              disabled={loading}
+            />
+          </div>
+          {errors.nombre && <span className="mf-field-error">{errors.nombre}</span>}
         </div>
 
         <div className="supplier-form-row">
@@ -181,21 +175,21 @@ const SupplierForm: React.FC<SupplierFormProps> = ({ proveedor, onClose, onSucce
             <label className="supplier-form-row__label" htmlFor="ruc_dni">
               RUC / DNI
             </label>
-            <div className="form-group supplier-form-row__field">
-              <div className="input-with-icon">
+            <div className="mf-group supplier-form-row__field">
+              <div className="mf-field-wrap">
                 <input
                   type="text"
                   id="ruc_dni"
                   name="ruc_dni"
                   value={formData.ruc_dni}
                   onChange={handleChange}
-                  className={errors.ruc_dni ? 'error' : ''}
+                  className={fieldClass('ruc_dni')}
                   placeholder=""
                   maxLength={11}
                   disabled={loading}
                 />
               </div>
-              {errors.ruc_dni && <span className="error-message">{errors.ruc_dni}</span>}
+              {errors.ruc_dni && <span className="mf-field-error">{errors.ruc_dni}</span>}
             </div>
           </div>
 
@@ -203,50 +197,50 @@ const SupplierForm: React.FC<SupplierFormProps> = ({ proveedor, onClose, onSucce
             <label className="supplier-form-row__label" htmlFor="contacto_telefono">
               Teléfono
             </label>
-            <div className="form-group supplier-form-row__field telefono-field">
-              <div className="input-with-icon">
+            <div className="mf-group supplier-form-row__field telefono-field">
+              <div className="mf-field-wrap">
                 <input
                   type="tel"
                   id="contacto_telefono"
                   name="contacto_telefono"
                   value={formData.contacto_telefono}
                   onChange={handleChange}
-                  className={errors.contacto_telefono ? 'error' : ''}
+                  className={fieldClass('contacto_telefono')}
                   placeholder=""
                   maxLength={9}
                   disabled={loading}
                 />
               </div>
               {errors.contacto_telefono && (
-                <span className="error-message">{errors.contacto_telefono}</span>
+                <span className="mf-field-error">{errors.contacto_telefono}</span>
               )}
             </div>
           </div>
         </div>
 
-        <div className="form-group">
+        <div className="mf-group">
           <label htmlFor="contacto_email">Email</label>
-          <div className="input-with-icon">
+          <div className="mf-field-wrap">
             <input
               type="email"
               id="contacto_email"
               name="contacto_email"
               value={formData.contacto_email}
               onChange={handleChange}
-              className={errors.contacto_email ? 'error' : ''}
+              className={fieldClass('contacto_email')}
               placeholder=""
               disabled={loading}
             />
           </div>
-          {errors.contacto_email && <span className="error-message">{errors.contacto_email}</span>}
+          {errors.contacto_email && <span className="mf-field-error">{errors.contacto_email}</span>}
         </div>
       </div>
 
-      <div className="form-actions">
-        <button type="button" onClick={onClose} className="btn-secondary" disabled={loading}>
+      <div className="mf-actions supplier-form-actions">
+        <button type="button" onClick={onClose} className="mf-btn mf-btn--ghost" disabled={loading}>
           Cancelar
         </button>
-        <button type="submit" disabled={loading} className="btn-primary">
+        <button type="submit" disabled={loading} className="mf-btn mf-btn--primary">
           Guardar
         </button>
       </div>

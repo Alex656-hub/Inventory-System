@@ -15,6 +15,8 @@ import './models/DetalleEntrada';
 import './models/SalidaInventario';
 import './models/DetalleSalida';
 import './models/MovimientoInventario';
+import Sede from './models/Sede';
+import Almacen from './models/Almacen';
 
 // Importar rutas
 import authRoutes from './routes/auth.routes';
@@ -33,6 +35,8 @@ import searchRoutes from './routes/search.routes';
 import alertsRoutes from './routes/alerts.routes';
 import reportRoutes from './routes/report.routes';
 import configuracionRoutes from './routes/configuracion.routes';
+import sedeRoutes from './routes/sede.routes';
+import almacenRoutes from './routes/almacen.routes';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -76,6 +80,8 @@ app.use('/api/search', searchRoutes);
 app.use('/api/alerts', alertsRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/configuracion', configuracionRoutes);
+app.use('/api/sedes', sedeRoutes);
+app.use('/api/almacenes', almacenRoutes);
 
 // Ruta de salud
 app.get('/api/health', (req, res) => {

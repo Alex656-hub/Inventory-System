@@ -64,82 +64,97 @@ const ClientForm: React.FC<ClientFormProps> = ({ cliente, onClose, onSave }) => 
 
   return (
     <div className="client-form-container">
-      <form className="client-form" onSubmit={handleSubmit}>
-        <div className="client-form-group">
+      <form className="mf-form client-form" onSubmit={handleSubmit}>
+        <div className="mf-group">
           <label htmlFor="nombre">Nombre / Razón Social *</label>
-          <input
-            id="nombre"
-            name="nombre"
-            type="text"
-            value={formData.nombre}
-            onChange={handleChange}
-            required
-            autoFocus
-          />
-        </div>
-
-        <div className="client-form-row">
-          <div className="client-form-group">
-            <label htmlFor="documento">DNI / RUC</label>
-            <div className="input-with-icon">
-              <i className="bx bx-file input-icon" />
-              <input
-                id="documento"
-                name="documento"
-                type="text"
-                value={formData.documento}
-                onChange={handleChange}
-                placeholder="Ej. 2013489182"
-              />
-            </div>
-          </div>
-          <div className="client-form-group">
-            <label htmlFor="telefono">Teléfono</label>
-            <div className="input-with-icon">
-              <i className="bx bx-phone input-icon" />
-              <input
-                id="telefono"
-                name="telefono"
-                type="tel"
-                value={formData.telefono}
-                onChange={handleChange}
-                placeholder="Ej. 987654321"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="client-form-group">
-          <label htmlFor="email">Email</label>
-          <div className="input-with-icon">
-            <i className="bx bx-envelope input-icon" />
+          <div className="mf-field-wrap">
             <input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
+              id="nombre"
+              name="nombre"
+              type="text"
+              value={formData.nombre}
               onChange={handleChange}
-              placeholder="correo@ejemplo.com"
+              className="mf-field"
+              required
+              autoFocus
             />
           </div>
         </div>
 
-        <div className="client-form-group">
-          <label htmlFor="direccion">Dirección</label>
-          <input
-            id="direccion"
-            name="direccion"
-            type="text"
-            value={formData.direccion}
-            onChange={handleChange}
-          />
+        <div className="client-form-row">
+          <div className="mf-group">
+            <label htmlFor="documento">DNI / RUC</label>
+            <div className="mf-input-with-icon">
+              <i className="bx bx-file mf-input-with-icon__pin" aria-hidden />
+              <div className="mf-field-wrap">
+                <input
+                  id="documento"
+                  name="documento"
+                  type="text"
+                  value={formData.documento}
+                  onChange={handleChange}
+                  placeholder="Ej. 2013489182"
+                  className="mf-field"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="mf-group">
+            <label htmlFor="telefono">Teléfono</label>
+            <div className="mf-input-with-icon">
+              <i className="bx bx-phone mf-input-with-icon__pin" aria-hidden />
+              <div className="mf-field-wrap">
+                <input
+                  id="telefono"
+                  name="telefono"
+                  type="tel"
+                  value={formData.telefono}
+                  onChange={handleChange}
+                  placeholder="Ej. 987654321"
+                  className="mf-field"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="client-form-actions">
-          <button type="button" className="client-cancel-btn" onClick={onClose}>
+        <div className="mf-group">
+          <label htmlFor="email">Email</label>
+          <div className="mf-input-with-icon">
+            <i className="bx bx-envelope mf-input-with-icon__pin" aria-hidden />
+            <div className="mf-field-wrap">
+              <input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="correo@ejemplo.com"
+                className="mf-field"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="mf-group">
+          <label htmlFor="direccion">Dirección</label>
+          <div className="mf-field-wrap">
+            <input
+              id="direccion"
+              name="direccion"
+              type="text"
+              value={formData.direccion}
+              onChange={handleChange}
+              className="mf-field"
+            />
+          </div>
+        </div>
+
+        <div className="mf-actions client-form-actions">
+          <button type="button" className="mf-btn mf-btn--ghost" onClick={onClose}>
             Cancelar
           </button>
-          <button type="submit" className="client-submit-btn">
+          <button type="submit" className="mf-btn mf-btn--primary">
             Guardar
           </button>
         </div>
@@ -149,4 +164,3 @@ const ClientForm: React.FC<ClientFormProps> = ({ cliente, onClose, onSave }) => 
 };
 
 export default ClientForm;
-

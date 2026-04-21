@@ -48,7 +48,7 @@ const PersonalForm: React.FC<PersonalFormProps> = ({ item, onClose, onSave }) =>
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.nombreCompleto.trim()) {
       alert('El nombre completo es obligatorio');
       return;
@@ -64,23 +64,26 @@ const PersonalForm: React.FC<PersonalFormProps> = ({ item, onClose, onSave }) =>
 
   return (
     <div className="personal-form-container">
-      <form className="personal-form" onSubmit={handleSubmit}>
-        <div className="personal-form-group">
+      <form className="mf-form personal-form" onSubmit={handleSubmit}>
+        <div className="mf-group">
           <label htmlFor="nombreCompleto">Nombre Completo *</label>
-          <input
-            id="nombreCompleto"
-            name="nombreCompleto"
-            type="text"
-            value={formData.nombreCompleto}
-            onChange={handleChange}
-            required
-          />
+          <div className="mf-field-wrap">
+            <input
+              id="nombreCompleto"
+              name="nombreCompleto"
+              type="text"
+              value={formData.nombreCompleto}
+              onChange={handleChange}
+              className="mf-field"
+              required
+            />
+          </div>
         </div>
 
         <div className="personal-form-row">
-          <div className="personal-form-group cargo-field">
+          <div className="mf-group">
             <label htmlFor="cargo">Rol / Cargo</label>
-            <div className="cargo-input-wrapper">
+            <div className="mf-field-wrap">
               <input
                 id="cargo"
                 name="cargo"
@@ -88,24 +91,28 @@ const PersonalForm: React.FC<PersonalFormProps> = ({ item, onClose, onSave }) =>
                 value={formData.cargo}
                 onChange={handleChange}
                 placeholder="Ejm. Almacenero"
+                className="mf-field"
               />
             </div>
           </div>
-          <div className="personal-form-group">
+          <div className="mf-group">
             <label htmlFor="telefono">Teléfono</label>
-            <input
-              id="telefono"
-              name="telefono"
-              type="tel"
-              value={formData.telefono}
-              onChange={handleChange}
-            />
+            <div className="mf-field-wrap">
+              <input
+                id="telefono"
+                name="telefono"
+                type="tel"
+                value={formData.telefono}
+                onChange={handleChange}
+                className="mf-field"
+              />
+            </div>
           </div>
         </div>
 
-        <div className="personal-form-actions">
-          <button type="button" className="personal-cancel-btn" onClick={onClose}>Cancelar</button>
-          <button type="submit" className="personal-submit-btn">Guardar</button>
+        <div className="mf-actions personal-form-actions">
+          <button type="button" className="mf-btn mf-btn--ghost" onClick={onClose}>Cancelar</button>
+          <button type="submit" className="mf-btn mf-btn--primary">Guardar</button>
         </div>
       </form>
     </div>

@@ -165,87 +165,17 @@ input:checked + .slider:before {
   margin-bottom: 20px;
 }
 
-.form-group {
-  margin-bottom: 20px;
+.form-row .mf-group {
+  margin-bottom: 0;
 }
 
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-  font-size: 14px;
-  color: var(--color-text);
-}
-
-.form-group label i {
+.user-form .mf-group label i {
   margin-right: 8px;
   color: var(--color-primary);
 }
 
-.required {
-  color: #dc3545;
-  font-size: 12px;
-  margin-left: 8px;
-  font-weight: 400;
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #a9c2ff;
-  border-radius: 8px;
-  font-size: 14px;
-  transition: all 0.2s ease;
-  box-sizing: border-box;
-  background: var(--color-surface);
-  color: var(--color-text);
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: #3b82f6;
-  background: var(--color-surface);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.form-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
+.user-form-actions {
   margin-top: 24px;
-}
-
-.cancel-btn,
-.submit-btn {
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
-}
-
-.cancel-btn {
-  background: var(--color-primary-lighter);
-  color: var(--color-text);
-}
-
-.cancel-btn:hover {
-  background: var(--color-border);
-}
-
-.submit-btn {
-  background: var(--color-primary);
-  color: white;
-}
-
-.submit-btn:hover {
-  background: var(--color-primary-dark);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 166, 244, 0.15);
 }
 
 /* Permissions Section Styles */
@@ -387,29 +317,30 @@ body.dark .nombre-cell {
   color: var(--color-sky-300);
 }
 
-body.dark .form-group label {
+body.dark .user-form .mf-group > label {
   color: var(--color-sky-300);
 }
 
-body.dark .form-group input,
-body.dark .form-group select {
+body.dark .user-form .mf-field,
+body.dark .user-form .mf-select {
   background: var(--color-sky-950);
   border-color: var(--color-sky-700);
   color: var(--color-sky-100);
 }
 
-body.dark .form-group input:focus,
-body.dark .form-group select:focus {
+body.dark .user-form .mf-field:focus,
+body.dark .user-form .mf-select:focus {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(0, 166, 244, 0.2);
 }
 
-body.dark .cancel-btn {
+body.dark .user-form .mf-btn--ghost {
   background: var(--color-sky-800);
   color: var(--color-sky-200);
+  border-color: var(--color-sky-600);
 }
 
-body.dark .cancel-btn:hover {
+body.dark .user-form .mf-btn--ghost:hover:not(:disabled) {
   background: var(--color-sky-700);
 }
 
@@ -472,6 +403,6 @@ body.dark .global-config-section .permission-item span {
   color: var(--color-sky-300);
 }
 
-body.dark .form-group label i {
+body.dark .user-form .mf-group label i {
   color: var(--color-sky-400);
 }

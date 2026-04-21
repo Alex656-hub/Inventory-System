@@ -1,0 +1,245 @@
+/**
+ * Controles de formulario unificados (prefijo mf- = "module field").
+ * Evita colisiones con Ajustes (.form-input !important), Login y selectores genéricos .form-group.
+ */
+
+.mf-form {
+  padding: 0;
+  max-width: none;
+  margin: 0;
+}
+
+.mf-field-wrap {
+  width: 100%;
+  max-width: 100%;
+}
+
+.mf-group {
+  margin-bottom: 20px;
+}
+
+.mf-group--full {
+  grid-column: 1 / -1;
+}
+
+.mf-group > label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--color-text);
+}
+
+.mf-required {
+  color: #dc3545;
+}
+
+.mf-field,
+.mf-select {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  height: 48px;
+  min-height: 48px;
+  max-height: 48px;
+  margin: 0;
+  padding: 0 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: normal;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.mf-select {
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 40px;
+}
+
+.mf-textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 88px;
+  margin: 0;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.45;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.mf-field:focus,
+.mf-select:focus,
+.mf-textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 166, 244, 0.18);
+}
+
+.mf-field.error,
+.mf-select.error,
+.mf-textarea.error {
+  border-color: #dc3545;
+}
+
+.mf-field:disabled,
+.mf-select:disabled,
+.mf-textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.mf-input-with-icon {
+  position: relative;
+}
+
+.mf-input-with-icon .mf-input-with-icon__pin {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  color: #9aa4b2;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.mf-input-with-icon .mf-field {
+  padding-left: 44px;
+}
+
+.mf-field-error,
+.mf-form .error-message {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #dc3545;
+  font-weight: 500;
+}
+
+.mf-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+}
+
+.mf-btn {
+  height: 40px;
+  padding: 0 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+  justify-content: center;
+  font-family: inherit;
+  border: none;
+}
+
+.mf-btn--ghost {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.mf-btn--ghost:hover:not(:disabled) {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+}
+
+.mf-btn--primary {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: var(--gradient-primary, linear-gradient(135deg, var(--color-sky-500) 0%, var(--color-sky-700) 100%));
+  color: #fff;
+}
+
+.mf-btn--primary:hover:not(:disabled) {
+  background: var(--gradient-primary-hover, linear-gradient(135deg, var(--color-sky-600) 0%, var(--color-sky-800) 100%));
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+}
+
+.mf-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.mf-form .mf-spinning {
+  animation: mf-spin 1s linear infinite;
+}
+
+@keyframes mf-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.mf-field.error {
+  animation: mf-shake 0.3s ease-in-out;
+}
+
+@keyframes mf-shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+@media (max-width: 768px) {
+  .mf-actions {
+    flex-direction: column;
+  }
+
+  .mf-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .mf-field,
+  .mf-select {
+    font-size: 16px;
+  }
+
+  .mf-textarea {
+    font-size: 16px;
+  }
+
+  .mf-input-with-icon .mf-field {
+    padding-left: 40px;
+  }
+
+  .mf-input-with-icon .mf-input-with-icon__pin {
+    left: 10px;
+    font-size: 16px;
+  }
+}

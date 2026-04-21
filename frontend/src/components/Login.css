@@ -326,9 +326,10 @@ button.forgot-password:hover {
   text-align: center;
 }
 
-input[type="email"],
-input[type="password"],
-input[type="text"] {
+/* Solo pantalla de login: antes era global y pisaba inputs del resto de la app (p. ej. modales). */
+.login-container input[type="email"],
+.login-container input[type="password"],
+.login-container input[type="text"] {
   background-color: #eee;
   border: none;
   padding: 10px 15px;

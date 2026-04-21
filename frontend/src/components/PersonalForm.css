@@ -33,90 +33,10 @@
   gap: 10px;
 }
 
-.personal-form-group {
-  margin-bottom: 10px;
-}
-
-/* 👇 Bajar solo el input de Rol/Cargo para alinear con Teléfono */
-.cargo-input-wrapper {
-  margin-top: -8px; /* 👈 aumentar margen negativo para subir más */
-}
-
-.personal-form-group label {
-  display: block;
-  margin-bottom: 6px;
-  font-weight: 600;
-  color: #1e293b;
-  font-size: 14px;
-  letter-spacing: 0;
-}
-
-.personal-form-group input,
-.personal-form-group select {
-  width: 100%;
-  height: 40px;
-  border-radius: 8px;
-  border: 1px solid #a9c2ff;
-  padding: 8px 10px;
-  font-size: 14px;
-  color: #0f172a;
-  background: #fff;
-  box-sizing: border-box;
-  transition: all 0.2s ease;
-}
-
-.personal-form-group input::placeholder {
-  color: #9aa7ba;
-}
-
-.personal-form-group input:focus,
-.personal-form-group select:focus {
-  outline: none;
-  border-color: #3b82f6;
-  background: #fff;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
 .personal-form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
   margin-top: 6px;
-  padding-top: 2px;
+  padding-top: 12px;
   border-top: none;
-}
-
-.personal-cancel-btn,
-.personal-submit-btn {
-  min-width: 108px;
-  height: 38px;
-  padding: 0 14px;
-  border-radius: 8px;
-  border: none;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.personal-cancel-btn {
-  background: #cedff7;
-  color: #1e293b;
-}
-
-.personal-cancel-btn:hover {
-  background: #bdd3f1;
-}
-
-.personal-submit-btn {
-  background: var(--color-primary);
-  color: white;
-}
-
-.personal-submit-btn:hover {
-  background: var(--color-primary-dark);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 166, 244, 0.2);
 }
 
 @media (max-width: 768px) {

@@ -15,6 +15,7 @@ import ReportSelector from './components/ReportSelector';
 import Ajustes from './components/Ajustes';
 import UserAccess from './components/UserAccess';
 import PersonalList from './components/PersonalList';
+import SedesYAlmacenesList from './components/SedesYAlmacenesList';
 import PrivateRoute from './components/PrivateRoute';
 import { authService } from './services/auth.service';
 import './App.css';
@@ -149,6 +150,16 @@ function App() {
               <PrivateRoute allowedRoles={['gerente']}>
                 <Layout>
                   <UserAccess />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/sedes-almacenes"
+            element={
+              <PrivateRoute allowedRoles={['gerente']}>
+                <Layout>
+                  <SedesYAlmacenesList />
                 </Layout>
               </PrivateRoute>
             }
