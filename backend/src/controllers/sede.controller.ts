@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { validationResult } from 'express-validator';
 import Sede from '../models/Sede';
-import Almacen from '../models/Almacen';
 import { Op } from 'sequelize';
 
 // Obtener todas las sedes con paginación y filtros
@@ -41,14 +40,7 @@ export const obtenerSedes = async (req: Request, res: Response) => {
       where,
       limit: Number(limite),
       offset,
-      order: [[orden as string, direccion as string]],
-      include: [
-        {
-          model: Almacen,
-          as: 'almacenes',
-          attributes: ['id', 'nombre', 'codigo', 'estado']
-        }
-      ]
+      order: [[orden as string, direccion as string]]
     });
 
     res.json({
@@ -72,13 +64,7 @@ export const obtenerSedePorId = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     const sede = await Sede.findByPk(id, {
-      include: [
-        {
-          model: Almacen,
-          as: 'almacenes',
-          attributes: ['id', 'nombre', 'codigo', 'tipo', 'capacidad', 'unidad_capacidad', 'estado']
-        }
-      ]
+      // Sin include de almacenes: sedes y almacenes son entidades independientes
     });
 
     if (!sede) {
@@ -190,14 +176,6 @@ export const eliminarSede = async (req: Request, res: Response) => {
     const sede = await Sede.findByPk(id);
     if (!sede) {
       return res.status(404).json({ mensaje: 'Sede no encontrada' });
-    }
-
-    // Verificar si tiene almacenes asociados
-    const almacenesAsociados = await Almacen.count({ where: { sede_id: id } });
-    if (almacenesAsociados > 0) {
-      return res.status(400).json({ 
-        mensaje: 'No se puede eliminar la sede porque tiene almacenes asociados' 
-      });
     }
 
     // Cambiar estado a inactivo en lugar de eliminar físicamente

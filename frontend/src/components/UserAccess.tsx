@@ -47,8 +47,8 @@ const UserAccess: React.FC = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredUsers = users.filter(user => 
-    user.username.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filteredUsers = users.filter(user =>
+    user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.nombre.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -82,7 +82,7 @@ const UserAccess: React.FC = () => {
   };
 
   const handleToggleStatus = (userId: number) => {
-    setUsers(users.map(user => 
+    setUsers(users.map(user =>
       user.id === userId ? { ...user, estado: !user.estado } : user
     ));
   };
@@ -106,17 +106,17 @@ const UserAccess: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (editingUser) {
-      setUsers(users.map(user => 
-        user.id === editingUser.id 
-          ? { 
-              ...user, 
+      setUsers(users.map(user =>
+        user.id === editingUser.id
+          ? {
+              ...user,
               username: formData.username,
               nombre: formData.nombre,
               rol: formData.rol === 'gerente' ? 'Admin Total' : 'Personalizado',
               rolType: formData.rol === 'gerente' ? 'admin' : 'personalizado'
-            } 
+            }
           : user
       ));
     } else {
@@ -216,7 +216,7 @@ const UserAccess: React.FC = () => {
                   </div>
                 </td>
                 <td className="acciones-cell">
-                  <button 
+                  <button
                     className="action-btn edit-btn"
                     onClick={() => handleEdit(user)}
                     title="Editar"
@@ -224,7 +224,7 @@ const UserAccess: React.FC = () => {
                     <i className='bx bx-edit'></i>
                   </button>
                   {user.rolType !== 'admin' && (
-                    <button 
+                    <button
                       className="action-btn delete-btn"
                       onClick={() => handleDelete(user.id)}
                       title="Eliminar"
@@ -244,213 +244,214 @@ const UserAccess: React.FC = () => {
         onClose={() => setShowModal(false)}
         title={editingUser ? 'Editar Usuario' : 'Nuevo Usuario'}
         size="large"
+        contentClassName="ua-modal"
       >
         <form onSubmit={handleSubmit} className="mf-form user-form">
-              <div className="form-row">
-                <div className="mf-group">
-                  <label htmlFor="username">Usuario (Login)</label>
-                  <div className="mf-field-wrap">
-                    <input
-                      type="text"
-                      id="username"
-                      className="mf-field"
-                      value={formData.username}
-                      onChange={(e) => setFormData({...formData, username: e.target.value})}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="mf-group">
-                  <label htmlFor="nombre">Nombre Completo</label>
-                  <div className="mf-field-wrap">
-                    <input
-                      type="text"
-                      id="nombre"
-                      className="mf-field"
-                      value={formData.nombre}
-                      onChange={(e) => setFormData({...formData, nombre: e.target.value})}
-                      required
-                    />
-                  </div>
+          <div className="form-row">
+            <div className="mf-group">
+              <label htmlFor="username">Usuario (Login)</label>
+              <div className="mf-field-wrap">
+                <input
+                  type="text"
+                  id="username"
+                  className="mf-field"
+                  value={formData.username}
+                  onChange={(e) => setFormData({...formData, username: e.target.value})}
+                  required
+                />
+              </div>
+            </div>
+            <div className="mf-group">
+              <label htmlFor="nombre">Nombre Completo</label>
+              <div className="mf-field-wrap">
+                <input
+                  type="text"
+                  id="nombre"
+                  className="mf-field"
+                  value={formData.nombre}
+                  onChange={(e) => setFormData({...formData, nombre: e.target.value})}
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="mf-group">
+              <label htmlFor="accessLevel">Nivel de Acceso</label>
+              <div className="mf-field-wrap">
+                <select
+                  id="accessLevel"
+                  className="mf-select"
+                  value={accessLevel}
+                  onChange={(e) => setAccessLevel(e.target.value as 'admin' | 'custom')}
+                >
+                  <option value="admin">Administrador Total</option>
+                  <option value="custom">Personalizado (Elegir módulos)</option>
+                </select>
+              </div>
+            </div>
+
+            {!editingUser && (
+              <div className="mf-group">
+                <label htmlFor="password">
+                  <i className='bx bx-lock-alt'></i> Contraseña
+                  <span className="mf-required"> Obligatorio</span>
+                </label>
+                <div className="mf-field-wrap">
+                  <input
+                    type="password"
+                    id="password"
+                    className="mf-field"
+                    value={formData.password}
+                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    required
+                  />
                 </div>
               </div>
-              
-              <div className="form-row">
-                <div className="mf-group">
-                  <label htmlFor="accessLevel">Nivel de Acceso</label>
-                  <div className="mf-field-wrap">
-                    <select
-                      id="accessLevel"
-                      className="mf-select"
-                      value={accessLevel}
-                      onChange={(e) => setAccessLevel(e.target.value as 'admin' | 'custom')}
-                    >
-                      <option value="admin">Administrador Total</option>
-                      <option value="custom">Personalizado (Elegir módulos)</option>
-                    </select>
-                  </div>
-                </div>
+            )}
+          </div>
 
-                {!editingUser && (
-                  <div className="mf-group">
-                    <label htmlFor="password">
-                      <i className='bx bx-lock-alt'></i> Contraseña
-                      <span className="mf-required"> Obligatorio</span>
-                    </label>
-                    <div className="mf-field-wrap">
+          {accessLevel === 'custom' && (
+            <div className="permissions-section">
+              <div className="permissions-header">
+                <i className='bx bx-shield'></i>
+                <h3>Permisos por Módulo</h3>
+              </div>
+
+              <div className="permissions-grid">
+                <div className="permission-column">
+                  <h4>PRINCIPAL</h4>
+                  <div className="permission-item">
+                    <span>Ver Dashboard / Resumen</span>
+                    <label className="switch">
                       <input
-                        type="password"
-                        id="password"
-                        className="mf-field"
-                        value={formData.password}
-                        onChange={(e) => setFormData({...formData, password: e.target.value})}
-                        required
+                        type="checkbox"
+                        checked={permissions.dashboard}
+                        onChange={() => handleTogglePermission('dashboard')}
                       />
-                    </div>
+                      <span className="slider"></span>
+                    </label>
                   </div>
-                )}
-              </div>
-
-              {accessLevel === 'custom' && (
-                <div className="permissions-section">
-                  <div className="permissions-header">
-                    <i className='bx bx-shield'></i>
-                    <h3>Permisos por Módulo</h3>
+                  <div className="permission-item">
+                    <span>Operaciones de Stock</span>
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={permissions.stock}
+                        onChange={() => handleTogglePermission('stock')}
+                      />
+                      <span className="slider"></span>
+                    </label>
                   </div>
-                  
-                  <div className="permissions-grid">
-                    <div className="permission-column">
-                      <h4>PRINCIPAL</h4>
-                      <div className="permission-item">
-                        <span>Ver Dashboard / Resumen</span>
-                        <label className="switch">
-                          <input
-                            type="checkbox"
-                            checked={permissions.dashboard}
-                            onChange={() => handleTogglePermission('dashboard')}
-                          />
-                          <span className="slider"></span>
-                        </label>
-                      </div>
-                      <div className="permission-item">
-                        <span>Operaciones de Stock</span>
-                        <label className="switch">
-                          <input
-                            type="checkbox"
-                            checked={permissions.stock}
-                            onChange={() => handleTogglePermission('stock')}
-                          />
-                          <span className="slider"></span>
-                        </label>
-                      </div>
-                      <div className="permission-item">
-                        <span>Ver Reportes y Kardex</span>
-                        <label className="switch">
-                          <input
-                            type="checkbox"
-                            checked={permissions.reports}
-                            onChange={() => handleTogglePermission('reports')}
-                          />
-                          <span className="slider"></span>
-                        </label>
-                      </div>
-                    </div>
-
-                    <div className="permission-column">
-                      <h4>CATÁLOGOS</h4>
-                      <div className="permission-item">
-                        <span>Gestionar Productos</span>
-                        <label className="switch">
-                          <input
-                            type="checkbox"
-                            checked={permissions.products}
-                            onChange={() => handleTogglePermission('products')}
-                          />
-                          <span className="slider"></span>
-                        </label>
-                      </div>
-                      <div className="permission-item">
-                        <span>Gestionar Clientes</span>
-                        <label className="switch">
-                          <input
-                            type="checkbox"
-                            checked={permissions.clients}
-                            onChange={() => handleTogglePermission('clients')}
-                          />
-                          <span className="slider"></span>
-                        </label>
-                      </div>
-                      <div className="permission-item">
-                        <span>Gestionar Proveedores</span>
-                        <label className="switch">
-                          <input
-                            type="checkbox"
-                            checked={permissions.suppliers}
-                            onChange={() => handleTogglePermission('suppliers')}
-                          />
-                          <span className="slider"></span>
-                        </label>
-                      </div>
-                      <div className="permission-item">
-                        <span>Gestionar Personal</span>
-                        <label className="switch">
-                          <input
-                            type="checkbox"
-                            checked={permissions.staff}
-                            onChange={() => handleTogglePermission('staff')}
-                          />
-                          <span className="slider"></span>
-                        </label>
-                      </div>
-                      <div className="permission-item">
-                        <span>Gestionar Sedes</span>
-                        <label className="switch">
-                          <input
-                            type="checkbox"
-                            checked={permissions.branches}
-                            onChange={() => handleTogglePermission('branches')}
-                          />
-                          <span className="slider"></span>
-                        </label>
-                      </div>
-                      <div className="permission-item">
-                        <span>Categorías y Unidades</span>
-                        <label className="switch">
-                          <input
-                            type="checkbox"
-                            checked={permissions.categories}
-                            onChange={() => handleTogglePermission('categories')}
-                          />
-                          <span className="slider"></span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="global-config-section">
-                    <div className="permission-item">
-                      <span>Acceso a Configuración Global</span>
-                      <label className="switch">
-                        <input
-                          type="checkbox"
-                          checked={permissions.globalConfig}
-                          onChange={() => handleTogglePermission('globalConfig')}
-                        />
-                        <span className="slider"></span>
-                      </label>
-                    </div>
+                  <div className="permission-item">
+                    <span>Ver Reportes y Kardex</span>
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={permissions.reports}
+                        onChange={() => handleTogglePermission('reports')}
+                      />
+                      <span className="slider"></span>
+                    </label>
                   </div>
                 </div>
-              )}
 
-              <div className="mf-actions user-form-actions">
-                <button type="button" className="mf-btn mf-btn--ghost" onClick={() => setShowModal(false)}>
-                  Cancelar
-                </button>
-                <button type="submit" className="mf-btn mf-btn--primary">
-                  {editingUser ? 'Actualizar Usuario' : 'Guardar Usuario'}
-                </button>
+                <div className="permission-column">
+                  <h4>CATÁLOGOS</h4>
+                  <div className="permission-item">
+                    <span>Gestionar Productos</span>
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={permissions.products}
+                        onChange={() => handleTogglePermission('products')}
+                      />
+                      <span className="slider"></span>
+                    </label>
+                  </div>
+                  <div className="permission-item">
+                    <span>Gestionar Clientes</span>
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={permissions.clients}
+                        onChange={() => handleTogglePermission('clients')}
+                      />
+                      <span className="slider"></span>
+                    </label>
+                  </div>
+                  <div className="permission-item">
+                    <span>Gestionar Proveedores</span>
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={permissions.suppliers}
+                        onChange={() => handleTogglePermission('suppliers')}
+                      />
+                      <span className="slider"></span>
+                    </label>
+                  </div>
+                  <div className="permission-item">
+                    <span>Gestionar Personal</span>
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={permissions.staff}
+                        onChange={() => handleTogglePermission('staff')}
+                      />
+                      <span className="slider"></span>
+                    </label>
+                  </div>
+                  <div className="permission-item">
+                    <span>Gestionar Sedes</span>
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={permissions.branches}
+                        onChange={() => handleTogglePermission('branches')}
+                      />
+                      <span className="slider"></span>
+                    </label>
+                  </div>
+                  <div className="permission-item">
+                    <span>Categorías y Unidades</span>
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={permissions.categories}
+                        onChange={() => handleTogglePermission('categories')}
+                      />
+                      <span className="slider"></span>
+                    </label>
+                  </div>
+                </div>
               </div>
+
+              <div className="global-config-section">
+                <div className="permission-item">
+                  <span>Acceso a Configuración Global</span>
+                  <label className="switch">
+                    <input
+                      type="checkbox"
+                      checked={permissions.globalConfig}
+                      onChange={() => handleTogglePermission('globalConfig')}
+                    />
+                    <span className="slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="mf-actions user-form-actions">
+            <button type="button" className="mf-btn mf-btn--ghost" onClick={() => setShowModal(false)}>
+              Cancelar
+            </button>
+            <button type="submit" className="mf-btn mf-btn--primary">
+              {editingUser ? 'Actualizar Usuario' : 'Guardar Usuario'}
+            </button>
+          </div>
         </form>
       </Modal>
     </div>

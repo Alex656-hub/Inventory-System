@@ -1,12 +1,10 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '../config/database';
-import Sede from './Sede';
 
 interface AlmacenAttributes {
   id: number;
   nombre: string;
   codigo: string;
-  sede_id: number;
   tipo: 'principal' | 'secundario' | 'temporal' | 'virtual';
   capacidad?: number;
   unidad_capacidad?: string;
@@ -22,7 +20,6 @@ class Almacen extends Model<AlmacenAttributes, AlmacenCreationAttributes> implem
   public id!: number;
   public nombre!: string;
   public codigo!: string;
-  public sede_id!: number;
   public tipo!: 'principal' | 'secundario' | 'temporal' | 'virtual';
   public capacidad?: number;
   public unidad_capacidad?: string;
@@ -30,9 +27,6 @@ class Almacen extends Model<AlmacenAttributes, AlmacenCreationAttributes> implem
   public estado!: 'activo' | 'inactivo';
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
-
-  // Relaciones
-  public sede?: Sede;
 }
 
 Almacen.init(
@@ -66,19 +60,6 @@ Almacen.init(
         len: {
           args: [2, 50],
           msg: 'El código debe tener entre 2 y 50 caracteres'
-        }
-      }
-    },
-    sede_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: 'sedes',
-        key: 'id'
-      },
-      validate: {
-        notNull: {
-          msg: 'La sede es requerida'
         }
       }
     },
@@ -152,8 +133,5 @@ Almacen.init(
     ]
   }
 );
-
-// Definir relaciones
-Almacen.belongsTo(Sede, { foreignKey: 'sede_id', as: 'sede' });
 
 export default Almacen;

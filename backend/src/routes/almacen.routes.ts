@@ -8,7 +8,6 @@ import {
   eliminarAlmacen,
   toggleEstadoAlmacen,
   obtenerAlmacenesSelect,
-  obtenerAlmacenesPorSede,
   obtenerEstadisticasAlmacenes
 } from '../controllers/almacen.controller';
 
@@ -26,9 +25,6 @@ const almacenValidation = [
     .withMessage('El código del almacén es requerido')
     .isLength({ min: 2, max: 50 })
     .withMessage('El código debe tener entre 2 y 50 caracteres'),
-  body('sede_id')
-    .isInt({ min: 1 })
-    .withMessage('El ID de la sede debe ser un número entero positivo'),
   body('tipo')
     .isIn(['principal', 'secundario', 'temporal', 'virtual'])
     .withMessage('El tipo de almacén debe ser: principal, secundario, temporal o virtual'),
@@ -54,9 +50,6 @@ router.get('/select', obtenerAlmacenesSelect);
 
 // GET /api/almacenes/estadisticas - Obtener estadísticas de almacenes
 router.get('/estadisticas', obtenerEstadisticasAlmacenes);
-
-// GET /api/almacenes/sede/:sede_id - Obtener almacenes por sede
-router.get('/sede/:sede_id', obtenerAlmacenesPorSede);
 
 // GET /api/almacenes/:id - Obtener un almacén por ID
 router.get('/:id', obtenerAlmacenPorId);

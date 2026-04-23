@@ -1,20 +1,17 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { productService } from '../services/product.service';
-import { categoryService } from '../services/category.service';
-import { Producto, Categoria } from '../types';
+import { Producto } from '../types';
 import { useAuth } from '../hooks/useAuth';
 import Modal from './Modal';
 import ProductForm from './ProductForm';
-import './ProductList.css';
+import '../styles/moduleBase.css';
 
 const ProductList: React.FC = () => {
   const [productos, setProductos] = useState<Producto[]>([]);
-  const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
   const [busquedaDebounced, setBusquedaDebounced] = useState('');
-  const [categoriaFiltro, setCategoriaFiltro] = useState<number | ''>('');
   const [pagina, setPagina] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
   const [showForm, setShowForm] = useState(false);
@@ -25,7 +22,6 @@ const ProductList: React.FC = () => {
   const esGerente = usuario?.rol === 'gerente';
   const firstLoadRef = useRef(true);
 
-  // URL search params
   const [searchParams] = useSearchParams();
   const focusId = searchParams.get('focusId');
   const urlBusqueda = searchParams.get('busqueda');
@@ -39,15 +35,9 @@ const ProductList: React.FC = () => {
         limite: 10,
         activo: true
       };
-
       if (busquedaDebounced) {
         params.busqueda = busquedaDebounced;
       }
-
-      if (categoriaFiltro) {
-        params.categoria_id = categoriaFiltro;
-      }
-
       const response = await productService.obtenerProductos(params);
       setProductos(response.productos);
       setTotalPaginas(response.paginacion.totalPaginas);
@@ -56,32 +46,17 @@ const ProductList: React.FC = () => {
     } finally {
       if (showLoading) setLoading(false);
     }
-  }, [pagina, busquedaDebounced, categoriaFiltro]);
+  }, [pagina, busquedaDebounced]);
 
   useEffect(() => {
-    // Cargar categorías una vez
-    (async () => {
-      try {
-        const catsResponse = await categoryService.obtenerCategorias(true);
-        setCategorias(catsResponse.categorias);
-      } catch (error) {
-        console.error('Error al cargar categorías:', error);
-      }
-    })();
-  }, []);
-
-  useEffect(() => {
-    // Handle URL parameters
     if (urlBusqueda) {
       setBusqueda(urlBusqueda);
     }
     if (focusId && productos.length > 0) {
-      // Scroll to the focused product
       const productElement = document.getElementById(`product-${focusId}`);
       if (productElement) {
         productElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
         productElement.classList.add('highlighted');
-        // Remove highlight after a few seconds
         setTimeout(() => {
           productElement.classList.remove('highlighted');
         }, 3000);
@@ -93,17 +68,14 @@ const ProductList: React.FC = () => {
     const timeoutId = setTimeout(() => {
       setBusquedaDebounced(busqueda);
     }, 500);
-
     return () => clearTimeout(timeoutId);
   }, [busqueda]);
 
   useEffect(() => {
-    // Al cambiar filtros/búsqueda, volver a página 1 (sin recargar aquí)
     setPagina(1);
-  }, [busquedaDebounced, categoriaFiltro]);
+  }, [busquedaDebounced]);
 
   useEffect(() => {
-    // Carga inicial con indicador; posteriores cambios mantienen la tabla visible
     cargarDatos({ showLoading: firstLoadRef.current });
     firstLoadRef.current = false;
   }, [cargarDatos]);
@@ -124,7 +96,6 @@ const ProductList: React.FC = () => {
 
   const handleEliminarProducto = async () => {
     if (!productoEliminar) return;
-    
     try {
       await productService.eliminarProducto(productoEliminar.id);
       await cargarDatos({ showLoading: true });
@@ -140,47 +111,37 @@ const ProductList: React.FC = () => {
   };
 
   return (
-    <div className="product-list">
-      <div className="page-header">
-        <h1>Gestión de Productos</h1>
-        {esGerente && (
-          <button onClick={handleNuevoProducto} className="btn-primary">
-            <i className='bx bx-plus'></i> Nuevo Producto
-          </button>
-        )}
-      </div>
-
-      <div className="filters">
-        <input
-          type="text"
-          placeholder="Buscar por código, nombre..."
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-          className="search-input"
-        />
-        <div className="select-wrapper">
-          <select
-            value={categoriaFiltro}
-            onChange={(e) => setCategoriaFiltro(e.target.value ? Number(e.target.value) : '')}
-            className="filter-select"
-          >
-            <option value="">Todas las categorías</option>
-            {categorias.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.nombre}
-              </option>
-            ))}
-          </select>
-          <i className="bx bx-chevron-down select-icon"></i>
+    <div className="module-page">
+      <div className="module-page-header">
+        <div>
+          <h1 className="module-title">Catálogo de Productos</h1>
+          <p className="module-subtitle">Administra los ítems disponibles para venta y compra.</p>
+        </div>
+        <div className="module-toolbar">
+          <div className="module-search">
+            <i className="bx bx-search" />
+            <input
+              type="text"
+              placeholder="Buscar por código, nombre..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+            />
+          </div>
+          {esGerente && (
+            <button type="button" onClick={handleNuevoProducto} className="module-primary-btn">
+              <i className="bx bx-plus" />
+              Nuevo Producto
+            </button>
+          )}
         </div>
       </div>
 
       {loading ? (
-        <div className="loading">Cargando productos...</div>
+        <div className="module-loading">Cargando productos...</div>
       ) : (
         <>
-          <div className="table-container">
-            <table className="products-table">
+          <div className="module-card">
+            <table className="module-table">
               <thead>
                 <tr>
                   <th>Código</th>
@@ -197,16 +158,16 @@ const ProductList: React.FC = () => {
               <tbody>
                 {productos.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="no-data">
+                    <td colSpan={esGerente ? 9 : 8} className="module-empty">
                       No se encontraron productos
                     </td>
                   </tr>
                 ) : (
                   productos.map((producto) => (
-                    <tr 
-                      key={producto.id} 
+                    <tr
+                      key={producto.id}
                       id={`product-${producto.id}`}
-                      className={hayStockBajo(producto) ? 'stock-bajo' : ''}
+                      className={hayStockBajo(producto) ? 'stock-bajo' : undefined}
                     >
                       <td>{producto.codigo}</td>
                       <td>{producto.nombre}</td>
@@ -224,21 +185,23 @@ const ProductList: React.FC = () => {
                       </td>
                       {esGerente && (
                         <td>
-                          <div className="action-buttons">
-                            <button 
+                          <div className="actions">
+                            <button
                               onClick={() => handleEditarProducto(producto)}
-                              className="btn-icon btn-edit"
+                              className="action-btn edit-btn"
                               title="Editar"
+                              type="button"
                             >
                               <i className='bx bx-edit'></i>
                             </button>
-                            <button 
+                            <button
                               onClick={() => {
                                 setProductoEliminar(producto);
                                 setShowDeleteConfirm(true);
                               }}
-                              className="btn-icon btn-delete"
+                              className="action-btn delete-btn"
                               title="Eliminar"
+                              type="button"
                             >
                               <i className='bx bx-trash-alt'></i>
                             </button>
@@ -257,25 +220,26 @@ const ProductList: React.FC = () => {
               <button
                 onClick={() => setPagina(pagina - 1)}
                 disabled={pagina === 1}
-                className="btn-pagination"
+                className="pagination-btn"
               >
-                Anterior
+                <i className='bx bx-chevron-left'></i>
               </button>
-              <span>
+              <span className="pagination-info">
                 Página {pagina} de {totalPaginas}
               </span>
               <button
                 onClick={() => setPagina(pagina + 1)}
                 disabled={pagina === totalPaginas}
-                className="btn-pagination"
+                className="pagination-btn"
               >
-                Siguiente
+                <i className='bx bx-chevron-right'></i>
               </button>
             </div>
           )}
         </>
       )}
 
+      {/* Modal formulario — size="medium" para layout compacto */}
       <Modal
         isOpen={showForm}
         onClose={() => {
@@ -283,7 +247,7 @@ const ProductList: React.FC = () => {
           setProductoEditando(null);
         }}
         title={productoEditando ? 'Editar Producto' : 'Nuevo Producto'}
-        size="large"
+        size="medium"
       >
         <ProductForm
           producto={productoEditando}
@@ -295,6 +259,7 @@ const ProductList: React.FC = () => {
         />
       </Modal>
 
+      {/* Modal confirmación eliminar */}
       <Modal
         isOpen={showDeleteConfirm}
         onClose={() => {
@@ -306,13 +271,20 @@ const ProductList: React.FC = () => {
       >
         <p>¿Estás seguro de que deseas eliminar el producto <strong>{productoEliminar?.nombre}</strong>?</p>
         <div className="form-actions">
-          <button onClick={() => {
-            setShowDeleteConfirm(false);
-            setProductoEliminar(null);
-          }} className="btn-secondary">
+          <button
+            onClick={() => {
+              setShowDeleteConfirm(false);
+              setProductoEliminar(null);
+            }}
+            className="btn-secondary"
+          >
             Cancelar
           </button>
-          <button onClick={handleEliminarProducto} className="btn-primary" style={{ backgroundColor: '#dc3545' }}>
+          <button
+            onClick={handleEliminarProducto}
+            className="btn-primary"
+            style={{ backgroundColor: '#dc3545' }}
+          >
             Eliminar
           </button>
         </div>
@@ -322,4 +294,3 @@ const ProductList: React.FC = () => {
 };
 
 export default ProductList;
-

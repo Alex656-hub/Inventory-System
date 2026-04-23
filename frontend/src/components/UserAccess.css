@@ -1,5 +1,4 @@
-/* UserAccess.css — estilos específicos (base en moduleBase.css).
-   Nota: este módulo aún tiene su propio modal (no usa el componente Modal). */
+/* UserAccess.css — estilos específicos (base en moduleBase.css). */
 
 .user-access-container {
   /* Base en moduleBase.css */
@@ -10,7 +9,6 @@
 }
 
 .users-table-container {
-  /* Card base en moduleBase.css */
   overflow-x: auto;
 }
 
@@ -264,6 +262,11 @@ input:checked + .slider:before {
   color: var(--color-sky-700);
 }
 
+/* Ancho específico para el modal de usuarios */
+.ua-modal {
+  max-width: 760px !important;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .user-search input {
@@ -364,7 +367,6 @@ body.dark .delete-btn:hover i {
   color: #f87171;
 }
 
-/* Dark mode for permissions section */
 body.dark .permissions-section {
   background: var(--color-sky-800);
   border-color: var(--color-sky-700);

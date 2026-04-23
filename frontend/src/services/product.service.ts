@@ -30,12 +30,41 @@ export const productService = {
     return data;
   },
 
-  crearProducto: async (producto: Partial<Producto>): Promise<{ mensaje: string; producto: Producto }> => {
+  crearProducto: async (
+    producto: Partial<Producto>,
+    imageFile?: File | null
+  ): Promise<{ mensaje: string; producto: Producto }> => {
+    if (imageFile) {
+      const fd = new FormData();
+      Object.entries(producto).forEach(([k, v]) => {
+        if (v === undefined || v === null || v === '') return;
+        fd.append(k, String(v));
+      });
+      fd.append('image', imageFile);
+      const { data } = await api.post<{ mensaje: string; producto: Producto }>('/products', fd);
+      return data;
+    }
+
     const { data } = await api.post<{ mensaje: string; producto: Producto }>('/products', producto);
     return data;
   },
 
-  actualizarProducto: async (id: number, producto: Partial<Producto>): Promise<{ mensaje: string; producto: Producto }> => {
+  actualizarProducto: async (
+    id: number,
+    producto: Partial<Producto>,
+    imageFile?: File | null
+  ): Promise<{ mensaje: string; producto: Producto }> => {
+    if (imageFile) {
+      const fd = new FormData();
+      Object.entries(producto).forEach(([k, v]) => {
+        if (v === undefined || v === null || v === '') return;
+        fd.append(k, String(v));
+      });
+      fd.append('image', imageFile);
+      const { data } = await api.put<{ mensaje: string; producto: Producto }>(`/products/${id}`, fd);
+      return data;
+    }
+
     const { data } = await api.put<{ mensaje: string; producto: Producto }>(`/products/${id}`, producto);
     return data;
   },

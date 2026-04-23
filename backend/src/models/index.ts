@@ -11,6 +11,8 @@ import MovimientoInventario from './MovimientoInventario';
 import Alert from './Alert';
 import UnidadMedida from './UnidadMedida';
 import ConfiguracionSistema from './ConfiguracionSistema';
+import Sede from './Sede';
+import Almacen from './Almacen';
 
 // Exportar modelos
 export {
@@ -25,7 +27,9 @@ export {
   MovimientoInventario,
   Alert,
   UnidadMedida,
-  ConfiguracionSistema
+  ConfiguracionSistema,
+  Sede,
+  Almacen
 };
 
 // Exportar tipos
@@ -41,6 +45,8 @@ export * from './MovimientoInventario';
 export * from './Alert';
 export * from './UnidadMedida';
 export * from './ConfiguracionSistema';
+export * from './Sede';
+export * from './Almacen';
 
 // Definir asociaciones adicionales
 Product.hasMany(Alert, { foreignKey: 'product_id', as: 'alerts' });

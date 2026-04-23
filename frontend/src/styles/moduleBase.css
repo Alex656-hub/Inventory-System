@@ -58,6 +58,13 @@
   color: var(--color-text);
 }
 
+.module-search input:focus,
+.module-search input:focus-visible {
+  border: none;
+  box-shadow: none;
+  outline: none;
+}
+
 .module-search:focus-within {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(0, 166, 244, 0.18);

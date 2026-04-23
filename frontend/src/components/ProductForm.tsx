@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { productService } from '../services/product.service';
 import { categoryService } from '../services/category.service';
-import { supplierService } from '../services/supplier.service';
-import { Producto, Categoria, Proveedor } from '../types';
+import { unidadmedidaService } from '../services/unidadmedida.service';
+import { Producto, Categoria, UnidadMedida } from '../types';
 import './ProductForm.css';
+import '../styles/formField.css';
 
 interface ProductFormProps {
   producto?: Producto | null;
@@ -15,19 +16,18 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
   const [formData, setFormData] = useState({
     codigo: '',
     nombre: '',
-    descripcion: '',
     categoria_id: '',
-    proveedor_id: '',
+    unidad_id: '',
     precio_compra: '',
     precio_venta: '',
-    stock_actual: '0',
-    stock_minimo: '0',
-    ubicacion: ''
+    stock_minimo: '0'
   });
   const [categorias, setCategorias] = useState<Categoria[]>([]);
-  const [proveedores, setProveedores] = useState<Proveedor[]>([]);
+  const [unidades, setUnidades] = useState<UnidadMedida[]>([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
     cargarDatos();
@@ -35,15 +35,13 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
       setFormData({
         codigo: producto.codigo || '',
         nombre: producto.nombre || '',
-        descripcion: producto.descripcion || '',
         categoria_id: producto.categoria_id?.toString() || '',
-        proveedor_id: producto.proveedor_id?.toString() || '',
+        unidad_id: producto.unidad_id?.toString() || '',
         precio_compra: producto.precio_compra?.toString() || '',
         precio_venta: producto.precio_venta?.toString() || '',
-        stock_actual: producto.stock_actual?.toString() || '0',
-        stock_minimo: producto.stock_minimo?.toString() || '0',
-        ubicacion: producto.ubicacion || ''
+        stock_minimo: producto.stock_minimo?.toString() || '0'
       });
+      setImagePreview(producto.imageUrl || null);
     }
   }, [producto]);
 
@@ -59,12 +57,12 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
 
   const cargarDatos = async () => {
     try {
-      const [catsRes, provRes] = await Promise.all([
+      const [catsRes, unidadesRes] = await Promise.all([
         categoryService.obtenerCategorias(true),
-        supplierService.obtenerProveedores({ activo: true, limite: 1000 })
+        unidadmedidaService.obtenerUnidades(true)
       ]);
       setCategorias(catsRes.categorias);
-      setProveedores(provRes.proveedores);
+      setUnidades(unidadesRes.unidades);
     } catch (error) {
       console.error('Error al cargar datos:', error);
     }
@@ -81,20 +79,17 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
     if (!formData.categoria_id) {
       newErrors.categoria_id = 'La categoría es requerida';
     }
-    if (!formData.proveedor_id) {
-      newErrors.proveedor_id = 'El proveedor es requerido';
+    if (!formData.unidad_id) {
+      newErrors.unidad_id = 'La unidad es requerida';
     }
     if (!formData.precio_compra || Number(formData.precio_compra) <= 0) {
-      newErrors.precio_compra = 'El precio de compra debe ser mayor a 0';
+      newErrors.precio_compra = 'Debe ser mayor a 0';
     }
     if (!formData.precio_venta || Number(formData.precio_venta) <= 0) {
-      newErrors.precio_venta = 'El precio de venta debe ser mayor a 0';
-    }
-    if (Number(formData.stock_actual) < 0) {
-      newErrors.stock_actual = 'El stock no puede ser negativo';
+      newErrors.precio_venta = 'Debe ser mayor a 0';
     }
     if (Number(formData.stock_minimo) < 0) {
-      newErrors.stock_minimo = 'El stock mínimo no puede ser negativo';
+      newErrors.stock_minimo = 'No puede ser negativo';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -102,27 +97,21 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validate()) {
-      return;
-    }
-
+    if (!validate()) return;
     setLoading(true);
     try {
       const productoData = {
         ...formData,
         categoria_id: Number(formData.categoria_id),
-        proveedor_id: Number(formData.proveedor_id),
+        unidad_id: Number(formData.unidad_id),
         precio_compra: Number(formData.precio_compra),
         precio_venta: Number(formData.precio_venta),
-        stock_actual: Number(formData.stock_actual),
         stock_minimo: Number(formData.stock_minimo)
       };
-
       if (producto) {
-        await productService.actualizarProducto(producto.id, productoData);
+        await productService.actualizarProducto(producto.id, productoData as any, imageFile);
       } else {
-        await productService.crearProducto(productoData);
+        await productService.crearProducto(productoData as any, imageFile);
       }
       onSuccess();
       onClose();
@@ -142,11 +131,79 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
     }
   };
 
+  const handleSelectImage = (file: File | null) => {
+    setImageFile(file);
+    if (!file) return;
+    setImagePreview(URL.createObjectURL(file));
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="mf-form product-form">
-      <div className="form-grid">
+    <form onSubmit={handleSubmit} className="mf-form product-modal-form">
+      <div className="pmf-body">
+
+        {/* Imagen */}
+        <div className="pmf-image-box">
+          {imagePreview ? (
+            <img src={imagePreview} alt="Vista previa" className="pmf-image-preview" />
+          ) : (
+            <div className="pmf-image-placeholder">
+              <i className="bx bx-upload" />
+              <div className="pmf-image-placeholder-title">Cambiar</div>
+              <div className="pmf-image-placeholder-subtitle">Subir foto</div>
+            </div>
+          )}
+          <input
+            type="file"
+            accept="image/*"
+            className="pmf-file-input"
+            onChange={(e) => handleSelectImage(e.target.files?.[0] ?? null)}
+          />
+        </div>
+
+        {/* Nombre + Código */}
+        <div className="pmf-fields">
+          <div className="mf-group">
+            <label htmlFor="nombre">Nombre del Producto <span className="mf-required">*</span></label>
+            <div className="mf-field-wrap">
+              <input
+                id="nombre"
+                name="nombre"
+                type="text"
+                value={formData.nombre}
+                onChange={handleChange}
+                placeholder="Ej: Aspirina 500mg"
+                className={`mf-field ${errors.nombre ? 'error' : ''}`}
+                disabled={loading}
+                autoComplete="off"
+              />
+            </div>
+            {errors.nombre && <span className="mf-field-error">{errors.nombre}</span>}
+          </div>
+
+          <div className="mf-group">
+            <label htmlFor="codigo">Código / SKU <span className="mf-required">*</span></label>
+            <div className="mf-field-wrap">
+              <input
+                id="codigo"
+                name="codigo"
+                type="text"
+                value={formData.codigo}
+                onChange={handleChange}
+                placeholder="Ej: ELE001"
+                className={`mf-field ${errors.codigo ? 'error' : ''}`}
+                disabled={loading || !producto}
+                autoComplete="off"
+              />
+            </div>
+            {errors.codigo && <span className="mf-field-error">{errors.codigo}</span>}
+          </div>
+        </div>
+      </div>
+
+      {/* Categoría + Unidad */}
+      <div className="pmf-row2">
         <div className="mf-group">
-          <label htmlFor="categoria_id">Categoría *</label>
+          <label htmlFor="categoria_id">Categoría <span className="mf-required">*</span></label>
           <div className="mf-field-wrap">
             <select
               id="categoria_id"
@@ -154,9 +211,10 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
               value={formData.categoria_id}
               onChange={handleChange}
               className={`mf-select ${errors.categoria_id ? 'error' : ''}`}
+              disabled={loading}
             >
-              <option value="">Seleccionar categoría</option>
-              {categorias.map(cat => (
+              <option value="">Seleccionar...</option>
+              {categorias.map((cat) => (
                 <option key={cat.id} value={cat.id}>{cat.nombre}</option>
               ))}
             </select>
@@ -165,154 +223,94 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
         </div>
 
         <div className="mf-group">
-          <label htmlFor="proveedor_id">Proveedor *</label>
+          <label htmlFor="unidad_id">Unidad <span className="mf-required">*</span></label>
           <div className="mf-field-wrap">
             <select
-              id="proveedor_id"
-              name="proveedor_id"
-              value={formData.proveedor_id}
+              id="unidad_id"
+              name="unidad_id"
+              value={formData.unidad_id}
               onChange={handleChange}
-              className={`mf-select ${errors.proveedor_id ? 'error' : ''}`}
+              className={`mf-select ${errors.unidad_id ? 'error' : ''}`}
+              disabled={loading}
             >
-              <option value="">Seleccionar proveedor</option>
-              {proveedores.map(prov => (
-                <option key={prov.id} value={prov.id}>{prov.nombre}</option>
+              <option value="">Seleccionar...</option>
+              {unidades.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.nombre} ({u.abreviatura})
+                </option>
               ))}
             </select>
           </div>
-          {errors.proveedor_id && <span className="mf-field-error">{errors.proveedor_id}</span>}
+          {errors.unidad_id && <span className="mf-field-error">{errors.unidad_id}</span>}
         </div>
+      </div>
 
+      {/* Costo + Precio + Stock mínimo */}
+      <div className="pmf-row3">
         <div className="mf-group">
-          <label htmlFor="codigo">Código *</label>
+          <label htmlFor="precio_compra">Costo Referencial (S/)</label>
           <div className="mf-field-wrap">
             <input
-              type="text"
-              id="codigo"
-              name="codigo"
-              value={formData.codigo}
-              onChange={handleChange}
-              className={`mf-field ${errors.codigo ? 'error' : ''}`}
-              disabled={!producto}
-            />
-          </div>
-          {errors.codigo && <span className="mf-field-error">{errors.codigo}</span>}
-        </div>
-
-        <div className="mf-group">
-          <label htmlFor="nombre">Nombre *</label>
-          <div className="mf-field-wrap">
-            <input
-              type="text"
-              id="nombre"
-              name="nombre"
-              value={formData.nombre}
-              onChange={handleChange}
-              className={`mf-field ${errors.nombre ? 'error' : ''}`}
-            />
-          </div>
-          {errors.nombre && <span className="mf-field-error">{errors.nombre}</span>}
-        </div>
-
-        <div className="mf-group">
-          <label htmlFor="precio_compra">Precio Compra (S/) *</label>
-          <div className="mf-field-wrap">
-            <input
-              type="number"
               id="precio_compra"
               name="precio_compra"
+              type="number"
               value={formData.precio_compra}
               onChange={handleChange}
-              step="0.01"
-              min="0"
               className={`mf-field ${errors.precio_compra ? 'error' : ''}`}
+              min="0"
+              step="0.01"
+              disabled={loading}
             />
           </div>
           {errors.precio_compra && <span className="mf-field-error">{errors.precio_compra}</span>}
         </div>
 
         <div className="mf-group">
-          <label htmlFor="precio_venta">Precio Venta (S/) *</label>
+          <label htmlFor="precio_venta">Precio Venta Base (S/)</label>
           <div className="mf-field-wrap">
             <input
-              type="number"
               id="precio_venta"
               name="precio_venta"
+              type="number"
               value={formData.precio_venta}
               onChange={handleChange}
-              step="0.01"
-              min="0"
               className={`mf-field ${errors.precio_venta ? 'error' : ''}`}
+              min="0"
+              step="0.01"
+              disabled={loading}
             />
           </div>
           {errors.precio_venta && <span className="mf-field-error">{errors.precio_venta}</span>}
         </div>
 
         <div className="mf-group">
-          <label htmlFor="stock_actual">Stock Actual</label>
+          <label htmlFor="stock_minimo">Stock Mínimo (Alerta)</label>
           <div className="mf-field-wrap">
             <input
-              type="number"
-              id="stock_actual"
-              name="stock_actual"
-              value={formData.stock_actual}
-              onChange={handleChange}
-              min="0"
-              className={`mf-field ${errors.stock_actual ? 'error' : ''}`}
-            />
-          </div>
-          {errors.stock_actual && <span className="mf-field-error">{errors.stock_actual}</span>}
-        </div>
-
-        <div className="mf-group">
-          <label htmlFor="stock_minimo">Stock Mínimo</label>
-          <div className="mf-field-wrap">
-            <input
-              type="number"
               id="stock_minimo"
               name="stock_minimo"
+              type="number"
               value={formData.stock_minimo}
               onChange={handleChange}
-              min="0"
               className={`mf-field ${errors.stock_minimo ? 'error' : ''}`}
+              min="0"
+              disabled={loading}
             />
           </div>
           {errors.stock_minimo && <span className="mf-field-error">{errors.stock_minimo}</span>}
         </div>
-
-        <div className="mf-group">
-          <label htmlFor="ubicacion">Ubicación Opcional*</label>
-          <div className="mf-field-wrap">
-            <input
-              type="text"
-              id="ubicacion"
-              name="ubicacion"
-              value={formData.ubicacion}
-              onChange={handleChange}
-              className="mf-field"
-            />
-          </div>
-        </div>
-
-        <div className="mf-group mf-group--full">
-          <label htmlFor="descripcion">Descripción</label>
-          <textarea
-            id="descripcion"
-            name="descripcion"
-            value={formData.descripcion}
-            onChange={handleChange}
-            rows={3}
-            className="mf-textarea"
-          />
-        </div>
       </div>
 
+      {/* Acciones */}
       <div className="mf-actions">
-        <button type="button" onClick={onClose} className="mf-btn mf-btn--ghost">
+        <button type="button" onClick={onClose} className="mf-btn mf-btn--ghost" disabled={loading}>
           Cancelar
         </button>
-        <button type="submit" disabled={loading} className="mf-btn mf-btn--primary">
-          {loading ? 'Guardando...' : producto ? 'Actualizar' : 'Crear'}
+        <button type="submit" className="mf-btn mf-btn--primary" disabled={loading}>
+          {loading
+            ? <><i className="bx bx-loader-alt bx-spin" /> Guardando...</>
+            : 'Guardar Producto'
+          }
         </button>
       </div>
     </form>

@@ -7,9 +7,10 @@ interface ModalProps {
   title: string;
   children: React.ReactNode;
   size?: 'xs' | 'small' | 'medium' | 'large';
+  contentClassName?: string;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 'medium' }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 'medium', contentClassName = '' }) => {
   useEffect(() => {
     const body = document.body;
     const prevPosition = body.style.position;
@@ -22,8 +23,6 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
     const scrollY = window.scrollY;
 
     if (isOpen) {
-      // Bloquea el scroll del fondo SIN remover el scrollbar (evita “shift” lateral).
-      // Técnica: fijar el body y compensar con top negativo.
       document.documentElement.style.scrollBehavior = 'auto';
       body.style.position = 'fixed';
       body.style.top = `-${scrollY}px`;
@@ -43,7 +42,6 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
       body.style.overflowY = prevOverflowY;
       document.documentElement.style.scrollBehavior = prevScrollBehavior;
 
-      // Restaurar scroll previo
       const y = top ? Math.abs(parseInt(top, 10)) : scrollY;
       window.scrollTo(0, y);
     };
@@ -53,7 +51,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className={`modal-content modal-${size}`} onClick={(e) => e.stopPropagation()}>
+      <div className={`modal-content modal-${size} ${contentClassName}`} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{title}</h2>
           <button className="modal-close" onClick={onClose}>

@@ -2,8 +2,38 @@ import { Request, Response } from 'express';
 import Product from '../models/Product';
 import Category from '../models/Category';
 import Supplier from '../models/Supplier';
+import UnidadMedida from '../models/UnidadMedida';
 import { Op } from 'sequelize';
 import { sequelize } from '../config/database';
+import path from 'path';
+import fs from 'fs';
+
+const PRODUCTS_UPLOAD_DIR = path.join(process.cwd(), 'uploads', 'products');
+
+function ensureUploadsDir() {
+  if (!fs.existsSync(PRODUCTS_UPLOAD_DIR)) {
+    fs.mkdirSync(PRODUCTS_UPLOAD_DIR, { recursive: true });
+  }
+}
+
+function toNullableNumber(value: any): number | null {
+  if (value === undefined || value === null || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function toBoolFromQuery(value: any): boolean | undefined {
+  if (value === undefined) return undefined;
+  if (value === 'true' || value === true) return true;
+  if (value === 'false' || value === false) return false;
+  return undefined;
+}
+
+function buildImageUrl(req: Request, imageFilename?: string | null): string | null {
+  if (!imageFilename) return null;
+  const base = `${req.protocol}://${req.get('host')}`;
+  return `${base}/uploads/products/${encodeURIComponent(imageFilename)}`;
+}
 
 export const obtenerProductos = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -24,15 +54,15 @@ export const obtenerProductos = async (req: Request, res: Response): Promise<voi
       where.categoria_id = categoria_id;
     }
 
-    if (activo !== undefined) {
-      where.activo = activo === 'true';
-    }
+    const activoBool = toBoolFromQuery(activo);
+    if (activoBool !== undefined) where.activo = activoBool;
 
     const { count, rows } = await Product.findAndCountAll({
       where,
       include: [
         { model: Category, as: 'categoria', attributes: ['id', 'nombre'] },
-        { model: Supplier, as: 'proveedor', attributes: ['id', 'nombre'] }
+        { model: Supplier, as: 'proveedor', attributes: ['id', 'nombre'] },
+        { model: UnidadMedida, as: 'unidad', attributes: ['id', 'nombre', 'abreviatura'] }
       ],
       limit: Number(limite),
       offset,
@@ -40,7 +70,10 @@ export const obtenerProductos = async (req: Request, res: Response): Promise<voi
     });
 
     res.json({
-      productos: rows,
+      productos: rows.map((p: any) => ({
+        ...p.toJSON(),
+        imageUrl: buildImageUrl(req, p.image_filename)
+      })),
       paginacion: {
         total: count,
         pagina: Number(pagina),
@@ -61,7 +94,8 @@ export const obtenerProductoPorId = async (req: Request, res: Response): Promise
     const producto = await Product.findByPk(id, {
       include: [
         { model: Category, as: 'categoria' },
-        { model: Supplier, as: 'proveedor' }
+        { model: Supplier, as: 'proveedor' },
+        { model: UnidadMedida, as: 'unidad' }
       ]
     });
 
@@ -70,7 +104,10 @@ export const obtenerProductoPorId = async (req: Request, res: Response): Promise
       return;
     }
 
-    res.json(producto);
+    res.json({
+      ...producto.toJSON(),
+      imageUrl: buildImageUrl(req, (producto as any).image_filename)
+    });
   } catch (error) {
     console.error('Error al obtener producto:', error);
     res.status(500).json({ mensaje: 'Error al obtener producto' });
@@ -85,6 +122,7 @@ export const crearProducto = async (req: Request, res: Response): Promise<void> 
       descripcion,
       categoria_id,
       proveedor_id,
+      unidad_id,
       precio_compra,
       precio_venta,
       stock_actual,
@@ -93,8 +131,8 @@ export const crearProducto = async (req: Request, res: Response): Promise<void> 
     } = req.body;
 
     // Validar campos requeridos
-    if (!codigo || !nombre || !categoria_id || !proveedor_id || !precio_compra || !precio_venta) {
-      res.status(400).json({ mensaje: 'Campos requeridos: codigo, nombre, categoria_id, proveedor_id, precio_compra, precio_venta' });
+    if (!codigo || !nombre || !categoria_id || !precio_compra || !precio_venta) {
+      res.status(400).json({ mensaje: 'Campos requeridos: codigo, nombre, categoria_id, precio_compra, precio_venta' });
       return;
     }
 
@@ -111,11 +149,28 @@ export const crearProducto = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Verificar que el proveedor existe
-    const proveedor = await Supplier.findByPk(proveedor_id);
-    if (!proveedor) {
-      res.status(404).json({ mensaje: 'Proveedor no encontrado' });
-      return;
+    // Verificar proveedor (si se envía)
+    const proveedorIdNum = toNullableNumber(proveedor_id);
+    if (proveedorIdNum !== null) {
+      const proveedor = await Supplier.findByPk(proveedorIdNum);
+      if (!proveedor) {
+        res.status(404).json({ mensaje: 'Proveedor no encontrado' });
+        return;
+      }
+    }
+
+    // Verificar unidad (si se envía)
+    const unidadIdNum = toNullableNumber(unidad_id);
+    if (unidadIdNum !== null) {
+      const unidad = await UnidadMedida.findByPk(unidadIdNum);
+      if (!unidad) {
+        res.status(404).json({ mensaje: 'Unidad no encontrada' });
+        return;
+      }
+      if (!unidad.estado) {
+        res.status(400).json({ mensaje: 'La unidad está inactiva.' });
+        return;
+      }
     }
 
     // Verificar que el código no existe
@@ -125,29 +180,46 @@ export const crearProducto = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
+    // Manejo de imagen (multipart)
+    let imageFilename: string | null = null;
+    const file = (req as any).file as Express.Multer.File | undefined;
+    if (file) {
+      ensureUploadsDir();
+      const safeBase = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const ext = path.extname(file.originalname || '').toLowerCase() || '.jpg';
+      imageFilename = `${safeBase}${ext}`;
+      fs.writeFileSync(path.join(PRODUCTS_UPLOAD_DIR, imageFilename), file.buffer);
+    }
+
     const producto = await Product.create({
       codigo,
       nombre,
       descripcion,
       categoria_id,
-      proveedor_id,
+      proveedor_id: proveedorIdNum ?? undefined,
+      unidad_id: unidadIdNum ?? undefined,
       precio_compra: Number(precio_compra),
       precio_venta: Number(precio_venta),
       stock_actual: stock_actual || 0,
       stock_minimo: stock_minimo || 0,
-      ubicacion
+      ubicacion,
+      image_filename: imageFilename ?? undefined
     });
 
     const productoCompleto = await Product.findByPk(producto.id, {
       include: [
         { model: Category, as: 'categoria' },
-        { model: Supplier, as: 'proveedor' }
+        { model: Supplier, as: 'proveedor' },
+        { model: UnidadMedida, as: 'unidad' }
       ]
     });
 
     res.status(201).json({
       mensaje: 'Producto creado exitosamente',
-      producto: productoCompleto
+      producto: {
+        ...(productoCompleto as any).toJSON(),
+        imageUrl: buildImageUrl(req, (productoCompleto as any).image_filename)
+      }
     });
   } catch (error: any) {
     console.error('Error al crear producto:', error);
@@ -195,6 +267,19 @@ export const actualizarProducto = async (req: Request, res: Response): Promise<v
       }
     }
 
+    // Si se actualiza la unidad, verificar que existe
+    if (datos.unidad_id) {
+      const unidad = await UnidadMedida.findByPk(datos.unidad_id);
+      if (!unidad) {
+        res.status(404).json({ mensaje: 'Unidad no encontrada' });
+        return;
+      }
+      if (!unidad.estado) {
+        res.status(400).json({ mensaje: 'La unidad está inactiva.' });
+        return;
+      }
+    }
+
     // Si se actualiza el código, verificar que no existe en otro producto
     if (datos.codigo && datos.codigo !== producto.codigo) {
       const productoExistente = await Product.findOne({ where: { codigo: datos.codigo } });
@@ -204,18 +289,47 @@ export const actualizarProducto = async (req: Request, res: Response): Promise<v
       }
     }
 
+    // Manejo de imagen (multipart)
+    const file = (req as any).file as Express.Multer.File | undefined;
+    if (file) {
+      ensureUploadsDir();
+      const safeBase = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const ext = path.extname(file.originalname || '').toLowerCase() || '.jpg';
+      const imageFilename = `${safeBase}${ext}`;
+      fs.writeFileSync(path.join(PRODUCTS_UPLOAD_DIR, imageFilename), file.buffer);
+
+      // Borrar imagen anterior si existía
+      const prev = (producto as any).image_filename as string | undefined;
+      if (prev) {
+        const prevPath = path.join(PRODUCTS_UPLOAD_DIR, prev);
+        if (fs.existsSync(prevPath)) {
+          try { fs.unlinkSync(prevPath); } catch {}
+        }
+      }
+
+      datos.image_filename = imageFilename;
+    }
+
+    // Normalizar proveedor_id/unidad_id si vienen vacíos
+    if (datos.proveedor_id === '' || datos.proveedor_id === null) datos.proveedor_id = null;
+    if (datos.unidad_id === '' || datos.unidad_id === null) datos.unidad_id = null;
+
     await producto.update(datos);
 
     const productoActualizado = await Product.findByPk(id, {
       include: [
         { model: Category, as: 'categoria' },
-        { model: Supplier, as: 'proveedor' }
+        { model: Supplier, as: 'proveedor' },
+        { model: UnidadMedida, as: 'unidad' }
       ]
     });
 
     res.json({
       mensaje: 'Producto actualizado exitosamente',
-      producto: productoActualizado
+      producto: {
+        ...(productoActualizado as any).toJSON(),
+        imageUrl: buildImageUrl(req, (productoActualizado as any).image_filename)
+      }
     });
   } catch (error: any) {
     console.error('Error al actualizar producto:', error);

@@ -7,7 +7,6 @@ import '../styles/moduleBase.css';
 
 const SedesYAlmacenesList: React.FC = () => {
   const [sedes, setSedes] = useState<Sede[]>([]);
-  const [almacenes, setAlmacenes] = useState<Almacen[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingSede, setEditingSede] = useState<Sede | null>(null);
@@ -102,10 +101,6 @@ const SedesYAlmacenesList: React.FC = () => {
     return labels[tipo] || tipo;
   };
 
-  const getEstadoBadge = (estado: string) => {
-    return estado === 'activo' ? 'activo' : 'inactivo';
-  };
-
   if (loading) {
     return <div className="module-page sedes-almacenes-container module-loading">Cargando...</div>;
   }
@@ -145,11 +140,6 @@ const SedesYAlmacenesList: React.FC = () => {
                     <span className="sede-icon">{'\ud83c\udfe2'}</span>
                     <div>
                       <strong>{sede.nombre}</strong>
-                      {sede.almacenes && (
-                        <span className="almacenes-count">
-                          {sede.almacenes.length} almacén(es)
-                        </span>
-                      )}
                     </div>
                   </div>
                 </td>

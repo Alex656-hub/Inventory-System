@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { validationResult } from 'express-validator';
 import Almacen from '../models/Almacen';
-import Sede from '../models/Sede';
 import { Op } from 'sequelize';
 
 // Obtener todos los almacenes con paginación y filtros
@@ -13,7 +12,6 @@ export const obtenerAlmacenes = async (req: Request, res: Response) => {
       busqueda = '',
       tipo = '',
       estado = '',
-      sede_id = '',
       orden = 'createdAt',
       direccion = 'DESC'
     } = req.query;
@@ -38,22 +36,11 @@ export const obtenerAlmacenes = async (req: Request, res: Response) => {
       where.estado = estado;
     }
 
-    if (sede_id) {
-      where.sede_id = sede_id;
-    }
-
     const { count, rows: almacenes } = await Almacen.findAndCountAll({
       where,
       limit: Number(limite),
       offset,
-      order: [[orden as string, direccion as string]],
-      include: [
-        {
-          model: Sede,
-          as: 'sede',
-          attributes: ['id', 'nombre', 'tipo', 'direccion']
-        }
-      ]
+      order: [[orden as string, direccion as string]]
     });
 
     res.json({
@@ -76,15 +63,7 @@ export const obtenerAlmacenPorId = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const almacen = await Almacen.findByPk(id, {
-      include: [
-        {
-          model: Sede,
-          as: 'sede',
-          attributes: ['id', 'nombre', 'tipo', 'direccion', 'telefono', 'responsable']
-        }
-      ]
-    });
+    const almacen = await Almacen.findByPk(id);
 
     if (!almacen) {
       return res.status(404).json({ mensaje: 'Almacén no encontrado' });
@@ -105,13 +84,7 @@ export const crearAlmacen = async (req: Request, res: Response) => {
       return res.status(400).json({ errores: errors.array() });
     }
 
-    const { nombre, codigo, sede_id, tipo, capacidad, unidad_capacidad, descripcion } = req.body;
-
-    // Verificar si la sede existe
-    const sede = await Sede.findByPk(sede_id);
-    if (!sede) {
-      return res.status(400).json({ mensaje: 'La sede especificada no existe' });
-    }
+    const { nombre, codigo, tipo, capacidad, unidad_capacidad, descripcion } = req.body;
 
     // Verificar si ya existe un almacén con el mismo código
     const almacenExistente = await Almacen.findOne({ where: { codigo: codigo.trim() } });
@@ -122,27 +95,15 @@ export const crearAlmacen = async (req: Request, res: Response) => {
     const nuevoAlmacen = await Almacen.create({
       nombre: nombre.trim(),
       codigo: codigo.trim(),
-      sede_id,
       tipo,
       capacidad: capacidad ? Number(capacidad) : undefined,
       unidad_capacidad,
       descripcion: descripcion?.trim()
     });
 
-    // Obtener el almacén creado con la relación de sede
-    const almacenConSede = await Almacen.findByPk(nuevoAlmacen.id, {
-      include: [
-        {
-          model: Sede,
-          as: 'sede',
-          attributes: ['id', 'nombre', 'tipo']
-        }
-      ]
-    });
-
     res.status(201).json({
       mensaje: 'Almacén creado exitosamente',
-      almacen: almacenConSede
+      almacen: nuevoAlmacen
     });
   } catch (error: any) {
     console.error('Error al crear almacén:', error);
@@ -162,19 +123,11 @@ export const actualizarAlmacen = async (req: Request, res: Response) => {
     }
 
     const { id } = req.params;
-    const { nombre, codigo, sede_id, tipo, capacidad, unidad_capacidad, descripcion, estado } = req.body;
+    const { nombre, codigo, tipo, capacidad, unidad_capacidad, descripcion, estado } = req.body;
 
     const almacen = await Almacen.findByPk(id);
     if (!almacen) {
       return res.status(404).json({ mensaje: 'Almacén no encontrado' });
-    }
-
-    // Verificar si la sede existe (si se proporciona)
-    if (sede_id && sede_id !== almacen.sede_id) {
-      const sede = await Sede.findByPk(sede_id);
-      if (!sede) {
-        return res.status(400).json({ mensaje: 'La sede especificada no existe' });
-      }
     }
 
     // Verificar si ya existe otro almacén con el mismo código
@@ -193,7 +146,6 @@ export const actualizarAlmacen = async (req: Request, res: Response) => {
     await almacen.update({
       nombre: nombre?.trim() || almacen.nombre,
       codigo: codigo?.trim() || almacen.codigo,
-      sede_id: sede_id || almacen.sede_id,
       tipo: tipo || almacen.tipo,
       capacidad: capacidad !== undefined ? (capacidad ? Number(capacidad) : undefined) : almacen.capacidad,
       unidad_capacidad: unidad_capacidad || almacen.unidad_capacidad,
@@ -201,20 +153,9 @@ export const actualizarAlmacen = async (req: Request, res: Response) => {
       estado: estado || almacen.estado
     });
 
-    // Obtener el almacén actualizado con la relación de sede
-    const almacenActualizado = await Almacen.findByPk(id, {
-      include: [
-        {
-          model: Sede,
-          as: 'sede',
-          attributes: ['id', 'nombre', 'tipo']
-        }
-      ]
-    });
-
     res.json({
       mensaje: 'Almacén actualizado exitosamente',
-      almacen: almacenActualizado
+      almacen
     });
   } catch (error: any) {
     console.error('Error al actualizar almacén:', error);
@@ -273,23 +214,10 @@ export const toggleEstadoAlmacen = async (req: Request, res: Response) => {
 // Obtener almacenes para select (solo activos)
 export const obtenerAlmacenesSelect = async (req: Request, res: Response) => {
   try {
-    const { sede_id } = req.query;
-
     const where: any = { estado: 'activo' };
-    if (sede_id) {
-      where.sede_id = sede_id;
-    }
-
     const almacenes = await Almacen.findAll({
       where,
       attributes: ['id', 'nombre', 'codigo', 'tipo'],
-      include: [
-        {
-          model: Sede,
-          as: 'sede',
-          attributes: ['id', 'nombre']
-        }
-      ],
       order: [['nombre', 'ASC']]
     });
 
@@ -297,41 +225,6 @@ export const obtenerAlmacenesSelect = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error al obtener almacenes para select:', error);
     res.status(500).json({ mensaje: 'Error al obtener los almacenes' });
-  }
-};
-
-// Obtener almacenes por sede
-export const obtenerAlmacenesPorSede = async (req: Request, res: Response) => {
-  try {
-    const { sede_id } = req.params;
-
-    // Verificar si la sede existe
-    const sede = await Sede.findByPk(sede_id);
-    if (!sede) {
-      return res.status(404).json({ mensaje: 'Sede no encontrada' });
-    }
-
-    const almacenes = await Almacen.findAll({
-      where: { 
-        sede_id,
-        estado: 'activo'
-      },
-      attributes: ['id', 'nombre', 'codigo', 'tipo', 'capacidad', 'unidad_capacidad'],
-      order: [['nombre', 'ASC']]
-    });
-
-    res.json({
-      sede: {
-        id: sede.id,
-        nombre: sede.nombre,
-        tipo: sede.tipo,
-        direccion: sede.direccion
-      },
-      almacenes
-    });
-  } catch (error) {
-    console.error('Error al obtener almacenes por sede:', error);
-    res.status(500).json({ mensaje: 'Error al obtener los almacenes de la sede' });
   }
 };
 
@@ -351,28 +244,11 @@ export const obtenerEstadisticasAlmacenes = async (req: Request, res: Response) 
       raw: true
     });
 
-    const almacenesPorSede = await Almacen.findAll({
-      attributes: [
-        'sede_id',
-        [Almacen.sequelize!.fn('COUNT', Almacen.sequelize!.col('id')), 'cantidad']
-      ],
-      include: [
-        {
-          model: Sede,
-          as: 'sede',
-          attributes: ['nombre']
-        }
-      ],
-      group: ['sede_id', 'sede.id', 'sede.nombre'],
-      raw: true
-    });
-
     res.json({
       totalAlmacenes,
       almacenesActivos,
       almacenesInactivos,
-      almacenesPorTipo,
-      almacenesPorSede
+      almacenesPorTipo
     });
   } catch (error) {
     console.error('Error al obtener estadísticas de almacenes:', error);

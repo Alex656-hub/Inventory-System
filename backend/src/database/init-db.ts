@@ -1,5 +1,6 @@
 import { sequelize } from '../config/database';
 import * as models from '../models';
+import { ensureProductosProveedorOptional } from './ensure-schema-patches';
 
 export async function initializeDatabase(force = false) {
   try {
@@ -7,9 +8,11 @@ export async function initializeDatabase(force = false) {
     await sequelize.authenticate();
     console.log('Conexión a la base de datos establecida correctamente.');
 
-    // Sincronizar todos los modelos
-    await sequelize.sync({ force });
-    
+    // Sincronizar todos los modelos.
+    // En entornos locales, usamos alter para incorporar columnas nuevas sin destruir datos.
+    await sequelize.sync({ force, alter: !force });
+    await ensureProductosProveedorOptional();
+
     if (force) {
       console.log('Base de datos recreada exitosamente.');
     } else {

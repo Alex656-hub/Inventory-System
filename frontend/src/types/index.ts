@@ -13,15 +13,18 @@ export interface Producto {
   nombre: string;
   descripcion?: string;
   categoria_id: number;
-  proveedor_id: number;
+  proveedor_id?: number;
+  unidad_id?: number;
   precio_compra: number;
   precio_venta: number;
   stock_actual: number;
   stock_minimo: number;
   ubicacion?: string;
   activo: boolean;
+  imageUrl?: string | null;
   categoria?: Categoria;
   proveedor?: Proveedor;
+  unidad?: UnidadMedida;
   createdAt?: string;
   updatedAt?: string;
 }

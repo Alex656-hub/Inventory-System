@@ -17,6 +17,7 @@ import './models/DetalleSalida';
 import './models/MovimientoInventario';
 import Sede from './models/Sede';
 import Almacen from './models/Almacen';
+import { ensureProductosProveedorOptional } from './database/ensure-schema-patches';
 
 // Importar rutas
 import authRoutes from './routes/auth.routes';
@@ -37,6 +38,7 @@ import reportRoutes from './routes/report.routes';
 import configuracionRoutes from './routes/configuracion.routes';
 import sedeRoutes from './routes/sede.routes';
 import almacenRoutes from './routes/almacen.routes';
+import path from 'path';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -62,6 +64,7 @@ app.use(cors({
 app.use(morgan('dev'));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Rutas
 app.use('/api/auth', authRoutes);
@@ -96,7 +99,11 @@ const startServer = async () => {
     
     // En producción, evita alterar el esquema automáticamente.
     // Usa migraciones; en dev puedes habilitar sync con un flag explícito.
-    const enableDbSync = process.env.ENABLE_DB_SYNC === 'true';
+    // Si ENABLE_DB_SYNC no está definido, sincroniza por defecto en development
+    // para crear tablas nuevas (por ejemplo: sedes/almacenes) sin romper el flujo local.
+    const enableDbSync = process.env.ENABLE_DB_SYNC !== undefined
+      ? process.env.ENABLE_DB_SYNC === 'true'
+      : process.env.NODE_ENV === 'development';
     if (enableDbSync) {
       const alter = process.env.DB_SYNC_ALTER === 'true';
       await sequelize.sync({ alter });
@@ -104,6 +111,8 @@ const startServer = async () => {
     } else {
       console.log('ℹ️  DB sync deshabilitado (ENABLE_DB_SYNC!=true).');
     }
+    // Corrige esquemas viejos aunque el sync esté apagado (proveedor opcional en catálogo).
+    await ensureProductosProveedorOptional();
     
     // Crear configuración por defecto si no existe
     try {

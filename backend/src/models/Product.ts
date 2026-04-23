@@ -2,6 +2,7 @@ import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '../config/database';
 import Category from './Category';
 import Supplier from './Supplier';
+import UnidadMedida from './UnidadMedida';
 
 interface ProductAttributes {
   id: number;
@@ -9,18 +10,20 @@ interface ProductAttributes {
   nombre: string;
   descripcion?: string;
   categoria_id: number;
-  proveedor_id: number;
+  proveedor_id?: number;
+  unidad_id?: number;
   precio_compra: number;
   precio_venta: number;
   stock_actual: number;
   stock_minimo: number;
   ubicacion?: string;
   activo: boolean;
+  image_filename?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-interface ProductCreationAttributes extends Optional<ProductAttributes, 'id' | 'activo' | 'createdAt' | 'updatedAt'> {}
+interface ProductCreationAttributes extends Optional<ProductAttributes, 'id' | 'activo' | 'createdAt' | 'updatedAt' | 'proveedor_id' | 'unidad_id' | 'image_filename'> {}
 
 class Product extends Model<ProductAttributes, ProductCreationAttributes> implements ProductAttributes {
   public id!: number;
@@ -28,19 +31,22 @@ class Product extends Model<ProductAttributes, ProductCreationAttributes> implem
   public nombre!: string;
   public descripcion?: string;
   public categoria_id!: number;
-  public proveedor_id!: number;
+  public proveedor_id?: number;
+  public unidad_id?: number;
   public precio_compra!: number;
   public precio_venta!: number;
   public stock_actual!: number;
   public stock_minimo!: number;
   public ubicacion?: string;
   public activo!: boolean;
+  public image_filename?: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
   // Relaciones
   public categoria?: Category;
   public proveedor?: Supplier;
+  public unidad?: UnidadMedida;
 }
 
 Product.init(
@@ -73,9 +79,17 @@ Product.init(
     },
     proveedor_id: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: 'proveedores',
+        key: 'id'
+      }
+    },
+    unidad_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'unidades_medida',
         key: 'id'
       }
     },
@@ -116,6 +130,10 @@ Product.init(
     activo: {
       type: DataTypes.BOOLEAN,
       defaultValue: true
+    },
+    image_filename: {
+      type: DataTypes.STRING(255),
+      allowNull: true
     }
   },
   {
@@ -131,6 +149,9 @@ Product.init(
       },
       {
         fields: ['proveedor_id']
+      },
+      {
+        fields: ['unidad_id']
       }
     ]
   }
@@ -139,6 +160,7 @@ Product.init(
 // Definir relaciones
 Product.belongsTo(Category, { foreignKey: 'categoria_id', as: 'categoria' });
 Product.belongsTo(Supplier, { foreignKey: 'proveedor_id', as: 'proveedor' });
+Product.belongsTo(UnidadMedida, { foreignKey: 'unidad_id', as: 'unidad' });
 
 export default Product;
 
