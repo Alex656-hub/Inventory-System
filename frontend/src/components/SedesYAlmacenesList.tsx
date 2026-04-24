@@ -139,7 +139,7 @@ const SedesYAlmacenesList: React.FC = () => {
                   <div className="sede-name-cell">
                     <span className="sede-icon">{'\ud83c\udfe2'}</span>
                     <div>
-                      <strong>{sede.nombre}</strong>
+                      {sede.nombre}
                     </div>
                   </div>
                 </td>

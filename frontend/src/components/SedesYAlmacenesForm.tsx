@@ -82,7 +82,7 @@ const SedesYAlmacenesForm: React.FC<SedesYAlmacenesFormProps> = ({
   };
 
   return (
-    <form className="mf-form" onSubmit={handleSubmit}>
+    <form className="mf-form sedes-almacenes-form" onSubmit={handleSubmit}>
       <div className="mf-group">
         <label htmlFor="nombre">
           Nombre del Local <span className="mf-required">*</span>

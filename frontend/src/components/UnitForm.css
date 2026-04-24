@@ -1,5 +1,22 @@
 /* UnitForm — contenedor y errores; campos en styles/formField.css */
 
+.modal-content.modal-xs:has(.unit-form-container) .modal-body {
+  /* Reduce el “aire” entre el header y el primer campo */
+  padding: 0;
+}
+
+/* Header estilo base "Unidades" (explicitar para consistencia cross-size) */
+.modal-content.modal-xs:has(.unit-form-container) .modal-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.modal-content.modal-xs:has(.unit-form-container) .modal-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
 .unit-form-container {
   background: white;
   border-radius: 14px;
@@ -14,7 +31,7 @@
 }
 
 .unit-form {
-  padding: 16px 18px;
+  padding: 12px 18px 16px;
 }
 
 .unit-general-error {

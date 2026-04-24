@@ -102,6 +102,12 @@ body.dark {
   opacity: 1;
 }
 
+/* Fix puntual: si por alguna razón el label se muestra como "proveedores",
+   forzamos la primera letra en mayúscula solo para ese item del sidebar. */
+.sidebar a[href="/proveedores"] .nav-text::first-letter {
+  text-transform: uppercase;
+}
+
 .sidebar.close .text {
   opacity: 0;
 }

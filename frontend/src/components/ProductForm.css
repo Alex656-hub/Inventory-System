@@ -2,6 +2,18 @@
   width: 100%;
 }
 
+/* Header estilo "Unidades" para el modal de Catálogo de Productos */
+.modal-content.modal-medium:has(.product-modal-form) .modal-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.modal-content.modal-medium:has(.product-modal-form) .modal-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
 /* Layout compacto: imagen pequeña + campos al lado */
 .pmf-body {
   display: grid;

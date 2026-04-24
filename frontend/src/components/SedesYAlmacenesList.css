@@ -1,5 +1,17 @@
 /* Sedes y Almacenes — lista (moduleBase.css aporta layout .module-*) */
 
+/* Header estilo "Unidades" para el modal de Sedes y Almacenes */
+.modal-content.modal-small:has(.sedes-almacenes-form) .modal-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.modal-content.modal-small:has(.sedes-almacenes-form) .modal-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
 .sede-name-cell {
   display: flex;
   align-items: center;

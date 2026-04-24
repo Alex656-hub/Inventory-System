@@ -10,7 +10,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  font-weight: 650;
+  font-weight: 500;
   color: var(--color-text);
 }
 

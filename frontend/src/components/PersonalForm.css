@@ -9,14 +9,16 @@
 }
 
 .modal-content.modal-small:has(.personal-form-container) .modal-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid rgba(0, 166, 244, 0.35);
+  /* Header estilo "Unidades" (compacto) */
+  padding: 14px 18px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .modal-content.modal-small:has(.personal-form-container) .modal-header h2 {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--color-primary-dark);
+  /* Header estilo "Unidades" */
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
 }
 
 .modal-content.modal-small:has(.personal-form-container) .modal-body {

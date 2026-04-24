@@ -1,4 +1,9 @@
 /* Proveedores — estilos específicos (base en moduleBase.css) */
+.supplier-list-container .module-title {
+  /* Asegura "Proveedores" con mayúscula aunque algún estilo global lo fuerce a minúscula */
+  text-transform: capitalize;
+}
+
 .supplier-subtitle {
   /* Se mantiene por compatibilidad; la base ya define `.module-subtitle`. */
 }

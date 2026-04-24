@@ -1,7 +1,24 @@
 /* CategoryForm — layout; campos en styles/formField.css (.mf-*) */
 
+.modal-content.modal-xs:has(.category-unit-form) .modal-body {
+  /* Reduce el “aire” entre el header y el primer campo en Categorías */
+  padding: 0;
+}
+
+/* Header estilo "Unidades" */
+.modal-content.modal-xs:has(.category-unit-form) .modal-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.modal-content.modal-xs:has(.category-unit-form) .modal-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
 .category-unit-form {
-  padding: 20px;
+  padding: 14px 20px 20px;
 }
 
 .category-form-actions {

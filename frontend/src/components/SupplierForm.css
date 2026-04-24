@@ -5,14 +5,16 @@
 }
 
 .modal-content.modal-large:has(.supplier-form) .modal-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--color-border);
+  /* Header estilo "Unidades" (compacto) */
+  padding: 14px 18px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .modal-content.modal-large:has(.supplier-form) .modal-header h2 {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--color-sky-800);
+  /* Header estilo "Unidades" */
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
 }
 
 .modal-content.modal-large:has(.supplier-form) .modal-body {
@@ -49,7 +51,7 @@
   display: block;
   margin: 0;
   padding: 0;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--color-text);
   font-size: 14px;
   line-height: 1.2;
@@ -69,7 +71,8 @@
 }
 
 .telefono-field {
-  margin-top: 8px;
+  /* Mantener alineación vertical con RUC/DNI */
+  margin-top: 0;
 }
 
 .supplier-form-actions {
