@@ -1,0 +1,175 @@
+import { DataTypes, Model, Optional } from 'sequelize';
+import { sequelize } from '../config/database';
+import User from './User';
+import Sede from './Sede';
+import Supplier from './Supplier';
+
+interface OperacionStockAttributes {
+  id: number;
+  tipo_operacion: 'ENTRADA' | 'SALIDA' | 'TRASPASO';
+  fecha_emision: Date;
+  responsable_fisico_id: number;
+  referencia?: string;
+  
+  // Campos dinámicos según tipo
+  sede_origen_id?: number;        // SALIDA, TRASPASO
+  sede_destino_id?: number;       // ENTRADA, TRASPASO
+  proveedor_id?: number;          // ENTRADA
+  cliente_id?: number;            // SALIDA
+  motivo_traspaso?: string;       // TRASPASO
+  
+  // Totales
+  total_unidades: number;
+  costo_total: number;
+  
+  estado: 'BORRADOR' | 'PROCESADO' | 'CANCELADO';
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+interface OperacionStockCreationAttributes extends Optional<OperacionStockAttributes, 'id' | 'referencia' | 'sede_origen_id' | 'sede_destino_id' | 'proveedor_id' | 'cliente_id' | 'motivo_traspaso' | 'createdAt' | 'updatedAt'> {}
+
+class OperacionStock extends Model<OperacionStockAttributes, OperacionStockCreationAttributes> implements OperacionStockAttributes {
+  public id!: number;
+  public tipo_operacion!: 'ENTRADA' | 'SALIDA' | 'TRASPASO';
+  public fecha_emision!: Date;
+  public responsable_fisico_id!: number;
+  public referencia?: string;
+  public sede_origen_id?: number;
+  public sede_destino_id?: number;
+  public proveedor_id?: number;
+  public cliente_id?: number;
+  public motivo_traspaso?: string;
+  public total_unidades!: number;
+  public costo_total!: number;
+  public estado!: 'BORRADOR' | 'PROCESADO' | 'CANCELADO';
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
+
+  // Relaciones
+  public responsable?: User;
+  public sede_origen?: Sede;
+  public sede_destino?: Sede;
+  public proveedor?: Supplier;
+}
+
+OperacionStock.init(
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true
+    },
+    tipo_operacion: {
+      type: DataTypes.ENUM('ENTRADA', 'SALIDA', 'TRASPASO'),
+      allowNull: false
+    },
+    fecha_emision: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW
+    },
+    responsable_fisico_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'usuarios',
+        key: 'id'
+      }
+    },
+    referencia: {
+      type: DataTypes.STRING(100),
+      allowNull: true
+    },
+    sede_origen_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'sedes',
+        key: 'id'
+      }
+    },
+    sede_destino_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'sedes',
+        key: 'id'
+      }
+    },
+    proveedor_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'proveedores',
+        key: 'id'
+      }
+    },
+    cliente_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'clientes',
+        key: 'id'
+      }
+    },
+    motivo_traspaso: {
+      type: DataTypes.STRING(200),
+      allowNull: true
+    },
+    total_unidades: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      validate: {
+        min: 0
+      }
+    },
+    costo_total: {
+      type: DataTypes.DECIMAL(12, 2),
+      allowNull: false,
+      defaultValue: 0,
+      validate: {
+        min: 0
+      }
+    },
+    estado: {
+      type: DataTypes.ENUM('BORRADOR', 'PROCESADO', 'CANCELADO'),
+      allowNull: false,
+      defaultValue: 'BORRADOR'
+    }
+  },
+  {
+    sequelize,
+    tableName: 'operaciones_stock',
+    timestamps: true,
+    indexes: [
+      {
+        fields: ['tipo_operacion']
+      },
+      {
+        fields: ['fecha_emision']
+      },
+      {
+        fields: ['responsable_fisico_id']
+      },
+      {
+        fields: ['estado']
+      },
+      {
+        fields: ['sede_origen_id']
+      },
+      {
+        fields: ['sede_destino_id']
+      }
+    ]
+  }
+);
+
+// Definir relaciones
+OperacionStock.belongsTo(User, { foreignKey: 'responsable_fisico_id', as: 'responsable' });
+OperacionStock.belongsTo(Sede, { foreignKey: 'sede_origen_id', as: 'sede_origen' });
+OperacionStock.belongsTo(Sede, { foreignKey: 'sede_destino_id', as: 'sede_destino' });
+OperacionStock.belongsTo(Supplier, { foreignKey: 'proveedor_id', as: 'proveedor' });
+
+export default OperacionStock;

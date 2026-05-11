@@ -17,6 +17,10 @@ import './models/DetalleSalida';
 import './models/MovimientoInventario';
 import Sede from './models/Sede';
 import Almacen from './models/Almacen';
+import OperacionStock from './models/OperacionStock';
+import StockPorSede from './models/StockPorSede';
+import DetalleOperacion from './models/DetalleOperacion';
+import Client from './models/Client';
 import { ensureProductosProveedorOptional } from './database/ensure-schema-patches';
 
 // Importar rutas
@@ -25,6 +29,7 @@ import userRoutes from './routes/user.routes';
 import productRoutes from './routes/product.routes';
 import categoryRoutes from './routes/category.routes';
 import supplierRoutes from './routes/supplier.routes';
+import clientRoutes from './routes/client.routes';
 import unidadmedidaRoutes from './routes/unidadmedida.routes';
 import entradaRoutes from './routes/entrada.routes';
 import salidaRoutes from './routes/salida.routes';
@@ -38,6 +43,7 @@ import reportRoutes from './routes/report.routes';
 import configuracionRoutes from './routes/configuracion.routes';
 import sedeRoutes from './routes/sede.routes';
 import almacenRoutes from './routes/almacen.routes';
+import operacionStockRoutes from './routes/operacionStock.routes';
 import path from 'path';
 
 // Cargar variables de entorno
@@ -72,6 +78,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/suppliers', supplierRoutes);
+app.use('/api/clients', clientRoutes);
 app.use('/api/unidades', unidadmedidaRoutes);
 app.use('/api/inventory/entries', entradaRoutes);
 app.use('/api/inventory/exits', salidaRoutes);
@@ -85,6 +92,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/configuracion', configuracionRoutes);
 app.use('/api/sedes', sedeRoutes);
 app.use('/api/almacenes', almacenRoutes);
+app.use('/api/stock', operacionStockRoutes);
 
 // Ruta de salud
 app.get('/api/health', (req, res) => {
