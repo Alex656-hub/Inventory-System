@@ -1,31 +1,32 @@
 import React, { useState, useEffect } from 'react';
+import { categoryService } from '../services/category.service';
+import { Categoria } from '../types';
 import './CategoryForm.css';
 
-interface Category {
-  id?: number;
-  nombre: string;
-  descripcion?: string;
-  estado: boolean;
-}
-
 interface CategoryFormProps {
-  category?: Category | null;
+  category?: Categoria | null;
   onClose: () => void;
 }
 
 const CategoryForm: React.FC<CategoryFormProps> = ({ category, onClose }) => {
   const [formData, setFormData] = useState({
-    nombre: ''
+    nombre: '',
+    descripcion: '',
+    activa: true
   });
 
   useEffect(() => {
     if (category) {
       setFormData({
-        nombre: category.nombre
+        nombre: category.nombre,
+        descripcion: category.descripcion || '',
+        activa: category.activa
       });
     } else {
       setFormData({
-        nombre: ''
+        nombre: '',
+        descripcion: '',
+        activa: true
       });
     }
   }, [category]);
@@ -38,7 +39,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ category, onClose }) => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.nombre.trim()) {
@@ -46,8 +47,19 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ category, onClose }) => {
       return;
     }
 
-    console.log('Guardando categoría:', formData);
-    onClose();
+    try {
+      if (category && category.id) {
+        // Editar categoría existente
+        await categoryService.actualizarCategoria(category.id, formData);
+      } else {
+        // Crear nueva categoría
+        await categoryService.crearCategoria(formData);
+      }
+      onClose();
+    } catch (error: any) {
+      console.error('Error al guardar categoría:', error);
+      alert(error.response?.data?.mensaje || 'Error al guardar categoría');
+    }
   };
 
   return (
@@ -71,12 +83,29 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ category, onClose }) => {
         </div>
       </div>
 
+      <div className="mf-group">
+        <label htmlFor="descripcion">
+          Descripción
+        </label>
+        <div className="mf-field-wrap">
+          <textarea
+            id="descripcion"
+            name="descripcion"
+            value={formData.descripcion}
+            onChange={(e) => setFormData(prev => ({ ...prev, descripcion: e.target.value }))}
+            placeholder="Describe esta categoría (opcional)..."
+            className="mf-field"
+            rows={3}
+          />
+        </div>
+      </div>
+
       <div className="mf-actions category-form-actions">
         <button type="button" className="mf-btn mf-btn--ghost" onClick={onClose}>
           Cancelar
         </button>
         <button type="submit" className="mf-btn mf-btn--primary">
-          {category ? 'Guardar' : 'Guardar'}
+          {category ? 'Actualizar Categoría' : 'Crear Categoría'}
         </button>
       </div>
     </form>

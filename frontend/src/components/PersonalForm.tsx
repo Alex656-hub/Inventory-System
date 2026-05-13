@@ -1,13 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { PersonalItem } from '../services/personal.service';
 import './PersonalForm.css';
-
-interface PersonalItem {
-  id?: number;
-  nombreCompleto: string;
-  cargo: string;
-  telefono: string;
-  estado: boolean;
-}
 
 interface PersonalFormProps {
   item?: PersonalItem | null;
@@ -18,32 +11,66 @@ interface PersonalFormProps {
 const PersonalForm: React.FC<PersonalFormProps> = ({ item, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     nombreCompleto: '',
-    cargo: '',
-    telefono: ''
+    cargo: 'Almacenero' as 'Almacenero' | 'Repartidor',
+    telefono: '',
+    activo: true
   });
-
+  
   useEffect(() => {
     if (item) {
       setFormData({
         nombreCompleto: item.nombreCompleto,
         cargo: item.cargo,
-        telefono: item.telefono
+        telefono: item.telefono || '',
+        activo: item.activo
       });
     } else {
       setFormData({
         nombreCompleto: '',
-        cargo: '',
-        telefono: ''
+        cargo: 'Almacenero' as 'Almacenero' | 'Repartidor',
+        telefono: '',
+        activo: true
       });
     }
   }, [item]);
 
+  const formatearTelefono = (telefono: string): string => {
+    // Remover todos los caracteres no numéricos
+    const soloNumeros = telefono.replace(/\D/g, '');
+    
+    // Formatear cada 3 dígitos: 987654321 -> 987 654 321
+    if (soloNumeros.length <= 3) return soloNumeros;
+    if (soloNumeros.length <= 6) return soloNumeros.slice(0, 3) + ' ' + soloNumeros.slice(3);
+    return soloNumeros.slice(0, 3) + ' ' + soloNumeros.slice(3, 6) + ' ' + soloNumeros.slice(6);
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // Si es el campo teléfono, solo permitir números que empiecen con 9
+    if (name === 'telefono') {
+      const soloNumeros = value.replace(/\D/g, '');
+      
+      // Solo permitir si empieza con 9 o está vacío
+      let permitido = '';
+      if (soloNumeros.length === 0) {
+        permitido = '';
+      } else if (soloNumeros.startsWith('9')) {
+        permitido = soloNumeros.slice(0, 9); // Máximo 9 dígitos
+      }
+      
+      const formateado = formatearTelefono(permitido);
+      
+      setFormData(prev => ({
+        ...prev,
+        [name]: formateado
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -54,11 +81,14 @@ const PersonalForm: React.FC<PersonalFormProps> = ({ item, onClose, onSave }) =>
       return;
     }
 
+    // Limpiar formato del teléfono para guardar (quitar espacios)
+    const telefonoLimpio = formData.telefono.replace(/\s/g, '');
+
     onSave({
       nombreCompleto: formData.nombreCompleto.trim(),
       cargo: formData.cargo,
-      telefono: formData.telefono.trim(),
-      estado: true
+      telefono: telefonoLimpio, // Guardar sin formato
+      activo: formData.activo
     });
   };
 
@@ -84,15 +114,16 @@ const PersonalForm: React.FC<PersonalFormProps> = ({ item, onClose, onSave }) =>
           <div className="mf-group">
             <label htmlFor="cargo">Rol / Cargo</label>
             <div className="mf-field-wrap">
-              <input
+              <select
                 id="cargo"
                 name="cargo"
-                type="text"
                 value={formData.cargo}
-                onChange={handleChange}
-                placeholder="Ejm. Almacenero"
+                onChange={(e) => setFormData(prev => ({ ...prev, cargo: e.target.value as 'Almacenero' | 'Repartidor' }))}
                 className="mf-field"
-              />
+              >
+                <option value="Almacenero">Almacenero</option>
+                <option value="Repartidor">Repartidor</option>
+              </select>
             </div>
           </div>
           <div className="mf-group">
@@ -105,6 +136,7 @@ const PersonalForm: React.FC<PersonalFormProps> = ({ item, onClose, onSave }) =>
                 value={formData.telefono}
                 onChange={handleChange}
                 className="mf-field"
+                placeholder="Ej: 9xx xxx xxx"
               />
             </div>
           </div>

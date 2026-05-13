@@ -137,7 +137,19 @@ const SupplierForm: React.FC<SupplierFormProps> = ({ proveedor, onClose, onSucce
 
     if (name === 'ruc_dni' || name === 'contacto_telefono') {
       const numericValue = value.replace(/\D/g, '');
-      setFormData(prev => ({ ...prev, [name]: numericValue }));
+      
+      if (name === 'contacto_telefono') {
+        // Solo permitir números que empiecen con 9
+        let permitido = '';
+        if (numericValue.length === 0) {
+          permitido = '';
+        } else if (numericValue.startsWith('9')) {
+          permitido = numericValue.slice(0, 9); // Máximo 9 dígitos
+        }
+        setFormData(prev => ({ ...prev, [name]: permitido }));
+      } else {
+        setFormData(prev => ({ ...prev, [name]: numericValue }));
+      }
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }

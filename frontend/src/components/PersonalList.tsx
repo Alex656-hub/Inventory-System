@@ -1,16 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
 import PersonalForm from './PersonalForm';
+import { personalService, PersonalItem } from '../services/personal.service';
 import './PersonalList.css';
 import '../styles/moduleBase.css';
-
-interface PersonalItem {
-  id: number;
-  nombreCompleto: string;
-  cargo: string;
-  telefono: string;
-  estado: boolean;
-}
 
 const PersonalList: React.FC = () => {
   const [items, setItems] = useState<PersonalItem[]>([]);
@@ -19,15 +12,21 @@ const PersonalList: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<PersonalItem | null>(null);
 
+  const formatearTelefono = (telefono: string): string => {
+    if (!telefono) return '';
+    const soloNumeros = telefono.replace(/\D/g, '');
+    
+    // Formatear cada 3 dígitos: 987654321 -> 987 654 321
+    if (soloNumeros.length <= 3) return soloNumeros;
+    if (soloNumeros.length <= 6) return soloNumeros.slice(0, 3) + ' ' + soloNumeros.slice(3);
+    return soloNumeros.slice(0, 3) + ' ' + soloNumeros.slice(3, 6) + ' ' + soloNumeros.slice(6);
+  };
+
   const cargarDatos = async () => {
     setLoading(true);
     try {
-      // Simulación de datos - reemplazar con servicio real
-      const mockData: PersonalItem[] = [
-        { id: 1, nombreCompleto: 'Jose', cargo: 'Almacenero', telefono: '987654321', estado: true },
-        { id: 2, nombreCompleto: 'Miguel', cargo: 'Repartidor', telefono: '987654312', estado: true }
-      ];
-      setItems(mockData);
+      const response = await personalService.obtenerPersonal();
+      setItems(response.personal);
     } catch (error) {
       console.error('Error al cargar personal:', error);
     } finally {
@@ -54,34 +53,50 @@ const PersonalList: React.FC = () => {
     setShowForm(true);
   };
 
-  const handleGuardar = (formData: Omit<PersonalItem, 'id'>) => {
-    if (editingItem) {
+  const handleGuardar = async (formData: Omit<PersonalItem, 'id'>) => {
+    try {
+      if (editingItem) {
+        // Editar personal existente
+        await personalService.actualizarPersonal(editingItem.id, formData);
+      } else {
+        // Crear nuevo personal
+        await personalService.crearPersonal(formData);
+      }
+      setShowForm(false);
+      setEditingItem(null);
+      cargarDatos(); // Recargar la lista
+    } catch (error: any) {
+      console.error('Error al guardar personal:', error);
+      alert(error.response?.data?.mensaje || 'Error al guardar personal');
+    }
+  };
+
+  const toggleEstado = async (id: number) => {
+    try {
+      const item = items.find(i => i.id === id);
+      if (!item) return;
+      
+      await personalService.actualizarPersonal(id, { activo: !item.activo });
       setItems((prev) =>
         prev.map((item) =>
-          item.id === editingItem.id
-            ? { ...item, ...formData }
-            : item
+          item.id === id ? { ...item, activo: !item.activo } : item
         )
       );
-    } else {
-      const nextId = items.length ? Math.max(...items.map((i) => i.id)) + 1 : 1;
-      setItems((prev) => [...prev, { id: nextId, ...formData }]);
+    } catch (error: any) {
+      console.error('Error al cambiar estado:', error);
+      alert(error.response?.data?.mensaje || 'Error al cambiar estado');
     }
-    setShowForm(false);
-    setEditingItem(null);
   };
 
-  const toggleEstado = (id: number) => {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, estado: !item.estado } : item
-      )
-    );
-  };
-
-  const eliminar = (id: number) => {
+  const eliminar = async (id: number) => {
     if (!window.confirm('¿Deseas eliminar este registro de personal?')) return;
-    setItems((prev) => prev.filter((item) => item.id !== id));
+    try {
+      await personalService.eliminarPersonal(id);
+      setItems((prev) => prev.filter((item) => item.id !== id));
+    } catch (error: any) {
+      console.error('Error al eliminar personal:', error);
+      alert(error.response?.data?.mensaje || 'Error al eliminar personal');
+    }
   };
 
   if (loading) {
@@ -140,7 +155,7 @@ const PersonalList: React.FC = () => {
                 <td>
                   <span className="phone-cell">
                     <i className="bx bx-phone" />
-                    {item.telefono || '-'}
+                    {formatearTelefono(item.telefono || '') || '-'}
                   </span>
                 </td>
                 <td>
@@ -148,13 +163,13 @@ const PersonalList: React.FC = () => {
                     <label className="switch">
                       <input
                         type="checkbox"
-                        checked={item.estado}
+                        checked={item.activo}
                         onChange={() => toggleEstado(item.id)}
                       />
                       <span className="slider"></span>
                     </label>
-                    <span className={`estado-label ${item.estado ? 'activo' : 'inactivo'}`}>
-                      {item.estado ? 'Activo' : 'Inactivo'}
+                    <span className={`estado-label ${item.activo ? 'activo' : 'inactivo'}`}>
+                      {item.activo ? 'Activo' : 'Inactivo'}
                     </span>
                   </div>
                 </td>

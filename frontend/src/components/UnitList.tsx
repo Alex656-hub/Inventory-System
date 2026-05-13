@@ -70,7 +70,10 @@ const UnitList: React.FC = () => {
   const handleFormClose = () => {
     setShowForm(false);
     setUnidadEditando(null);
-    cargarDatos();
+  };
+
+  const handleFormSuccess = () => {
+    cargarDatos(); // Solo recargar cuando se guarda exitosamente
   };
 
   const toggleEstado = async (unidad: UnidadMedida) => {
@@ -95,7 +98,7 @@ const UnitList: React.FC = () => {
       <div className="module-page-header unit-list-header">
         <div>
           <h1 className="module-title">Unidades de Medida</h1>
-          <p className="module-subtitle subtitle">Gestión de unidades (Kilos, Litros, Cajas).</p>
+          <p className="module-subtitle subtitle">Gestión de unidades (Unidad, Paquete, Caja).</p>
         </div>
         <div className="module-toolbar unit-list-actions">
           <div className="module-search unit-search">
@@ -134,7 +137,9 @@ const UnitList: React.FC = () => {
                   {unidad.nombre}
                 </td>
                 <td className="unit-abbreviation">
-                  <span className="abbr-badge">{unidad.abreviatura}</span>
+                  <span className="abbr-badge" translate="no">
+                    {unidad.abreviatura || 'SIN ABREV'}
+                  </span>
                 </td>
                 <td className="unit-status">
                   <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'}}>
@@ -194,6 +199,7 @@ const UnitList: React.FC = () => {
         <UnitForm
           unidad={unidadEditando}
           onClose={handleFormClose}
+          onSuccess={handleFormSuccess}
         />
       </Modal>
 

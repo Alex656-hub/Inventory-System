@@ -21,6 +21,7 @@ import OperacionStock from './models/OperacionStock';
 import StockPorSede from './models/StockPorSede';
 import DetalleOperacion from './models/DetalleOperacion';
 import Client from './models/Client';
+import Personal from './models/Personal';
 import { ensureProductosProveedorOptional } from './database/ensure-schema-patches';
 
 // Importar rutas
@@ -44,6 +45,7 @@ import configuracionRoutes from './routes/configuracion.routes';
 import sedeRoutes from './routes/sede.routes';
 import almacenRoutes from './routes/almacen.routes';
 import operacionStockRoutes from './routes/operacionStock.routes';
+import personalRoutes from './routes/personal.routes';
 import path from 'path';
 
 // Cargar variables de entorno
@@ -93,6 +95,7 @@ app.use('/api/configuracion', configuracionRoutes);
 app.use('/api/sedes', sedeRoutes);
 app.use('/api/almacenes', almacenRoutes);
 app.use('/api/stock', operacionStockRoutes);
+app.use('/api/personal', personalRoutes);
 
 // Ruta de salud
 app.get('/api/health', (req, res) => {
@@ -121,6 +124,14 @@ const startServer = async () => {
     }
     // Corrige esquemas viejos aunque el sync esté apagado (proveedor opcional en catálogo).
     await ensureProductosProveedorOptional();
+    
+    // Forzar la actualización de la estructura de la tabla personal
+    try {
+      await Personal.sync({ alter: true });
+      console.log('✅ Tabla personal sincronizada correctamente con alter=true');
+    } catch (error) {
+      console.error('⚠️ Error al sincronizar tabla personal:', error);
+    }
     
     // Crear configuración por defecto si no existe
     try {

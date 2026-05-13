@@ -1,8 +1,5 @@
 /* CategoryList.css — estilos específicos (base en moduleBase.css) */
 
-.category-list-container {
-  /* Base en moduleBase.css */
-}
 
 /* Header: base en moduleBase.css */
 
@@ -11,27 +8,31 @@
 }
 
 /* ── Table ── */
-.category-table-container {
+.unit-table-container {
   overflow-x: auto;
 }
 
-.category-table {
+.unit-table {
   min-width: 600px;
 }
 
-.category-table th:nth-child(2) {
+.unit-table th:nth-child(1) {
+  text-align: left !important;
+}
+
+.unit-table th:nth-child(2) {
   text-align: center;
 }
 
-.category-table th:nth-child(3) {
+.unit-table th:nth-child(3) {
   text-align: center;
 }
 
-.category-table tbody tr {
+.unit-table tbody tr {
   transition: background 0.15s ease;
 }
 
-.category-table tr.inactive {
+.unit-table tr.inactive {
   opacity: 0.55;
 }
 
@@ -196,8 +197,8 @@ input:disabled + .slider {
     min-width: 160px;
   }
 
-  .category-table th,
-  .category-table td {
+  .unit-table th,
+  .unit-table td {
     padding: 12px 8px;
   }
 
@@ -226,22 +227,22 @@ body.dark .category-list-container .subtitle {
   color: var(--color-sky-400);
 }
 
-body.dark .category-table-container {
+body.dark .unit-table-container {
   background: var(--color-sky-900);
 }
 
-body.dark .category-table th {
+body.dark .unit-table th {
   background: var(--color-sky-800);
   color: var(--color-sky-200);
   border-bottom-color: var(--color-sky-700);
 }
 
-body.dark .category-table td {
+body.dark .unit-table td {
   border-bottom-color: var(--color-sky-800);
   color: var(--color-sky-100);
 }
 
-body.dark .category-table tr:hover {
+body.dark .unit-table tr:hover {
   background: var(--color-sky-800);
 }
 

@@ -13,6 +13,7 @@ import UnidadMedida from './UnidadMedida';
 import ConfiguracionSistema from './ConfiguracionSistema';
 import Sede from './Sede';
 import Almacen from './Almacen';
+import Personal from './Personal';
 
 // Exportar modelos
 export {
@@ -29,7 +30,8 @@ export {
   UnidadMedida,
   ConfiguracionSistema,
   Sede,
-  Almacen
+  Almacen,
+  Personal
 };
 
 // Exportar tipos
@@ -47,6 +49,7 @@ export * from './UnidadMedida';
 export * from './ConfiguracionSistema';
 export * from './Sede';
 export * from './Almacen';
+export * from './Personal';
 
 // Definir asociaciones adicionales
 Product.hasMany(Alert, { foreignKey: 'product_id', as: 'alerts' });

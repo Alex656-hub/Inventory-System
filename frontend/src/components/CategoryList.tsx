@@ -1,25 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
 import CategoryForm from './CategoryForm';
+import { categoryService } from '../services/category.service';
+import { Categoria } from '../types';
 import './CategoryList.css';
 import '../styles/moduleBase.css';
 
-interface Category {
-  id: number;
-  nombre: string;
-  descripcion?: string;
-  estado: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
 const CategoryList: React.FC = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [categoryEditando, setCategoryEditando] = useState<Category | null>(null);
+  const [categoryEditando, setCategoryEditando] = useState<Categoria | null>(null);
   const [showEliminarHardConfirm, setShowEliminarHardConfirm] = useState(false);
-  const [categoryEliminarHard, setCategoryEliminarHard] = useState<Category | null>(null);
+  const [categoryEliminarHard, setCategoryEliminarHard] = useState<Categoria | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const esGerente = true; // Temporal, deberías usar useAuth
 
@@ -30,13 +23,8 @@ const CategoryList: React.FC = () => {
   const cargarDatos = async () => {
     setLoading(true);
     try {
-      // Simulación de datos - reemplazar con servicio real
-      const mockCategories: Category[] = [
-        { id: 1, nombre: 'Electrónica', estado: true },
-        { id: 2, nombre: 'Limpieza', estado: true },
-        { id: 3, nombre: 'Materiales', estado: true }
-      ];
-      setCategories(mockCategories);
+      const response = await categoryService.obtenerCategorias();
+      setCategories(response.categorias);
     } catch (error) {
       console.error('Error al cargar categorías:', error);
     } finally {
@@ -53,12 +41,12 @@ const CategoryList: React.FC = () => {
     setShowForm(true);
   };
 
-  const handleEditar = (category: Category) => {
+  const handleEditar = (category: Categoria) => {
     setCategoryEditando(category);
     setShowForm(true);
   };
 
-  const handleEliminarHard = (category: Category) => {
+  const handleEliminarHard = (category: Categoria) => {
     setCategoryEliminarHard(category);
     setShowEliminarHardConfirm(true);
   };
@@ -67,7 +55,7 @@ const CategoryList: React.FC = () => {
     if (!categoryEliminarHard) return;
 
     try {
-      // await categoryService.eliminarCategoryHard(categoryEliminarHard.id);
+      await categoryService.eliminarCategoriaHard(categoryEliminarHard.id);
       setCategories(categories.filter(cat => cat.id !== categoryEliminarHard.id));
       setShowEliminarHardConfirm(false);
       setCategoryEliminarHard(null);
@@ -82,15 +70,11 @@ const CategoryList: React.FC = () => {
     cargarDatos();
   };
 
-  const toggleEstado = async (category: Category) => {
+  const toggleEstado = async (category: Categoria) => {
     try {
-      // if (category.estado) {
-      //   await categoryService.desactivarCategory(category.id);
-      // } else {
-      //   await categoryService.activarCategory(category.id);
-      // }
+      await categoryService.actualizarCategoria(category.id, { activa: !category.activa });
       setCategories(categories.map(cat => 
-        cat.id === category.id ? { ...cat, estado: !cat.estado } : cat
+        cat.id === category.id ? { ...cat, activa: !cat.activa } : cat
       ));
     } catch (error) {
       console.error('Error al cambiar estado:', error);
@@ -139,7 +123,7 @@ const CategoryList: React.FC = () => {
             </thead>
             <tbody>
               {filteredCategories.map((category) => (
-                <tr key={category.id} className={!category.estado ? 'inactive' : ''}>
+                <tr key={category.id} className={!category.activa ? 'inactive' : ''}>
                   <td className="unit-name">
                     <i className='bx bx-category unit-icon'></i>
                     {category.nombre}
@@ -149,14 +133,14 @@ const CategoryList: React.FC = () => {
                       <label className="switch">
                         <input
                           type="checkbox"
-                          checked={category.estado}
+                          checked={category.activa}
                           onChange={() => toggleEstado(category)}
                           disabled={!esGerente}
                         />
                         <span className="slider"></span>
                       </label>
-                      <span className={`status-text ${category.estado ? 'active' : 'inactive'}`}>
-                        {category.estado ? 'Activo' : 'Inactivo'}
+                      <span className={`status-text ${category.activa ? 'active' : 'inactive'}`}>
+                        {category.activa ? 'Activo' : 'Inactivo'}
                       </span>
                     </div>
                   </td>

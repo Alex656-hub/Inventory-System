@@ -6,9 +6,10 @@ import './UnitForm.css';
 interface UnitFormProps {
   unidad?: UnidadMedida | null;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-const UnitForm: React.FC<UnitFormProps> = ({ unidad, onClose }) => {
+const UnitForm: React.FC<UnitFormProps> = ({ unidad, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     nombre: '',
     abreviatura: ''
@@ -69,6 +70,7 @@ const UnitForm: React.FC<UnitFormProps> = ({ unidad, onClose }) => {
         });
       }
       onClose();
+      onSuccess?.();
     } catch (error: any) {
       console.error('Error al guardar unidad:', error);
       if (error.response?.data?.mensaje) {
