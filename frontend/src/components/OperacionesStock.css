@@ -235,6 +235,18 @@
   max-width: 110px;
 }
 
+.os-input-disabled {
+  background: #f3f4f6 !important;
+  color: #9ca3af !important;
+  cursor: not-allowed !important;
+}
+
+.os-btn-disabled {
+  background: #9ca3af !important;
+  cursor: not-allowed !important;
+  opacity: 0.7;
+}
+
 /* ── Selects ─────────────────────────────────────────────────── */
 .os-select-wrapper {
   position: relative;
@@ -455,6 +467,30 @@
   font-size: 0.8125rem;
   color: #4b5563;
   letter-spacing: 0.02em;
+}
+
+.os-table th:nth-child(1),
+.os-table td:nth-child(1) {
+  text-align: left;
+}
+
+.os-table th:nth-child(2),
+.os-table td:nth-child(2) {
+  text-align: left;
+}
+
+.os-table th:nth-child(3),
+.os-table td:nth-child(3),
+.os-table th:nth-child(4),
+.os-table td:nth-child(4),
+.os-table th:nth-child(5),
+.os-table td:nth-child(5) {
+  text-align: center;
+}
+
+.os-table th:nth-child(6),
+.os-table td:nth-child(6) {
+  text-align: center;
 }
 
 .os-table td {

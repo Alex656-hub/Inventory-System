@@ -3,12 +3,13 @@ import { sequelize } from '../config/database';
 import User from './User';
 import Sede from './Sede';
 import Supplier from './Supplier';
+import Personal from './Personal';
 
 interface OperacionStockAttributes {
   id: number;
   tipo_operacion: 'ENTRADA' | 'SALIDA' | 'TRASPASO';
   fecha_emision: Date;
-  responsable_fisico_id: number;
+  personal_id: number;
   referencia?: string;
   
   // Campos dinámicos según tipo
@@ -22,6 +23,9 @@ interface OperacionStockAttributes {
   total_unidades: number;
   costo_total: number;
   
+  // PDF storage
+  pdf_html?: string;              // HTML del PDF generado al procesar
+  
   estado: 'BORRADOR' | 'PROCESADO' | 'CANCELADO';
   createdAt?: Date;
   updatedAt?: Date;
@@ -33,7 +37,7 @@ class OperacionStock extends Model<OperacionStockAttributes, OperacionStockCreat
   public id!: number;
   public tipo_operacion!: 'ENTRADA' | 'SALIDA' | 'TRASPASO';
   public fecha_emision!: Date;
-  public responsable_fisico_id!: number;
+  public personal_id!: number;
   public referencia?: string;
   public sede_origen_id?: number;
   public sede_destino_id?: number;
@@ -42,12 +46,13 @@ class OperacionStock extends Model<OperacionStockAttributes, OperacionStockCreat
   public motivo_traspaso?: string;
   public total_unidades!: number;
   public costo_total!: number;
+  public pdf_html?: string;
   public estado!: 'BORRADOR' | 'PROCESADO' | 'CANCELADO';
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
   // Relaciones
-  public responsable?: User;
+  public personal?: Personal;
   public sede_origen?: Sede;
   public sede_destino?: Sede;
   public proveedor?: Supplier;
@@ -69,11 +74,11 @@ OperacionStock.init(
       allowNull: false,
       defaultValue: DataTypes.NOW
     },
-    responsable_fisico_id: {
+    personal_id: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
-        model: 'usuarios',
+        model: 'personal',
         key: 'id'
       }
     },
@@ -133,6 +138,11 @@ OperacionStock.init(
         min: 0
       }
     },
+    pdf_html: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: 'HTML del PDF generado al procesar la operación'
+    },
     estado: {
       type: DataTypes.ENUM('BORRADOR', 'PROCESADO', 'CANCELADO'),
       allowNull: false,
@@ -151,7 +161,7 @@ OperacionStock.init(
         fields: ['fecha_emision']
       },
       {
-        fields: ['responsable_fisico_id']
+        fields: ['personal_id']
       },
       {
         fields: ['estado']
@@ -167,7 +177,7 @@ OperacionStock.init(
 );
 
 // Definir relaciones
-OperacionStock.belongsTo(User, { foreignKey: 'responsable_fisico_id', as: 'responsable' });
+OperacionStock.belongsTo(Personal, { foreignKey: 'personal_id', as: 'personal' });
 OperacionStock.belongsTo(Sede, { foreignKey: 'sede_origen_id', as: 'sede_origen' });
 OperacionStock.belongsTo(Sede, { foreignKey: 'sede_destino_id', as: 'sede_destino' });
 OperacionStock.belongsTo(Supplier, { foreignKey: 'proveedor_id', as: 'proveedor' });

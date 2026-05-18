@@ -1,0 +1,441 @@
+/* =============================================
+   HISTORIAL KARDEX - Rediseño Estético
+   Inspirado en la Imagen 1 (diseño de referencia)
+   ============================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+/* ── Contenedor principal ── */
+.historial-kardex-container {
+  padding: 32px 36px;
+  background: #f5f6fa;
+  min-height: 100vh;
+}
+
+.hk-header {
+  margin-bottom: 6px;
+}
+
+.hk-header h2 {
+  color: #111827;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+  letter-spacing: -0.3px;
+}
+
+.hk-header p,
+.hk-header span {
+  color: #6b7280;
+  font-size: 13px;
+  margin: 0;
+}
+
+/* ── Filtros ── */
+/* ── Encabezado card (filtros) ── */
+.hk-encabezado-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.hk-periodo-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.hk-periodo-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.hk-periodo-btn {
+  padding: 6px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.hk-periodo-btn:hover {
+  background: #f3f4f6;
+}
+
+.hk-periodo-btn--active {
+  background: #111827;
+  color: #ffffff;
+  border-color: #111827;
+}
+
+.hk-periodo-btn--active:hover {
+  background: #1f2937;
+}
+
+.hk-rango-fechas {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hk-rango-icono {
+  font-size: 15px;
+  color: #9ca3af;
+}
+
+.hk-rango-input {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: #374151;
+  background: #fafafa;
+  transition: border-color 0.15s;
+}
+
+.hk-rango-input:focus {
+  outline: none;
+  border-color: #6366f1;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+}
+
+.hk-rango-separador {
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.hk-filtros-secundarios {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+  padding: 16px 20px;
+}
+
+.hk-filtro-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+}
+
+.hk-filtro-group label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.hk-filtro-group input,
+.hk-filtro-group select {
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #374151;
+  background: #fafafa;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.hk-filtro-group input:focus,
+.hk-filtro-group select:focus {
+  outline: none;
+  border-color: #6366f1;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.hk-filtro-group--wide {
+  flex: 1;
+  min-width: 180px;
+}
+
+.hk-filtro-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.hk-btn-reporte {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.hk-btn-reporte:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+/* ── Botones generales ── */
+.hk-btn {
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hk-btn-primary {
+  background: #111827;
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
+.hk-btn-primary:hover {
+  background: #1f2937;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+}
+
+.hk-btn-secondary {
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}
+
+.hk-btn-secondary:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+/* ── Tabla: contenedor ── */
+.hk-tabla-container {
+  overflow-x: auto;
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* ── Tabla ── */
+.hk-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+/* Cabecera */
+.hk-tabla thead {
+  background: #ffffff;
+  border-bottom: 2px solid #f3f4f6;
+}
+
+.hk-tabla th {
+  padding: 13px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  white-space: nowrap;
+}
+
+.hk-tabla th:nth-child(6) {
+  text-align: right;
+}
+
+/* Filas */
+.hk-tabla td {
+  padding: 13px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #374151;
+  font-size: 13.5px;
+}
+
+.hk-tabla tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.hk-origen-destino {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hk-origen {
+  font-weight: 600;
+  color: #111827;
+  font-size: 13.5px;
+}
+
+.hk-destino {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.hk-row-even {
+  background: #ffffff;
+}
+
+.hk-row-odd {
+  background: #fafbfc;
+}
+
+.hk-tabla tbody tr:hover td {
+  background: #f0f4ff !important;
+  transition: background 0.12s;
+}
+
+/* Columnas numéricas */
+.hk-numero {
+  text-align: right;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: #111827;
+  font-weight: 500;
+}
+
+/* ── Badges de tipo ── */
+.hk-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.hk-badge-entrada {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.hk-badge-salida {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.hk-badge-ajuste {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* ── Acciones en fila ── */
+.hk-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.hk-btn-action {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #6b7280;
+  transition: all 0.15s;
+}
+
+.hk-btn-action:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  color: #111827;
+  transform: scale(1.06);
+}
+
+.hk-btn-action:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.hk-btn-preview:hover:not(:disabled) {
+  background: #e0e7ff;
+  border-color: #6366f1;
+  color: #4338ca;
+}
+
+.hk-btn-print:hover:not(:disabled) {
+  background: #fef9c3;
+  border-color: #ca8a04;
+  color: #92400e;
+}
+
+/* ── Estados vacíos y carga ── */
+.hk-loading,
+.hk-empty {
+  text-align: center;
+  padding: 52px;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+/* ── Paginación ── */
+.hk-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 14px 20px;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.hk-pagination button {
+  padding: 7px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #374151;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+
+.hk-pagination button:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.hk-pagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.hk-pagination span {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+}

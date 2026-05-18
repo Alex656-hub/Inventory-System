@@ -2,6 +2,10 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { authService } from '../services/auth.service';
+import ModalKardexPDF from './ModalKardexPDF';
+import ModalInventarioExcel from './ModalInventarioExcel';
+import tokenManager from '../services/tokenManager.service';
+import './ReportSelector.css';
 
 interface ReportParams {
   type: string;
@@ -23,6 +27,8 @@ const ReportSelector: React.FC = () => {
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [showKardexModal, setShowKardexModal] = useState(false);
+  const [showInventarioModal, setShowInventarioModal] = useState(false);
 
   if (!usuario || usuario.rol !== 'gerente') {
     return <p>No tienes permisos para generar reportes.</p>;
@@ -31,10 +37,10 @@ const ReportSelector: React.FC = () => {
   const handleGenerate = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      const headers = tokenManager.getAuthHeaders();
       const response = await axios.post('/api/reports/generate', params, {
         responseType: 'blob',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { ...headers }
       });
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -53,63 +59,90 @@ const ReportSelector: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '20px' }}>
+    <div className="report-selector-container">
       <h2>Generar Reporte</h2>
-      <div style={{ marginBottom: '10px' }}>
-        <label>Tipo de Reporte:</label>
-        <select
-          value={params.type}
-          onChange={(e) => setParams({ ...params, type: e.target.value })}
-          style={{ marginLeft: '10px', padding: '5px' }}
-        >
-          <option value="inventory_status">Estado de Inventario</option>
-          <option value="stock_movements">Movimientos de Stock</option>
-          <option value="financial_kpis">KPIs Financieros</option>
-          <option value="demand_forecast">Predicciones de Demanda</option>
-        </select>
+      
+      <div className="report-section">
+        <h3>Reportes del Sistema</h3>
+        <div className="report-form">
+          <div className="report-field">
+            <label>Tipo de Reporte:</label>
+            <select
+              value={params.type}
+              onChange={(e) => setParams({ ...params, type: e.target.value })}
+            >
+              <option value="inventory_status">Estado de Inventario</option>
+              <option value="stock_movements">Movimientos de Stock</option>
+              <option value="financial_kpis">KPIs Financieros</option>
+              <option value="demand_forecast">Predicciones de Demanda</option>
+            </select>
+          </div>
+          <div className="report-field">
+            <label>Fecha Inicio:</label>
+            <input
+              type="date"
+              value={params.startDate}
+              onChange={(e) => setParams({ ...params, startDate: e.target.value })}
+            />
+          </div>
+          <div className="report-field">
+            <label>Fecha Fin:</label>
+            <input
+              type="date"
+              value={params.endDate}
+              onChange={(e) => setParams({ ...params, endDate: e.target.value })}
+            />
+          </div>
+          <div className="report-field">
+            <label>Formato:</label>
+            <select
+              value={params.format}
+              onChange={(e) => setParams({ ...params, format: e.target.value as 'pdf' | 'excel' })}
+            >
+              <option value="pdf">PDF</option>
+              <option value="excel">Excel</option>
+            </select>
+          </div>
+          <button
+            className="report-btn report-btn-primary"
+            onClick={handleGenerate}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Generando...' : 'Generar y Descargar'}
+          </button>
+        </div>
       </div>
-      <div style={{ marginBottom: '10px' }}>
-        <label>Fecha Inicio:</label>
-        <input
-          type="date"
-          value={params.startDate}
-          onChange={(e) => setParams({ ...params, startDate: e.target.value })}
-          style={{ marginLeft: '10px', padding: '5px' }}
-        />
+
+      <div className="report-section">
+        <h3>Kardex</h3>
+        <div className="report-buttons">
+          <button 
+            className="report-btn report-btn-secondary"
+            onClick={() => setShowKardexModal(true)}
+          >
+            Kardex PDF
+          </button>
+        </div>
       </div>
-      <div style={{ marginBottom: '10px' }}>
-        <label>Fecha Fin:</label>
-        <input
-          type="date"
-          value={params.endDate}
-          onChange={(e) => setParams({ ...params, endDate: e.target.value })}
-          style={{ marginLeft: '10px', padding: '5px' }}
-        />
+
+      <div className="report-section">
+        <h3>Inventario</h3>
+        <div className="report-buttons">
+          <button 
+            className="report-btn report-btn-success"
+            onClick={() => setShowInventarioModal(true)}
+          >
+            Exportar Excel 📊
+          </button>
+        </div>
       </div>
-      <div style={{ marginBottom: '10px' }}>
-        <label>Formato:</label>
-        <select
-          value={params.format}
-          onChange={(e) => setParams({ ...params, format: e.target.value as 'pdf' | 'excel' })}
-          style={{ marginLeft: '10px', padding: '5px' }}
-        >
-          <option value="pdf">PDF</option>
-          <option value="excel">Excel</option>
-        </select>
-      </div>
-      <button
-        onClick={handleGenerate}
-        disabled={isLoading}
-        style={{
-          padding: '10px 20px',
-          backgroundColor: isLoading ? '#ccc' : '#007bff',
-          color: 'white',
-          border: 'none',
-          cursor: isLoading ? 'not-allowed' : 'pointer'
-        }}
-      >
-        {isLoading ? 'Generando...' : 'Generar y Descargar'}
-      </button>
+
+      {showKardexModal && (
+        <ModalKardexPDF onClose={() => setShowKardexModal(false)} />
+      )}
+      {showInventarioModal && (
+        <ModalInventarioExcel onClose={() => setShowInventarioModal(false)} />
+      )}
     </div>
   );
 };

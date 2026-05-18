@@ -122,9 +122,6 @@ Almacen.init(
         fields: ['codigo']
       },
       {
-        fields: ['sede_id']
-      },
-      {
         fields: ['tipo']
       },
       {

@@ -17,6 +17,8 @@ import UserAccess from './components/UserAccess';
 import PersonalList from './components/PersonalList';
 import SedesYAlmacenesList from './components/SedesYAlmacenesList';
 import OperacionesStock from './components/OperacionesStock';
+import HistorialKardex from './components/HistorialKardex';
+import ReporteInventario from './components/ReporteInventario';
 import PrivateRoute from './components/PrivateRoute';
 import { authService } from './services/auth.service';
 import './App.css';
@@ -171,6 +173,26 @@ function App() {
               <PrivateRoute>
                 <Layout>
                   <OperacionesStock />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/historial-kardex"
+            element={
+              <PrivateRoute>
+                <Layout>
+                  <HistorialKardex />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/reporte-inventario"
+            element={
+              <PrivateRoute>
+                <Layout>
+                  <ReporteInventario />
                 </Layout>
               </PrivateRoute>
             }

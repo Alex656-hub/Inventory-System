@@ -1,26 +1,34 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Modal from './Modal';
 import ClientForm, { Cliente } from './ClientForm';
+import clientService from '../services/client.service';
 import '../styles/moduleBase.css';
 import './ClientList.css';
 
-const initialData: Cliente[] = [
-  {
-    id: 1,
-    nombre: 'Cliente 1',
-    documento: '2013489182',
-    telefono: '876543121',
-    estado: true,
-  },
-];
-
 const ClientList: React.FC = () => {
-  const [clientes, setClientes] = useState<Cliente[]>(initialData);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Cliente | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = useMemo(() => {
+  useEffect(() => {
+    cargarClientes();
+  }, []);
+
+  const cargarClientes = async () => {
+    setLoading(true);
+    try {
+      const data = await clientService.listar();
+      setClientes(data);
+    } catch (error) {
+      console.error('Error al cargar clientes:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filtered = React.useMemo(() => {
     const q = busqueda.trim().toLowerCase();
     if (!q) return clientes;
     return clientes.filter((c) =>
@@ -38,20 +46,32 @@ const ClientList: React.FC = () => {
     setShowForm(true);
   };
 
-  const handleEliminar = (id: number) => {
+  const handleEliminar = async (id: number) => {
     if (!window.confirm('¿Deseas eliminar este cliente?')) return;
-    setClientes((prev) => prev.filter((c) => c.id !== id));
+    try {
+      await clientService.eliminar(id);
+      setClientes((prev) => prev.filter((c) => c.id !== id));
+    } catch (error) {
+      console.error('Error al eliminar cliente:', error);
+      alert('Error al eliminar el cliente');
+    }
   };
 
-  const handleSave = (data: Omit<Cliente, 'id'>) => {
-    if (editing) {
-      setClientes((prev) => prev.map((c) => (c.id === editing.id ? { ...c, ...data } : c)));
-    } else {
-      const nextId = clientes.length ? Math.max(...clientes.map((c) => c.id)) + 1 : 1;
-      setClientes((prev) => [{ id: nextId, ...data }, ...prev]);
+  const handleSave = async (data: Omit<Cliente, 'id'>) => {
+    try {
+      if (editing) {
+        const actualizado = await clientService.actualizar(editing.id, data);
+        setClientes((prev) => prev.map((c) => (c.id === editing.id ? actualizado : c)));
+      } else {
+        const creado = await clientService.crear(data);
+        setClientes((prev) => [creado, ...prev]);
+      }
+      setShowForm(false);
+      setEditing(null);
+    } catch (error) {
+      console.error('Error al guardar cliente:', error);
+      alert('Error al guardar el cliente');
     }
-    setShowForm(false);
-    setEditing(null);
   };
 
   return (
@@ -90,7 +110,11 @@ const ClientList: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
+            {loading ? (
+              <tr>
+                <td colSpan={5} className="module-empty">Cargando...</td>
+              </tr>
+            ) : filtered.length === 0 ? (
               <tr>
                 <td colSpan={5} className="module-empty">
                   No se encontraron clientes
@@ -170,4 +194,3 @@ const ClientList: React.FC = () => {
 };
 
 export default ClientList;
-

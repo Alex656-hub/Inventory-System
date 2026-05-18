@@ -1,0 +1,39 @@
+{
+    "$schema": "https://opencode.ai/config.json",
+    "mcp": {
+        "Context7": {
+            "type": "local",
+            "command": [
+                "npx",
+                "-y",
+                "@upstash/context7-mcp"
+            ],
+            "enabled": true,
+            "environment": {
+                "--api-key": "ctx7sk-c325beb2-826d-4101-aaf8-6b1be63da2f7",
+            },
+        },
+
+        "TestSprite": {
+            "type": "local",
+            "command": [
+                "npx",
+                "-y",
+                "@testsprite/testsprite-mcp@latest"
+            ],
+            "enabled": true,
+            "environment": {
+                "API_KEY": "sk-user-BpT40xhpBjmEWRGjIkjU-l50lQfj4ottzv3M3V3G5CfVGZHtjDnDii56S-94fa1E01yHphoR1FlWXmGoWAvx5C6_hzQDQjOHf1K_O-3vsirIdT52o1G-OXnqMWux503WvXc",
+            },
+        },
+
+        "Chrome": {
+            "type": "local",
+            "command": [
+                "npx",
+                "-y",
+                "chrome-devtools-mcp@latest"
+            ],
+        },
+    },
+}

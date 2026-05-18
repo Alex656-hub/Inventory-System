@@ -1,0 +1,287 @@
+/* =============================================
+   REPORTE DE INVENTARIO — Estilos
+   ============================================= */
+
+.ri-container {
+  padding: 28px 32px;
+  background: #ffffff;
+}
+
+/* ── Header ── */
+.ri-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 28px;
+}
+
+.ri-header-left h2 {
+  color: #111827;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+}
+
+.ri-header-left p {
+  color: #6b7280;
+  font-size: 13px;
+  margin: 0;
+}
+
+/* ── Cards métricas ── */
+.ri-metricas {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.ri-metrica-item {
+  padding: 12px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ri-metrica-item:first-child {
+  border-right: 1px solid #e5e7eb;
+}
+
+.ri-metrica-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ri-metrica-valor {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.1;
+}
+
+.ri-metrica-item.verde .ri-metrica-valor {
+  color: #059669;
+}
+
+/* ── Barra de filtros ── */
+.ri-filtros {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.ri-filtro-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ri-filtro-grupo label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.ri-btn-excel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  background: #f9fafb;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+  height: 36px;
+}
+
+.ri-btn-excel:hover {
+  background: #f3f4f6;
+}
+
+.ri-filtro-grupo select {
+  padding: 8px 32px 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #374151;
+  background: #ffffff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%236b7280' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") no-repeat right 10px center;
+  appearance: none;
+  cursor: pointer;
+  min-width: 160px;
+  height: 36px;
+}
+
+.ri-filtro-grupo select:focus {
+  outline: none;
+  border-color: #9ca3af;
+  box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.15);
+}
+
+.ri-filtro-grupo select.ri-select-sm {
+  min-width: 110px;
+}
+
+.ri-buscar-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+}
+
+.ri-buscar-wrapper input {
+  width: 100%;
+  padding: 9px 12px 9px 36px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #374151;
+  background: #ffffff;
+  box-sizing: border-box;
+  height: 36px;
+}
+
+.ri-buscar-wrapper input::placeholder {
+  color: #9ca3af;
+}
+
+.ri-buscar-wrapper input:focus {
+  outline: none;
+  border-color: #9ca3af;
+  box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.15);
+}
+
+.ri-buscar-icono {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  font-size: 15px;
+  pointer-events: none;
+}
+
+/* ── Tabla ── */
+.ri-tabla-container {
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.ri-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.ri-tabla thead {
+  background: #f9fafb;
+}
+
+.ri-tabla thead tr {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.ri-tabla th {
+  padding: 11px 14px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 12px;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.ri-tabla th:nth-child(5),
+.ri-tabla th:nth-child(7),
+.ri-tabla th:nth-child(8) {
+  text-align: right;
+}
+
+.ri-tabla td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #111827;
+}
+
+.ri-row-even,
+.ri-row-odd {
+  background: #ffffff;
+}
+
+.ri-tabla tbody tr:hover {
+  background: #f9fafb;
+}
+
+.ri-tabla tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.ri-tabla td:first-child {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.ri-tabla td:nth-child(2) {
+  font-weight: 600;
+  color: #111827;
+}
+
+.ri-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}
+
+.ri-numero {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.ri-stock-und {
+  color: #9ca3af;
+  font-size: 11px;
+  margin-left: 2px;
+}
+
+.ri-footer {
+  background: #f9fafb;
+}
+
+.ri-footer td {
+  padding: 12px 14px;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: none;
+  font-weight: 600;
+  font-size: 13px;
+  color: #111827;
+}
+
+.ri-loading,
+.ri-empty {
+  text-align: center;
+  padding: 48px;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .ri-container { padding: 16px; }
+  .ri-header { flex-direction: column; gap: 16px; }
+  .ri-filtros { flex-direction: column; align-items: stretch; }
+}

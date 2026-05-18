@@ -1,11 +1,13 @@
 import api from '../config/api';
 import { supplierService } from './supplier.service';
+import { clientService } from './client.service';
 
 export interface OperacionStock {
   id?: number;
   tipo_operacion: 'ENTRADA' | 'SALIDA' | 'TRASPASO';
   fecha_emision: Date;
-  responsable_fisico_id: number;
+  personal_id?: number;
+  responsable_fisico_id?: number;
   referencia?: string;
   sede_origen_id?: number;
   sede_destino_id?: number;
@@ -88,25 +90,25 @@ export interface Proveedor {
 export interface Cliente {
   id: number;
   nombre: string;
-  tipo_documento: 'DNI' | 'RUC' | 'PASAPORTE' | 'OTRO';
-  numero_documento: string;
-  direccion?: string;
+  documento: string;
   telefono?: string;
   email?: string;
-  estado: 'activo' | 'inactivo';
+  direccion?: string;
+  estado: boolean;
 }
 
-export interface User {
+export interface Personal {
   id: number;
-  nombre: string;
-  email: string;
-  rol: string;
+  nombreCompleto: string;
+  cargo: 'Almacenero' | 'Repartidor';
+  telefono?: string;
+  activo: boolean;
 }
 
 class OperacionStockService {
   // Operaciones de Stock
   async crearOperacion(operacion: Omit<OperacionStock, 'id' | 'total_unidades' | 'costo_total' | 'estado'>) {
-    const response = await api.post('/stock/operaciones', operacion);
+    const response = await api.post('/stock', operacion);
     return response.data;
   }
 
@@ -116,17 +118,17 @@ class OperacionStockService {
     tipo?: string;
     estado?: string;
   }) {
-    const response = await api.get('/stock/operaciones', { params });
+    const response = await api.get('/stock', { params });
     return response.data;
   }
 
   async obtenerOperacion(id: number) {
-    const response = await api.get(`/stock/operaciones/${id}`);
+    const response = await api.get(`/stock/${id}`);
     return response.data;
   }
 
   async procesarOperacion(id: number) {
-    const response = await api.put(`/stock/operaciones/${id}/procesar`);
+    const response = await api.put(`/stock/${id}/procesar`);
     return response.data;
   }
 
@@ -179,30 +181,20 @@ class OperacionStockService {
   }
 
   async obtenerClientes(): Promise<Cliente[]> {
-    // Usar los mismos datos locales que ClientList.tsx
-    return [
-      {
-        id: 1,
-        nombre: 'Cliente 1',
-        documento: '2013489182',
-        telefono: '876543121',
-        estado: true,
-      }
-    ].map(c => ({
-      id: c.id,
-      nombre: c.nombre,
-      tipo_documento: c.documento?.length === 11 ? 'RUC' : 'DNI',
-      numero_documento: c.documento || '',
-      estado: c.estado ? 'activo' : 'inactivo'
-    }));
+    try {
+      return await clientService.listar();
+    } catch (error) {
+      console.error('Error al obtener clientes:', error);
+      return [];
+    }
   }
 
-  async obtenerUsuarios(): Promise<User[]> {
-    const response = await api.get('/users');
-    console.log('Respuesta de /api/users:', response.data);
-    const usuarios = response.data.users || response.data;
-    console.log('Usuarios extraídos:', usuarios);
-    return usuarios;
+  async obtenerPersonal(): Promise<Personal[]> {
+    const response = await api.get('/personal');
+    console.log('Respuesta de /api/personal:', response.data);
+    const personal = response.data.personal || response.data;
+    console.log('Personal extraído:', personal);
+    return personal;
   }
 
   // Validaciones

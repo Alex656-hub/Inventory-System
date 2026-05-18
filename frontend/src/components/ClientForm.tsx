@@ -25,6 +25,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ cliente, onClose, onSave }) => 
     email: '',
     direccion: '',
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (cliente) {
@@ -40,15 +41,49 @@ const ClientForm: React.FC<ClientFormProps> = ({ cliente, onClose, onSave }) => 
     }
   }, [cliente]);
 
+  const validatePhone = (phone: string): boolean => {
+    const phoneRegex = /^9\d{8}$/;
+    return phoneRegex.test(phone);
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    if (name === 'telefono') {
+      const numericValue = value.replace(/\D/g, '');
+      let permitido = '';
+      if (numericValue.length === 0) {
+        permitido = '';
+      } else if (numericValue.startsWith('9')) {
+        permitido = numericValue.slice(0, 9);
+      }
+      setFormData(prev => ({ ...prev, [name]: permitido }));
+    } else if (name === 'documento') {
+      const numericValue = value.replace(/\D/g, '');
+      setFormData(prev => ({ ...prev, [name]: numericValue }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const newErrors: Record<string, string> = {};
+
     if (!formData.nombre.trim()) {
-      alert('El nombre / razón social es obligatorio');
+      newErrors.nombre = 'El nombre / razón social es obligatorio';
+    }
+
+    if (formData.telefono && !validatePhone(formData.telefono)) {
+      newErrors.telefono = 'El teléfono debe tener 9 dígitos empezando con 9';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
@@ -111,10 +146,12 @@ const ClientForm: React.FC<ClientFormProps> = ({ cliente, onClose, onSave }) => 
                   value={formData.telefono}
                   onChange={handleChange}
                   placeholder="Ej. 987654321"
-                  className="mf-field"
+                  className={`mf-field ${errors.telefono ? 'error' : ''}`}
+                  maxLength={9}
                 />
               </div>
             </div>
+            {errors.telefono && <span className="mf-field-error">{errors.telefono}</span>}
           </div>
         </div>
 

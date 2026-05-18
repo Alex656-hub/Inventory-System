@@ -1,6 +1,7 @@
 import { Router } from 'express';
-import { body } from 'express-validator';
+import { body, query } from 'express-validator';
 import operacionStockController from '../controllers/operacionStock.controller';
+import stockService from '../services/stock.service';
 import { verificarToken } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -13,7 +14,7 @@ const operacionValidation = [
   body('tipo_operacion')
     .isIn(['ENTRADA', 'SALIDA', 'TRASPASO'])
     .withMessage('Tipo de operación inválido'),
-  body('responsable_fisico_id')
+  body('personal_id')
     .isInt({ min: 1 })
     .withMessage('El responsable físico es requerido'),
   body('detalles')
@@ -59,6 +60,23 @@ const traspasoValidation = [
     .withMessage('El motivo debe tener entre 3 y 200 caracteres')
 ];
 
+// Rutas de consulta (antes de /:id para evitar conflicto)
+router.get('/productos/buscar', async (req, res) => {
+  try {
+    const { termino, sedeId } = req.query;
+    const productos = await stockService.buscarProductosParaOperacion(
+      termino as string || '',
+      sedeId ? parseInt(sedeId as string) : undefined
+    );
+    res.json(productos);
+  } catch (error) {
+    console.error('Error al buscar productos:', error);
+    res.status(500).json({ message: 'Error al buscar productos' });
+  }
+});
+
+router.get('/stock/disponible/:productoId/:sedeId', operacionStockController.obtenerStockDisponible);
+
 // Rutas principales
 router.post('/', operacionValidation, operacionStockController.crearOperacion);
 router.get('/', operacionStockController.listarOperaciones);
@@ -66,8 +84,5 @@ router.get('/:id', operacionStockController.listarOperaciones); // Reutilizar m�
 
 // Rutas de procesamiento
 router.put('/:id/procesar', operacionStockController.procesarOperacion);
-
-// Rutas de consulta
-router.get('/stock/disponible/:productoId/:sedeId', operacionStockController.obtenerStockDisponible);
 
 export default router;
