@@ -116,7 +116,7 @@ const UnitForm: React.FC<UnitFormProps> = ({ unidad, onClose, onSuccess }) => {
               name="nombre"
               value={formData.nombre}
               onChange={handleChange}
-              placeholder="Ej: Kilogramo, Litro, Caja"
+              placeholder="Ej: Unidad, Caja, Juego"
               className={`mf-field ${errors.nombre ? 'error' : ''}`}
               disabled={loading}
             />
@@ -135,7 +135,7 @@ const UnitForm: React.FC<UnitFormProps> = ({ unidad, onClose, onSuccess }) => {
               name="abreviatura"
               value={formData.abreviatura}
               onChange={handleChange}
-              placeholder="Ej: Kg, Lt, Cj"
+              placeholder="Ej: Und, Cja, Jgo"
               className={`mf-field ${errors.abreviatura ? 'error' : ''}`}
               disabled={loading}
               maxLength={10}
@@ -160,7 +160,7 @@ const UnitForm: React.FC<UnitFormProps> = ({ unidad, onClose, onSuccess }) => {
             className="mf-btn mf-btn--primary"
             disabled={loading}
           >
-            {loading ? 'Guardando...' : (unidad ? 'Actualizar' : 'Crear')}
+            {loading ? 'Guardando...' : (unidad ? 'Actualizar' : 'Guardar')}
           </button>
         </div>
       </form>

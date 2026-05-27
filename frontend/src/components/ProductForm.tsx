@@ -182,7 +182,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
                 type="text"
                 value={formData.nombre}
                 onChange={handleChange}
-                placeholder="Ej: Aspirina 500mg"
+                placeholder="Ej: Escritorio de Madera"
                 className={`mf-field ${errors.nombre ? 'error' : ''}`}
                 disabled={loading}
                 autoComplete="off"
@@ -267,6 +267,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
               type="number"
               value={formData.precio_compra}
               onChange={handleChange}
+              placeholder="Ej: 25.50"
               className={`mf-field ${errors.precio_compra ? 'error' : ''}`}
               min="0"
               step="0.01"
@@ -285,6 +286,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
               type="number"
               value={formData.precio_venta}
               onChange={handleChange}
+              placeholder="Ej: 35.00"
               className={`mf-field ${errors.precio_venta ? 'error' : ''}`}
               min="0"
               step="0.01"
@@ -303,6 +305,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
               type="number"
               value={formData.stock_minimo}
               onChange={handleChange}
+              placeholder="Ej: 10"
               className={`mf-field ${errors.stock_minimo ? 'error' : ''}`}
               min="0"
               disabled={loading}
@@ -320,7 +323,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
         <button type="submit" className="mf-btn mf-btn--primary" disabled={loading}>
           {loading
             ? <><i className="bx bx-loader-alt bx-spin" /> Guardando...</>
-            : 'Guardar Producto'
+            : (producto ? 'Actualizar' : 'Guardar')
           }
         </button>
       </div>

@@ -104,6 +104,7 @@ const PersonalForm: React.FC<PersonalFormProps> = ({ item, onClose, onSave }) =>
               type="text"
               value={formData.nombreCompleto}
               onChange={handleChange}
+              placeholder="Ej: Juan Pérez"
               className="mf-field"
               required
             />
@@ -144,7 +145,7 @@ const PersonalForm: React.FC<PersonalFormProps> = ({ item, onClose, onSave }) =>
 
         <div className="mf-actions personal-form-actions">
           <button type="button" className="mf-btn mf-btn--ghost" onClick={onClose}>Cancelar</button>
-          <button type="submit" className="mf-btn mf-btn--primary">Guardar</button>
+          <button type="submit" className="mf-btn mf-btn--primary">{item ? 'Actualizar' : 'Guardar'}</button>
         </div>
       </form>
     </div>

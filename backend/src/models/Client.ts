@@ -7,14 +7,14 @@ interface ClientAttributes {
   tipo_documento: 'DNI' | 'RUC' | 'PASAPORTE' | 'OTRO';
   numero_documento: string;
   direccion?: string;
-  telefono?: string;
+  telefono: string;
   email?: string;
   estado: 'activo' | 'inactivo';
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-interface ClientCreationAttributes extends Optional<ClientAttributes, 'id' | 'direccion' | 'telefono' | 'email' | 'estado' | 'createdAt' | 'updatedAt'> {}
+interface ClientCreationAttributes extends Optional<ClientAttributes, 'id' | 'direccion' | 'email' | 'estado' | 'createdAt' | 'updatedAt'> {}
 
 class Client extends Model<ClientAttributes, ClientCreationAttributes> implements ClientAttributes {
   public id!: number;
@@ -22,7 +22,7 @@ class Client extends Model<ClientAttributes, ClientCreationAttributes> implement
   public tipo_documento!: 'DNI' | 'RUC' | 'PASAPORTE' | 'OTRO';
   public numero_documento!: string;
   public direccion?: string;
-  public telefono?: string;
+  public telefono!: string;
   public email?: string;
   public estado!: 'activo' | 'inactivo';
   public readonly createdAt!: Date;
@@ -62,9 +62,9 @@ Client.init(
         notEmpty: {
           msg: 'El número de documento es requerido'
         },
-        len: {
-          args: [5, 20],
-          msg: 'El número de documento debe tener entre 5 y 20 caracteres'
+        is: {
+          args: /^\d{8}$|^\d{11}$/,
+          msg: 'El documento debe ser un DNI (8 dígitos) o RUC (11 dígitos)'
         }
       }
     },
@@ -74,8 +74,11 @@ Client.init(
     },
     telefono: {
       type: DataTypes.STRING(20),
-      allowNull: true,
+      allowNull: false,
       validate: {
+        notEmpty: {
+          msg: 'El teléfono es requerido'
+        },
         len: {
           args: [7, 20],
           msg: 'El teléfono debe tener entre 7 y 20 caracteres'

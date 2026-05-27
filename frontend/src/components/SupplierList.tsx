@@ -153,7 +153,7 @@ const SupplierList: React.FC = () => {
             <thead>
               <tr>
                 <th>Razón Social / Nombre</th>
-                <th>Documento</th>
+                <th>DNI / RUC</th>
                 <th>Contacto</th>
                 <th>Estado</th>
                 {esGerente && <th>Acciones</th>}

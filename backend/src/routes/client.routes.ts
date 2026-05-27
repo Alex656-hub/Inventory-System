@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { body } from 'express-validator';
+import { body, validationResult } from 'express-validator';
 import Client from '../models/Client';
 import { verificarToken, verificarPermiso } from '../middleware/auth.middleware';
 
@@ -19,11 +19,14 @@ const clientValidation = [
     .withMessage('Tipo de documento inválido'),
   body('numero_documento')
     .notEmpty()
-    .withMessage('El número de documento es requerido'),
+    .withMessage('El número de documento es requerido')
+    .matches(/^\d{8}$|^\d{11}$/)
+    .withMessage('El documento debe ser un DNI (8 dígitos) o RUC (11 dígitos)'),
   body('direccion')
     .optional(),
   body('telefono')
-    .optional(),
+    .notEmpty()
+    .withMessage('El teléfono es requerido'),
   body('email')
     .optional()
     .isEmail()
@@ -60,6 +63,11 @@ router.get('/:id', async (req: Request, res: Response) => {
 
 // Crear nuevo cliente
 router.post('/', clientValidation, async (req: Request, res: Response) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   try {
     const cliente = await Client.create({
       ...req.body,
@@ -74,6 +82,11 @@ router.post('/', clientValidation, async (req: Request, res: Response) => {
 
 // Actualizar cliente
 router.put('/:id', clientValidation, async (req: Request, res: Response) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   try {
     const cliente = await Client.findByPk(req.params.id);
     if (!cliente) {

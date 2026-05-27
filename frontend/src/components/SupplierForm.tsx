@@ -196,7 +196,7 @@ const SupplierForm: React.FC<SupplierFormProps> = ({ proveedor, onClose, onSucce
                   value={formData.ruc_dni}
                   onChange={handleChange}
                   className={fieldClass('ruc_dni')}
-                  placeholder=""
+                  placeholder="Ej: xxxxxxxx (DNI) / xxxxxxxxxxx (RUC)"
                   maxLength={11}
                   disabled={loading}
                 />
@@ -218,7 +218,7 @@ const SupplierForm: React.FC<SupplierFormProps> = ({ proveedor, onClose, onSucce
                   value={formData.contacto_telefono}
                   onChange={handleChange}
                   className={fieldClass('contacto_telefono')}
-                  placeholder=""
+                  placeholder="Ej: 9xx xxx xxx"
                   maxLength={9}
                   disabled={loading}
                 />
@@ -240,11 +240,11 @@ const SupplierForm: React.FC<SupplierFormProps> = ({ proveedor, onClose, onSucce
               value={formData.contacto_email}
               onChange={handleChange}
               className={fieldClass('contacto_email')}
-              placeholder=""
-              disabled={loading}
-            />
-          </div>
-          {errors.contacto_email && <span className="mf-field-error">{errors.contacto_email}</span>}
+               placeholder="correo@ejemplo.com"
+               disabled={loading}
+             />
+           </div>
+           {errors.contacto_email && <span className="mf-field-error">{errors.contacto_email}</span>}
         </div>
       </div>
 
@@ -253,7 +253,7 @@ const SupplierForm: React.FC<SupplierFormProps> = ({ proveedor, onClose, onSucce
           Cancelar
         </button>
         <button type="submit" disabled={loading} className="mf-btn mf-btn--primary">
-          Guardar
+          {proveedor ? 'Actualizar' : 'Guardar'}
         </button>
       </div>
     </form>

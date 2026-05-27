@@ -160,7 +160,7 @@ const SedesYAlmacenesForm: React.FC<SedesYAlmacenesFormProps> = ({
               Guardando...
             </>
           ) : (
-            'Guardar'
+            sede ? 'Actualizar' : 'Guardar'
           )}
         </button>
       </div>

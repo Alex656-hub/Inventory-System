@@ -76,7 +76,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ category, onClose }) => {
             name="nombre"
             value={formData.nombre}
             onChange={handleChange}
-            placeholder="Ej: Bebidas, Limpieza, Electrónica..."
+            placeholder="Ej: Oficina, Hogar"
             className="mf-field"
             required
           />
@@ -93,8 +93,8 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ category, onClose }) => {
             name="descripcion"
             value={formData.descripcion}
             onChange={(e) => setFormData(prev => ({ ...prev, descripcion: e.target.value }))}
-            placeholder="Describe esta categoría (opcional)..."
-            className="mf-field"
+            placeholder="(Opcional)"
+            className="mf-textarea"
             rows={3}
           />
         </div>
@@ -105,7 +105,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ category, onClose }) => {
           Cancelar
         </button>
         <button type="submit" className="mf-btn mf-btn--primary">
-          {category ? 'Actualizar Categoría' : 'Crear Categoría'}
+          {category ? 'Actualizar' : 'Guardar'}
         </button>
       </div>
     </form>

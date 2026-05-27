@@ -103,7 +103,7 @@ const ClientList: React.FC = () => {
           <thead>
             <tr>
               <th style={{ textAlign: 'left' }}>Nombre / Razón Social</th>
-              <th style={{ textAlign: 'left' }}>Documento</th>
+              <th style={{ textAlign: 'left' }}>DNI / RUC</th>
               <th style={{ textAlign: 'left' }}>Contacto</th>
               <th>Estado</th>
               <th style={{ textAlign: 'right' }}>Acciones</th>

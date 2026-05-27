@@ -59,7 +59,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ cliente, onClose, onSave }) => 
       }
       setFormData(prev => ({ ...prev, [name]: permitido }));
     } else if (name === 'documento') {
-      const numericValue = value.replace(/\D/g, '');
+      const numericValue = value.replace(/\D/g, '').slice(0, 11);
       setFormData(prev => ({ ...prev, [name]: numericValue }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
@@ -78,7 +78,18 @@ const ClientForm: React.FC<ClientFormProps> = ({ cliente, onClose, onSave }) => 
       newErrors.nombre = 'El nombre / razón social es obligatorio';
     }
 
-    if (formData.telefono && !validatePhone(formData.telefono)) {
+    if (!formData.documento.trim()) {
+      newErrors.documento = 'El DNI / RUC es obligatorio';
+    } else {
+      const docLen = formData.documento.trim().length;
+      if (docLen !== 8 && docLen !== 11) {
+        newErrors.documento = 'El DNI debe tener 8 dígitos o el RUC 11 dígitos';
+      }
+    }
+
+    if (!formData.telefono.trim()) {
+      newErrors.telefono = 'El teléfono es obligatorio';
+    } else if (!validatePhone(formData.telefono)) {
       newErrors.telefono = 'El teléfono debe tener 9 dígitos empezando con 9';
     }
 
@@ -109,6 +120,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ cliente, onClose, onSave }) => 
               type="text"
               value={formData.nombre}
               onChange={handleChange}
+              placeholder="Ej: Juan Pérez"
               className="mf-field"
               required
               autoFocus
@@ -118,7 +130,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ cliente, onClose, onSave }) => 
 
         <div className="client-form-row">
           <div className="mf-group">
-            <label htmlFor="documento">DNI / RUC</label>
+            <label htmlFor="documento">DNI / RUC *</label>
             <div className="mf-input-with-icon">
               <i className="bx bx-file mf-input-with-icon__pin" aria-hidden />
               <div className="mf-field-wrap">
@@ -128,14 +140,17 @@ const ClientForm: React.FC<ClientFormProps> = ({ cliente, onClose, onSave }) => 
                   type="text"
                   value={formData.documento}
                   onChange={handleChange}
-                  placeholder="Ej. 2013489182"
-                  className="mf-field"
+                  placeholder="Ej: xxxxxxxx (DNI) / xxxxxxxxxxx (RUC)"
+                  className={`mf-field ${errors.documento ? 'error' : ''}`}
+                  required
+                  maxLength={11}
                 />
               </div>
             </div>
+            {errors.documento && <span className="mf-field-error">{errors.documento}</span>}
           </div>
           <div className="mf-group">
-            <label htmlFor="telefono">Teléfono</label>
+            <label htmlFor="telefono">Teléfono *</label>
             <div className="mf-input-with-icon">
               <i className="bx bx-phone mf-input-with-icon__pin" aria-hidden />
               <div className="mf-field-wrap">
@@ -145,8 +160,9 @@ const ClientForm: React.FC<ClientFormProps> = ({ cliente, onClose, onSave }) => 
                   type="tel"
                   value={formData.telefono}
                   onChange={handleChange}
-                  placeholder="Ej. 987654321"
+                  placeholder="Ej: 9xx xxx xxx"
                   className={`mf-field ${errors.telefono ? 'error' : ''}`}
+                  required
                   maxLength={9}
                 />
               </div>
@@ -182,6 +198,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ cliente, onClose, onSave }) => 
               type="text"
               value={formData.direccion}
               onChange={handleChange}
+              placeholder="Ej: Av. Los Olivos 123"
               className="mf-field"
             />
           </div>
@@ -192,7 +209,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ cliente, onClose, onSave }) => 
             Cancelar
           </button>
           <button type="submit" className="mf-btn mf-btn--primary">
-            Guardar
+            {cliente ? 'Actualizar' : 'Guardar'}
           </button>
         </div>
       </form>
