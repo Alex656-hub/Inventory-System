@@ -138,21 +138,6 @@ class OperacionStockService {
     return response.data;
   }
 
-  async obtenerStockPorProducto(productoId: number): Promise<StockDisponible[]> {
-    const response = await api.get(`/stock/stock/producto/${productoId}`);
-    return response.data;
-  }
-
-  async obtenerStockPorSede(sedeId: number): Promise<StockDisponible[]> {
-    const response = await api.get(`/stock/stock/sede/${sedeId}`);
-    return response.data;
-  }
-
-  async obtenerStockGeneral(): Promise<StockDisponible[]> {
-    const response = await api.get('/stock/stock/general');
-    return response.data;
-  }
-
   // Búsqueda de productos
   async buscarProductos(termino: string, sedeId?: number): Promise<ProductoBusqueda[]> {
     const params: any = { termino };
@@ -205,13 +190,6 @@ class OperacionStockService {
     } catch (error) {
       return false;
     }
-  }
-
-  // Utilidades
-  calcularTotales(detalles: DetalleOperacion[]): { total_unidades: number; costo_total: number } {
-    const total_unidades = detalles.reduce((sum, detalle) => sum + detalle.cantidad, 0);
-    const costo_total = detalles.reduce((sum, detalle) => sum + detalle.subtotal, 0);
-    return { total_unidades, costo_total };
   }
 
   validarCamposPorTipo(operacion: Partial<OperacionStock>): { valido: boolean; mensaje: string } {

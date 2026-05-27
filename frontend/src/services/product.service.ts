@@ -34,18 +34,13 @@ export const productService = {
     producto: Partial<Producto>,
     imageFile?: File | null
   ): Promise<{ mensaje: string; producto: Producto }> => {
-    if (imageFile) {
-      const fd = new FormData();
-      Object.entries(producto).forEach(([k, v]) => {
-        if (v === undefined || v === null || v === '') return;
-        fd.append(k, String(v));
-      });
-      fd.append('image', imageFile);
-      const { data } = await api.post<{ mensaje: string; producto: Producto }>('/products', fd);
-      return data;
-    }
-
-    const { data } = await api.post<{ mensaje: string; producto: Producto }>('/products', producto);
+    const fd = new FormData();
+    Object.entries(producto).forEach(([k, v]) => {
+      if (v === undefined || v === null || v === '') return;
+      fd.append(k, String(v));
+    });
+    if (imageFile) fd.append('image', imageFile);
+    const { data } = await api.post<{ mensaje: string; producto: Producto }>('/products', fd);
     return data;
   },
 
@@ -54,18 +49,13 @@ export const productService = {
     producto: Partial<Producto>,
     imageFile?: File | null
   ): Promise<{ mensaje: string; producto: Producto }> => {
-    if (imageFile) {
-      const fd = new FormData();
-      Object.entries(producto).forEach(([k, v]) => {
-        if (v === undefined || v === null || v === '') return;
-        fd.append(k, String(v));
-      });
-      fd.append('image', imageFile);
-      const { data } = await api.put<{ mensaje: string; producto: Producto }>(`/products/${id}`, fd);
-      return data;
-    }
-
-    const { data } = await api.put<{ mensaje: string; producto: Producto }>(`/products/${id}`, producto);
+    const fd = new FormData();
+    Object.entries(producto).forEach(([k, v]) => {
+      if (v === undefined || v === null || v === '') return;
+      fd.append(k, String(v));
+    });
+    if (imageFile) fd.append('image', imageFile);
+    const { data } = await api.put<{ mensaje: string; producto: Producto }>(`/products/${id}`, fd);
     return data;
   },
 

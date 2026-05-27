@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { alertService } from '../services/alertService';
+import { getFullInventoryMetrics } from '../analytics/services/inventoryAnalysis';
 import Alert from '../models/Alert';
 import Product from '../models/Product';
 import User from '../models/User';
@@ -94,6 +95,16 @@ export const getRecommendations = async (req: Request, res: Response): Promise<v
     res.json({ recomendaciones: recommendations });
   } catch (error) {
     console.error('Error al obtener recomendaciones:', error);
+    res.status(500).json({ mensaje: 'Error interno del servidor' });
+  }
+};
+
+export const getAnalytics = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const metrics = await getFullInventoryMetrics();
+    res.json(metrics);
+  } catch (error) {
+    console.error('Error al obtener analytics:', error);
     res.status(500).json({ mensaje: 'Error interno del servidor' });
   }
 };

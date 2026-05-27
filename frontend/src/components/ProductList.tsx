@@ -141,16 +141,15 @@ const ProductList: React.FC = () => {
       ) : (
         <>
           <div className="module-card">
-            <table className="module-table">
+              <table className="module-table">
               <thead>
                 <tr>
+                  <th>Img</th>
                   <th>Código</th>
-                  <th>Nombre</th>
-                  <th>Categoría</th>
-                  <th>Stock Actual</th>
-                  <th>Stock Mínimo</th>
-                  <th>Precio Compra</th>
-                  <th>Precio Venta</th>
+                  <th>Categoria</th>
+                  <th>Unidad</th>
+                  <th>Costo</th>
+                  <th>Precio</th>
                   <th>Estado</th>
                   {esGerente && <th>Acciones</th>}
                 </tr>
@@ -158,7 +157,7 @@ const ProductList: React.FC = () => {
               <tbody>
                 {productos.length === 0 ? (
                   <tr>
-                    <td colSpan={esGerente ? 9 : 8} className="module-empty">
+                    <td colSpan={esGerente ? 8 : 7} className="module-empty">
                       No se encontraron productos
                     </td>
                   </tr>
@@ -169,11 +168,18 @@ const ProductList: React.FC = () => {
                       id={`product-${producto.id}`}
                       className={hayStockBajo(producto) ? 'stock-bajo' : undefined}
                     >
+                      <td>
+                        {producto.imageUrl ? (
+                          <img src={producto.imageUrl} alt="" className="product-thumb" />
+                        ) : (
+                          <span className="product-thumb-placeholder">
+                            <i className="bx bx-image-alt" />
+                          </span>
+                        )}
+                      </td>
                       <td>{producto.codigo}</td>
-                      <td>{producto.nombre}</td>
                       <td>{producto.categoria?.nombre}</td>
-                      <td>{producto.stock_actual}</td>
-                      <td>{producto.stock_minimo}</td>
+                      <td>{producto.unidad?.nombre}</td>
                       <td>S/ {Number(producto.precio_compra).toFixed(2)}</td>
                       <td>S/ {Number(producto.precio_venta).toFixed(2)}</td>
                       <td>
@@ -250,6 +256,7 @@ const ProductList: React.FC = () => {
         size="medium"
       >
         <ProductForm
+          key={productoEditando?.id ?? 'new'}
           producto={productoEditando}
           onClose={() => {
             setShowForm(false);

@@ -17,6 +17,26 @@ interface RecommendationsResponse {
   recomendaciones: string[];
 }
 
+export interface InventoryMetrics {
+  stockBajo: number;
+  agotados: number;
+  totalProductos: number;
+  rotacion: number;
+  diasInventario: number;
+  capitalInmovilizado: number;
+  productosLentos: number;
+  sinMovimiento: number;
+  stockMuerto: number;
+  margenBruto: number;
+  roiInventario: number;
+  precisionInventario: number;
+  cicloConversion: number;
+  antiguedadPromedio: number;
+  tasaAgotamiento: number;
+  valorStockMuerto: number;
+  lastUpdated: string;
+}
+
 export const alertService = {
   getAlerts: async (params?: {
     pagina?: number;
@@ -41,6 +61,11 @@ export const alertService = {
 
   getRecommendations: async (): Promise<RecommendationsResponse> => {
     const { data } = await api.get<RecommendationsResponse>('/alerts/recommendations');
+    return data;
+  },
+
+  getAnalytics: async (): Promise<InventoryMetrics> => {
+    const { data } = await api.get<InventoryMetrics>('/alerts/analytics');
     return data;
   }
 };

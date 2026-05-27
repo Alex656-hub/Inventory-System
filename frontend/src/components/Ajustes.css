@@ -180,29 +180,29 @@
   display: none;
 }
 
-/* Botón subir imagen estilo imagen 1 */
+/* Botón subir imagen estilo temático */
 .btn-upload-logo {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   padding: 10px 20px;
-  border: 1.5px solid #e2e8f0;
+  border: 1.5px solid #00a6f4;
   border-radius: 8px;
-  background: #fff;
-  color: var(--text-color);
+  background: #00a6f4;
+  color: #fff;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   width: 100%;
   box-sizing: border-box;
 }
 
 .btn-upload-logo:hover {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(0, 166, 244, 0.1);
-  color: var(--primary-color);
+  background: #0084d1;
+  box-shadow: 0 4px 12px rgba(0, 166, 244, 0.3);
+  transform: translateY(-1px);
 }
 
 .btn {
@@ -220,15 +220,15 @@
   text-decoration: none;
 }
 
-.btn-primary {
-  background: var(--primary-color);
+.btn.btn-primary {
+  background: #00a6f4;
   color: white;
   width: 100%;
   box-sizing: border-box;
 }
 
-.btn-primary:hover {
-  background: var(--color-sky-600);
+.btn.btn-primary:hover {
+  background: #0084d1;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 166, 244, 0.3);
 }
@@ -413,9 +413,14 @@ body.dark .logo-preview {
 }
 
 body.dark .btn-upload-logo {
-  background: var(--color-sky-950);
-  border-color: var(--color-sky-700);
-  color: var(--text-color);
+  background: #0069a8;
+  border-color: #0084d1;
+  color: #fff;
+}
+
+body.dark .btn-upload-logo:hover {
+  background: #0084d1;
+  box-shadow: 0 4px 12px rgba(0, 166, 244, 0.3);
 }
 
 body.dark .btn-backup {
@@ -468,7 +473,7 @@ body.dark .danger-subtitle {
     justify-content: center;
   }
 
-  .btn-primary {
+  .btn.btn-primary {
     width: 100%;
   }
 }

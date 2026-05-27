@@ -4,10 +4,7 @@ import tokenManager from '../services/tokenManager.service';
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
 export const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json'
-  }
+  baseURL: API_URL
 });
 
 // Interceptor para agregar el token a las peticiones

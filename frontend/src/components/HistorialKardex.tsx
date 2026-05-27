@@ -35,6 +35,7 @@ const HistorialKardex: React.FC = () => {
   useEffect(() => {
     cargarSedes();
     fetchMovimientos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paginacion.pagina, limite]);
 
   const cargarSedes = async () => {

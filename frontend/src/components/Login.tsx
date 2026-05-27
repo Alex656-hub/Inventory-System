@@ -25,12 +25,6 @@ const Login: React.FC = () => {
   const [twoFactorCode, setTwoFactorCode] = useState('');
   const [show2FA, setShow2FA] = useState(false);
   const [pendingEmail, setPendingEmail] = useState('');
-  const [registerData, setRegisterData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -42,15 +36,21 @@ const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await authService.login({ email, password });
+      const credenciales: any = { password };
+      const esEmail = email.includes('@');
+      if (esEmail) {
+        credenciales.email = email;
+      } else {
+        credenciales.usuario = email;
+      }
+
+      const response = await authService.login(credenciales);
       
       if (response.requiere2FA) {
-        // Mostrar formulario de 2FA
         setShow2FA(true);
         setPendingEmail(email);
         setError('');
       } else {
-        // Login exitoso sin 2FA
         authService.guardarSesion(response.usuario);
         navigate('/');
       }
@@ -67,7 +67,11 @@ const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await authService.login2FA(pendingEmail, twoFactorCode);
+      const esEmail = pendingEmail.includes('@');
+      const resolvedEmail = esEmail
+        ? pendingEmail
+        : `${pendingEmail}@credisa.com`;
+      const response = await authService.login2FA(resolvedEmail, twoFactorCode);
       authService.guardarSesion(response.usuario);
       navigate('/');
     } catch (err: any) {
@@ -75,20 +79,6 @@ const Login: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleRegisterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setRegisterData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleRegisterSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Registration logic will be implemented later
-    console.log('Register data:', registerData);
   };
 
   const toggleForm = (showLogin: boolean) => {
@@ -113,8 +103,8 @@ const Login: React.FC = () => {
               <h1>Iniciar Sesión</h1>
               {error && <div className="error-message">{error}</div>}
               <input
-                type="email"
-                placeholder="Correo electrónico"
+                type="text"
+                placeholder="Usuario o correo electrónico"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -126,10 +116,7 @@ const Login: React.FC = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-              <button type="button" className="forgot-password" onClick={(e) => {
-                e.preventDefault();
-                // Lógica para recuperar contraseña
-              }}>
+              <button type="button" className="forgot-password" onClick={(e) => e.preventDefault()}>
                 ¿Olvidaste tu contraseña?
               </button>
               <button type="submit" disabled={loading}>
@@ -169,43 +156,11 @@ const Login: React.FC = () => {
 
         {/* Sign Up Form */}
         <div className="form-container sign-up">
-          <form onSubmit={handleRegisterSubmit}>
+          <div className="register-placeholder">
             <h1>Crear Cuenta</h1>
-            <span>o usa tu correo para registrarte</span>
-            <input
-              type="text"
-              name="name"
-              placeholder="Nombre completo"
-              value={registerData.name}
-              onChange={handleRegisterChange}
-              required
-            />
-            <input
-              type="email"
-              name="email"
-              placeholder="Correo electrónico"
-              value={registerData.email}
-              onChange={handleRegisterChange}
-              required
-            />
-            <input
-              type="password"
-              name="password"
-              placeholder="Contraseña"
-              value={registerData.password}
-              onChange={handleRegisterChange}
-              required
-            />
-            <input
-              type="password"
-              name="confirmPassword"
-              placeholder="Confirmar contraseña"
-              value={registerData.confirmPassword}
-              onChange={handleRegisterChange}
-              required
-            />
-            <button type="submit">Registrarse</button>
-          </form>
+            <p>El registro de nuevos usuarios está disponible solo para administradores.</p>
+            <p>Contacta al administrador del sistema para crear una cuenta.</p>
+          </div>
         </div>
 
         {/* Toggle Panel */}

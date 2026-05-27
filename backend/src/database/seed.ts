@@ -2,13 +2,66 @@ import { sequelize } from '../config/database';
 import * as models from '../models';
 import bcrypt from 'bcryptjs';
 
+interface Permisos {
+  dashboard: boolean;
+  catalogoProductos: boolean;
+  operacionesStock: boolean;
+  historialKardex: boolean;
+  reporteInventario: boolean;
+  alertasStock: boolean;
+  clientes: boolean;
+  sedesAlmacenes: boolean;
+  proveedores: boolean;
+  unidades: boolean;
+  personal: boolean;
+  categorias: boolean;
+  usuariosAccesos: boolean;
+  ajustes: boolean;
+}
+
+const PERMISOS_TOTAL: Permisos = {
+  dashboard: true,
+  catalogoProductos: true,
+  operacionesStock: true,
+  historialKardex: true,
+  reporteInventario: true,
+  alertasStock: true,
+  clientes: true,
+  sedesAlmacenes: true,
+  proveedores: true,
+  unidades: true,
+  personal: true,
+  categorias: true,
+  usuariosAccesos: true,
+  ajustes: true,
+};
+
+const PERMISOS_BASICO: Permisos = {
+  dashboard: true,
+  catalogoProductos: true,
+  operacionesStock: true,
+  historialKardex: true,
+  reporteInventario: true,
+  alertasStock: true,
+  clientes: true,
+  sedesAlmacenes: false,
+  proveedores: false,
+  unidades: true,
+  personal: false,
+  categorias: true,
+  usuariosAccesos: false,
+  ajustes: false,
+};
+
 interface SeedData {
   users: Array<{
+    usuario: string;
     nombre: string;
     email: string;
     password: string;
     rol: 'gerente' | 'empleado';
     activo: boolean;
+    permisos: Permisos;
   }>;
   categories: Array<{
     nombre: string;
@@ -26,18 +79,22 @@ interface SeedData {
 const seedData: SeedData = {
   users: [
     {
+      usuario: 'gerente',
       nombre: 'Gerente Principal',
       email: 'gerente@credisa.com',
       password: 'gerente123',
       rol: 'gerente',
-      activo: true
+      activo: true,
+      permisos: PERMISOS_TOTAL
     },
     {
+      usuario: 'empleado',
       nombre: 'Empleado Ejemplo',
       email: 'empleado@credisa.com',
       password: 'empleado123',
       rol: 'empleado',
-      activo: true
+      activo: true,
+      permisos: PERMISOS_BASICO
     }
   ],
   categories: [
@@ -88,10 +145,8 @@ const seed = async () => {
       });
 
       if (!userExists) {
-        const hashedPassword = await bcrypt.hash(userData.password, 10);
         await models.User.create({
-          ...userData,
-          password: hashedPassword
+          ...userData
         });
         console.log(`✅ Usuario creado: ${userData.email} / ${userData.password}`);
       } else {

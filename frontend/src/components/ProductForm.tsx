@@ -41,7 +41,19 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
         precio_venta: producto.precio_venta?.toString() || '',
         stock_minimo: producto.stock_minimo?.toString() || '0'
       });
-      setImagePreview(producto.imageUrl || null);
+      setImagePreview(producto.imageUrl ?? null);
+    } else {
+      setFormData({
+        codigo: '',
+        nombre: '',
+        categoria_id: '',
+        unidad_id: '',
+        precio_compra: '',
+        precio_venta: '',
+        stock_minimo: '0'
+      });
+      setImagePreview(null);
+      setImageFile(null);
     }
   }, [producto]);
 
@@ -133,8 +145,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
 
   const handleSelectImage = (file: File | null) => {
     setImageFile(file);
-    if (!file) return;
-    setImagePreview(URL.createObjectURL(file));
+    setImagePreview(file ? URL.createObjectURL(file) : null);
   };
 
   return (

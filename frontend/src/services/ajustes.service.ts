@@ -18,11 +18,7 @@ export const ajustesService = {
 
   // Guardar configuración del sistema (incluyendo logo)
   guardarConfiguracion: async (configuracion: FormData): Promise<{ mensaje: string; configuracion: ConfiguracionSistema }> => {
-    const { data } = await api.post<{ mensaje: string; configuracion: ConfiguracionSistema }>('/configuracion', configuracion, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const { data } = await api.post<{ mensaje: string; configuracion: ConfiguracionSistema }>('/configuracion', configuracion);
     return data;
   },
 

@@ -1,10 +1,38 @@
 import { Op } from 'sequelize';
-import { Product, EntradaInventario, SalidaInventario, DetalleSalida } from '../../models';
-import { subMonths } from 'date-fns';
+import { Product, EntradaInventario, SalidaInventario, DetalleSalida, MovimientoInventario, DetalleEntrada } from '../../models';
+import { subMonths, subDays } from 'date-fns';
 
 /**
  * Servicio para análisis de inventario
  */
+
+export interface FullInventoryMetrics {
+  // Métricas básicas de stock
+  stockBajo: number;
+  agotados: number;
+  totalProductos: number;
+  rotacion: number;
+  diasInventario: number;
+
+  // Métricas de capital
+  capitalInmovilizado: number;
+  productosLentos: number;
+  sinMovimiento: number;
+  stockMuerto: number;
+
+  // Métricas financieras
+  margenBruto: number;
+  roiInventario: number;
+  precisionInventario: number;
+
+  // Métricas operativas
+  cicloConversion: number;
+  antiguedadPromedio: number;
+  tasaAgotamiento: number;
+  valorStockMuerto: number;
+
+  lastUpdated: Date;
+}
 
 export interface InventoryMetrics {
   // Métricas existentes
@@ -131,20 +159,190 @@ export const getInventoryMetrics = async (): Promise<InventoryMetrics> => {
 };
 
 /**
- * Identifica productos que necesitan reabastecimiento
+ * Obtiene las 16 métricas completas del inventario
  */
-export const getProductsNeedingReorder = async (threshold: number = 10) => {
+export const getFullInventoryMetrics = async (): Promise<FullInventoryMetrics> => {
   try {
-    return await Product.findAll({
-      where: {
-        stock_actual: {
-          [Op.lte]: threshold
+    // 1. Métricas básicas de stock
+    const [totalProductos, stockBajo, agotados] = await Promise.all([
+      Product.count({ where: { activo: true } }),
+      Product.count({
+        where: {
+          activo: true,
+          stock_actual: { [Op.lt]: 10, [Op.gt]: 0 }
         }
-      },
-      order: [['stock_actual', 'ASC']]
+      }),
+      Product.count({
+        where: {
+          activo: true,
+          stock_actual: { [Op.lte]: 0 }
+        }
+      })
+    ]);
+
+    // 2. Obtener productos con datos necesarios
+    const products = await Product.findAll({
+      where: { activo: true },
+      attributes: ['id', 'stock_actual', 'precio_venta', 'precio_compra', 'stock_minimo', 'createdAt']
     });
+
+    // 3. Calcular métricas de inventario
+    let totalValue = 0;
+    let totalCost = 0;
+    let productosLentos = 0;
+    let sinMovimiento = 0;
+    let stockMuerto = 0;
+    let valorStockMuerto = 0;
+
+    const threeMonthsAgo = subMonths(new Date(), 3);
+    const sixMonthsAgo = subMonths(new Date(), 6);
+
+    for (const product of products) {
+      const stockValue = product.stock_actual * (product.precio_venta || 0);
+      const costValue = product.stock_actual * (product.precio_compra || 0);
+      totalValue += stockValue;
+      totalCost += costValue;
+
+      // Productos lentos: stock > 3x stock mínimo
+      if (product.stock_actual > ((product.stock_minimo || 5) * 3)) {
+        productosLentos++;
+      }
+
+      // Productos sin movimiento en 3 meses (stock > 0)
+      if (product.stock_actual > 0) {
+        const tieneMovimiento = await MovimientoInventario.findOne({
+          where: {
+            producto_id: product.id,
+            fecha: { [Op.gte]: threeMonthsAgo }
+          },
+          limit: 1
+        });
+        if (!tieneMovimiento) {
+          sinMovimiento++;
+        }
+      }
+
+      // Stock muerto: productos sin movimiento en 6 meses
+      if (product.stock_actual > 0) {
+        const tieneMovimientoReciente = await MovimientoInventario.findOne({
+          where: {
+            producto_id: product.id,
+            fecha: { [Op.gte]: sixMonthsAgo }
+          },
+          limit: 1
+        });
+        if (!tieneMovimientoReciente) {
+          stockMuerto++;
+          valorStockMuerto += costValue;
+        }
+      }
+    }
+
+    // 4. Obtener datos de ventas de los últimos 90 días
+    const ninetyDaysAgo = subMonths(new Date(), 3);
+    const salesData = await SalidaInventario.findAll({
+      where: {
+        fecha: { [Op.gte]: ninetyDaysAgo },
+        estado: 'completado'
+      },
+      include: [{
+        model: DetalleSalida,
+        include: [Product]
+      }]
+    });
+
+    const salesMetrics = salesData.reduce((acc, sale: any) => {
+      const saleTotal = (sale.detalles || []).reduce((sum: number, detalle: any) => {
+        return sum + (detalle.cantidad * detalle.precio_unitario);
+      }, 0);
+      
+      const costOfSales = (sale.detalles || []).reduce((sum: number, detalle: any) => {
+        return sum + (detalle.cantidad * (detalle.producto?.precio_compra || 0));
+      }, 0);
+      
+      return {
+        totalSales: acc.totalSales + saleTotal,
+        totalCostOfSales: acc.totalCostOfSales + costOfSales,
+        totalUnitsSold: acc.totalUnitsSold + (sale.detalles || []).reduce((sum: number, d: any) => sum + d.cantidad, 0)
+      };
+    }, { totalSales: 0, totalCostOfSales: 0, totalUnitsSold: 0 });
+
+    // 5. Calcular antigüedad promedio del inventario
+    const entradas = await DetalleEntrada.findAll({
+      include: [{
+        model: EntradaInventario,
+        where: { estado: 'completado' }
+      }],
+      order: [['createdAt', 'DESC']],
+      limit: 100
+    });
+
+    const ahora = new Date();
+    let sumaDias = 0;
+    let conteo = 0;
+
+    for (const entrada of entradas) {
+      const fechaEntrada = new Date(entrada.createdAt);
+      const dias = Math.floor((ahora.getTime() - fechaEntrada.getTime()) / (1000 * 60 * 60 * 24));
+      sumaDias += dias;
+      conteo++;
+    }
+
+    const antiguedadPromedio = conteo > 0 ? Math.round(sumaDias / conteo) : 0;
+
+    // 6. Calcular métricas derivadas
+    const averageInventoryValue = totalValue / 2;
+    const rotacion = salesMetrics.totalSales > 0 
+      ? parseFloat((salesMetrics.totalSales / (averageInventoryValue || 1)).toFixed(2))
+      : 0;
+
+    const diasInventario = salesMetrics.totalUnitsSold > 0
+      ? parseFloat((totalProductos * 90 / salesMetrics.totalUnitsSold).toFixed(1))
+      : 0;
+
+    const margenBruto = salesMetrics.totalSales > 0
+      ? parseFloat(((salesMetrics.totalSales - salesMetrics.totalCostOfSales) / salesMetrics.totalSales * 100).toFixed(2))
+      : 0;
+
+    // ROI: (Ventas - Costo Inventario) / Costo Inventario * 100
+    const roiInventario = totalCost > 0
+      ? parseFloat(((salesMetrics.totalSales - totalCost) / totalCost * 100).toFixed(2))
+      : 0;
+
+    // Precisión de inventario (simulada - en un sistema real se compararía con conteo físico)
+    const precisionInventario = totalProductos > 0
+      ? parseFloat((((totalProductos - stockBajo - agotados) / totalProductos) * 100).toFixed(1))
+      : 0;
+
+    // Ciclo de conversión (igual a días de inventario)
+    const cicloConversion = diasInventario;
+
+    // Tasa de agotamiento
+    const tasaAgotamiento = totalProductos > 0
+      ? parseFloat(((agotados / totalProductos) * 100).toFixed(2))
+      : 0;
+
+    return {
+      stockBajo,
+      agotados,
+      totalProductos,
+      rotacion,
+      diasInventario: diasInventario,
+      capitalInmovilizado: parseFloat(totalValue.toFixed(2)),
+      productosLentos,
+      sinMovimiento,
+      stockMuerto,
+      margenBruto,
+      roiInventario,
+      precisionInventario,
+      cicloConversion,
+      antiguedadPromedio,
+      tasaAgotamiento,
+      valorStockMuerto: parseFloat(valorStockMuerto.toFixed(2)),
+      lastUpdated: new Date()
+    };
   } catch (error) {
-    console.error('Error al identificar productos para reabastecer:', error);
-    throw new Error('No se pudieron identificar los productos para reabastecer');
+    console.error('Error al calcular métricas completas de inventario:', error);
+    throw new Error('No se pudieron calcular las métricas de inventario');
   }
 };

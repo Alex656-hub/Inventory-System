@@ -43,8 +43,4 @@ export const personalService = {
     return data;
   },
 
-  eliminarPersonalHard: async (id: number): Promise<{ mensaje: string }> => {
-    const { data } = await api.delete<{ mensaje: string }>(`/personal/hard/${id}`);
-    return data;
-  }
 };

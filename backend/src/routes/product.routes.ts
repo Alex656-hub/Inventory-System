@@ -8,7 +8,7 @@ import {
   obtenerProductosStockBajo,
   obtenerSiguienteCodigo
 } from '../controllers/product.controller';
-import { verificarToken, gerenteOEmpleado, soloGerente } from '../middleware/auth.middleware';
+import { verificarToken, verificarPermiso, soloGerente } from '../middleware/auth.middleware';
 import multer from 'multer';
 
 const router = Router();
@@ -20,10 +20,10 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }
 });
 
-router.get('/', gerenteOEmpleado, obtenerProductos);
-router.get('/stock-bajo', gerenteOEmpleado, obtenerProductosStockBajo);
-router.get('/next-code/:categoria_id', gerenteOEmpleado, obtenerSiguienteCodigo);
-router.get('/:id', gerenteOEmpleado, obtenerProductoPorId);
+router.get('/', verificarPermiso('catalogoProductos'), obtenerProductos);
+router.get('/stock-bajo', verificarPermiso('catalogoProductos'), obtenerProductosStockBajo);
+router.get('/next-code/:categoria_id', verificarPermiso('catalogoProductos'), obtenerSiguienteCodigo);
+router.get('/:id', verificarPermiso('catalogoProductos'), obtenerProductoPorId);
 
 router.post('/', soloGerente, upload.single('image'), crearProducto);
 router.put('/:id', soloGerente, upload.single('image'), actualizarProducto);

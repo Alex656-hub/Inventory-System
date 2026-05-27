@@ -9,16 +9,16 @@ import {
   activarUnidad,
   eliminarUnidadHard
 } from '../controllers/unidadmedida.controller';
-import { verificarToken, gerenteOEmpleado, soloGerente } from '../middleware/auth.middleware';
+import { verificarToken, verificarPermiso, soloGerente } from '../middleware/auth.middleware';
 
 const router = Router();
 
 // Todas las rutas requieren autenticación
 router.use(verificarToken);
 
-// Rutas accesibles por gerente y empleado
-router.get('/', gerenteOEmpleado, obtenerUnidades);
-router.get('/:id', gerenteOEmpleado, obtenerUnidadPorId);
+// Rutas accesibles con permiso de unidades
+router.get('/', verificarPermiso('unidades'), obtenerUnidades);
+router.get('/:id', verificarPermiso('unidades'), obtenerUnidadPorId);
 
 // Rutas que requieren ser gerente
 router.post('/', soloGerente, crearUnidad);

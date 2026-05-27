@@ -2,12 +2,13 @@ import { Router } from 'express';
 import { body, query } from 'express-validator';
 import operacionStockController from '../controllers/operacionStock.controller';
 import stockService from '../services/stock.service';
-import { verificarToken } from '../middleware/auth.middleware';
+import { verificarToken, verificarPermiso } from '../middleware/auth.middleware';
 
 const router = Router();
 
-// Middleware de autenticación para todas las rutas
+// Middleware de autenticación y permiso para todas las rutas
 router.use(verificarToken);
+router.use(verificarPermiso('operacionesStock'));
 
 // Validaciones para crear operación
 const operacionValidation = [

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { salesService, type SalesSummary as SalesSummaryData, type SalesSummaryResponse } from '../services/sales.service';
+import { salesService, type SalesSummary as SalesSummaryData } from '../services/sales.service';
 import './SalesSummary.css';
 
 interface SalesSummaryProps {
@@ -36,6 +36,7 @@ const SalesSummaryPage: React.FC<SalesSummaryProps> = ({ startDate, endDate }) =
 
   useEffect(() => {
     fetchSummary();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startDate, endDate]);
 
   const formatCurrency = (amount: number) => {

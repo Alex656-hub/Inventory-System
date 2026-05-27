@@ -1,12 +1,13 @@
 import { Router, Request, Response } from 'express';
 import { body } from 'express-validator';
 import Client from '../models/Client';
-import { verificarToken } from '../middleware/auth.middleware';
+import { verificarToken, verificarPermiso } from '../middleware/auth.middleware';
 
 const router = Router();
 
 // Middleware de autenticación para todas las rutas
 router.use(verificarToken);
+router.use(verificarPermiso('clientes'));
 
 // Validaciones para crear cliente
 const clientValidation = [

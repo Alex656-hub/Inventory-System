@@ -1,9 +1,28 @@
+export interface Permisos {
+  dashboard: boolean;
+  catalogoProductos: boolean;
+  operacionesStock: boolean;
+  historialKardex: boolean;
+  reporteInventario: boolean;
+  alertasStock: boolean;
+  clientes: boolean;
+  sedesAlmacenes: boolean;
+  proveedores: boolean;
+  unidades: boolean;
+  personal: boolean;
+  categorias: boolean;
+  usuariosAccesos: boolean;
+  ajustes: boolean;
+}
+
 export interface Usuario {
   id: number;
+  usuario: string;
   nombre: string;
   email: string;
   rol: 'gerente' | 'empleado';
   activo: boolean;
+  permisos: Permisos;
   twoFactorEnabled?: boolean;
 }
 
@@ -61,7 +80,8 @@ export interface UnidadMedida {
 }
 
 export interface LoginRequest {
-  email: string;
+  email?: string;
+  usuario?: string;
   password: string;
 }
 

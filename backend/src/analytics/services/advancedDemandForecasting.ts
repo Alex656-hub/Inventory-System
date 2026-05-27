@@ -66,18 +66,18 @@ export class AdvancedDemandForecasting {
     }));
   }
 
-  private async getFromCache(key: string): Promise<ForecastResult | null> {
+  private getFromCache(key: string): ForecastResult | null {
     try {
-      return await cacheService.get(key, () => Promise.resolve(null));
+      return cacheService.getRaw<ForecastResult>(key) || null;
     } catch (error) {
       console.error('Error al leer de caché:', error);
       return null;
     }
   }
 
-  private async saveToCache(key: string, data: ForecastResult): Promise<void> {
+  private saveToCache(key: string, data: ForecastResult): void {
     try {
-      await cacheService.get(key, () => Promise.resolve(data));
+      cacheService.set(key, data);
     } catch (error) {
       console.error('Error al guardar en caché:', error);
     }

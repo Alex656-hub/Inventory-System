@@ -1,5 +1,5 @@
 import api from '../config/api';
-import { RefreshTokenRequest, RefreshTokenResponse } from '../types';
+import { RefreshTokenResponse } from '../types';
 
 class TokenManager {
   private static instance: TokenManager;

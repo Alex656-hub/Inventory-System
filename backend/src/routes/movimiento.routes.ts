@@ -6,18 +6,18 @@ import {
   obtenerPreviewOperacion,
   obtenerPdfOperacion
 } from '../controllers/movimiento.controller';
-import { verificarToken, gerenteOEmpleado } from '../middleware/auth.middleware';
+import { verificarToken, verificarPermiso } from '../middleware/auth.middleware';
 
 const router = Router();
 
 // Todas las rutas requieren autenticación
 router.use(verificarToken);
 
-router.get('/', gerenteOEmpleado, obtenerMovimientos);
-router.get('/historial', gerenteOEmpleado, obtenerHistorialMovimientos);
-router.get('/kardex/:id', gerenteOEmpleado, obtenerKardexPorProducto);
-router.get('/:id/preview', gerenteOEmpleado, obtenerPreviewOperacion);
-router.get('/:id/pdf', gerenteOEmpleado, obtenerPdfOperacion);
+router.get('/', verificarPermiso('historialKardex'), obtenerMovimientos);
+router.get('/historial', verificarPermiso('historialKardex'), obtenerHistorialMovimientos);
+router.get('/kardex/:id', verificarPermiso('historialKardex'), obtenerKardexPorProducto);
+router.get('/:id/preview', verificarPermiso('historialKardex'), obtenerPreviewOperacion);
+router.get('/:id/pdf', verificarPermiso('historialKardex'), obtenerPdfOperacion);
 
 export default router;
 

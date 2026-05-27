@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './ReporteInventario.css';
 import api from '../config/api';
-import { reporteService } from '../services/reporte.service';
 import ModalInventarioExcel from './ModalInventarioExcel';
 
 interface StockItem {

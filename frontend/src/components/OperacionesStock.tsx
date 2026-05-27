@@ -890,6 +890,7 @@ const ProductoSelector: React.FC<{
       else setProductos([]);
     }, 300);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [termino]);
 
   const buscarProductos = async (terminoBusqueda: string) => {

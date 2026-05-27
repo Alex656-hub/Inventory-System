@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import User from '../models/User';
+import User, { Permisos } from '../models/User';
 import { getJwtSecret } from '../config/env';
 
 // Extender interfaz Request para incluir usuario
@@ -15,7 +15,9 @@ declare global {
 export interface JWTPayload {
   id: number;
   email: string;
+  usuario: string;
   rol: string;
+  permisos: Record<string, boolean>;
   twoFactorEnabled?: boolean;
 }
 
@@ -109,55 +111,6 @@ export const verificarToken = async (
   }
 };
 
-// Middleware para verificar tokens temporales (solo para 2FA)
-export const verificarToken2FA = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const token = req.headers.authorization?.split(' ')[1];
-
-    if (!token) {
-      res.status(401).json({ mensaje: 'Token de autenticación requerido' });
-      return;
-    }
-
-    const decoded = jwt.verify(token, getJwtSecret()) as DecodedToken;
-    
-    // Verificar que sea un token temporal
-    if (!('temp' in decoded) || decoded.temp !== true) {
-      res.status(401).json({ 
-        mensaje: 'Token inválido para verificación 2FA',
-        codigo: 'INVALID_2FA_TOKEN'
-      });
-      return;
-    }
-    
-    // Verificar si el token ha expirado
-    if (decoded.exp < Math.floor(Date.now() / 1000)) {
-      res.status(401).json({ 
-        mensaje: 'El código de verificación ha expirado',
-        codigo: '2FA_TOKEN_EXPIRED'
-      });
-      return;
-    }
-    
-    const usuario = await User.findByPk(decoded.id);
-    
-    if (!usuario || !usuario.activo) {
-      res.status(401).json({ mensaje: 'Usuario no válido o inactivo' });
-      return;
-    }
-
-    req.usuario = usuario;
-    next();
-  } catch (error) {
-    console.error('Error en verificación 2FA:', error);
-    res.status(401).json({ mensaje: 'Token 2FA inválido o expirado' });
-  }
-};
-
 export const verificarRol = (rolesPermitidos: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.usuario) {
@@ -189,4 +142,31 @@ export const verificarRol = (rolesPermitidos: string[]) => {
 
 export const soloGerente = verificarRol(['gerente']);
 export const gerenteOEmpleado = verificarRol(['gerente', 'empleado']);
+
+// Middleware para verificar permisos específicos del módulo
+export const verificarPermiso = (permiso: keyof Permisos) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.usuario) {
+      return res.status(401).json({ mensaje: 'Usuario no autenticado' });
+    }
+
+    // Gerentes siempre pasan (tienen todos los permisos)
+    if (req.usuario.rol === 'gerente') {
+      return next();
+    }
+
+    const permisos = req.usuario.permisos;
+    
+    if (!permisos || !permisos[permiso]) {
+      return res.status(403).json({
+        mensaje: 'No tienes permiso para acceder a este módulo',
+        detalle: {
+          permisoRequerido: permiso
+        }
+      });
+    }
+
+    next();
+  };
+};
 

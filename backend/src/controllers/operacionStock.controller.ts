@@ -10,6 +10,7 @@ import Sede from '../models/Sede';
 import Supplier from '../models/Supplier';
 import { sequelize } from '../config/database';
 import { Transaction } from 'sequelize';
+import { alertService } from '../services/alertService';
 
 interface OperacionRequest {
   tipo_operacion: 'ENTRADA' | 'SALIDA' | 'TRASPASO';
@@ -164,6 +165,10 @@ class OperacionStockController {
       res.json({
         message: 'Operación procesada exitosamente',
         operacion
+      });
+
+      alertService.checkLowStock().catch(err => {
+        console.warn('Background alert check failed:', err.message);
       });
     } catch (error) {
       console.error('Error al procesar operación:', error);

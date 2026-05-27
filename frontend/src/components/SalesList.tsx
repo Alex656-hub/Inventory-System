@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { salesService, Sale, SalesResponse } from '../services/sales.service';
+import { salesService, Sale } from '../services/sales.service';
 import './SalesList.css';
 
 interface SalesListProps {
@@ -21,9 +21,6 @@ const SalesList: React.FC<SalesListProps> = ({ startDate, endDate, productId }) 
   // URL search params
   const [searchParams] = useSearchParams();
   const ventaId = searchParams.get('ventaId');
-
-  // Ref for scrolling to focused sale
-  const salesContainerRef = useRef<HTMLDivElement>(null);
 
   const limit = 10;
 
@@ -57,6 +54,7 @@ const SalesList: React.FC<SalesListProps> = ({ startDate, endDate, productId }) 
 
   useEffect(() => {
     fetchSales(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startDate, endDate, productId]);
 
   // Handle ventaId parameter

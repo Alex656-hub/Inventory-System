@@ -3,12 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/auth.service';
-import { searchService } from '../services/search.service';
-import { alertService } from '../services/alert.service';
-import { GlobalSearchResponse, Alert } from '../types';
-import Ajustes from './Ajustes';
 import './Layout.css';
-import './Ajustes.css';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -23,21 +18,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarClosed, setSidebarClosed] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
 
-  // Estado para búsqueda
   const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults, setSearchResults] = useState<GlobalSearchResponse | null>(null);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [showResults, setShowResults] = useState(false);
-
-  // Estado para alertas
-  const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [alertCount, setAlertCount] = useState(0);
-  const [showAlertDropdown, setShowAlertDropdown] = useState(false);
-
-  // Refs
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const searchDropdownRef = useRef<HTMLDivElement>(null);
 
   // Función auxiliar para saber si una ruta está activa
   const isActive = (path: string) => location.pathname === path;
@@ -67,17 +49,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     }
   };
 
-  // Logout functions
   const handleLogout = async () => {
     await authService.logout();
     navigate('/login');
-  };
-
-  const handleLogoutAll = async () => {
-    if (window.confirm('¿Estás seguro de que quieres cerrar todas las sesiones en todos los dispositivos?')) {
-      await authService.logoutAll();
-      navigate('/login');
-    }
   };
 
   const esGerente = usuario?.rol === 'gerente';
@@ -146,55 +120,68 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             
             {/* List of menu links */}
             <ul className="menu-links">
-              <li className={`nav-link ${isActive('/') ? 'active' : ''}`}>
-                <Link to="/">
-                  <i className='bx bxs-dashboard icon'></i>
-                  <span className="text nav-text">Dashboard</span>
-                </Link>
-              </li>
+              {/* Dashboard */}
+              {(usuario?.permisos?.dashboard ?? (esGerente || esEmpleado)) && (
+                <li className={`nav-link ${isActive('/') ? 'active' : ''}`}>
+                  <Link to="/">
+                    <i className='bx bxs-dashboard icon'></i>
+                    <span className="text nav-text">Dashboard</span>
+                  </Link>
+                </li>
+              )}
               
               {/* Catálogo Productos */}
-              <li className={`nav-link ${isActive('/productos') ? 'active' : ''}`}>
-                <Link to="/productos">
-                  <i className='bx bx-package icon'></i>
-                  <span className="text nav-text">Catálogo Productos</span>
-                </Link>
-              </li>
+              {(usuario?.permisos?.catalogoProductos ?? (esGerente || esEmpleado)) && (
+                <li className={`nav-link ${isActive('/productos') ? 'active' : ''}`}>
+                  <Link to="/productos">
+                    <i className='bx bx-package icon'></i>
+                    <span className="text nav-text">Catálogo Productos</span>
+                  </Link>
+                </li>
+              )}
               
               {/* Operaciones Stock */}
-              <li className={`nav-link ${isActive('/operaciones-stock') ? 'active' : ''}`}>
-                <Link to="/operaciones-stock">
-                  <i className='bx bx-transfer icon'></i>
-                  <span className="text nav-text">Operaciones Stock</span>
-                </Link>
-              </li>
+              {(usuario?.permisos?.operacionesStock ?? (esGerente || esEmpleado)) && (
+                <li className={`nav-link ${isActive('/operaciones-stock') ? 'active' : ''}`}>
+                  <Link to="/operaciones-stock">
+                    <i className='bx bx-transfer icon'></i>
+                    <span className="text nav-text">Operaciones Stock</span>
+                  </Link>
+                </li>
+              )}
               
               {/* Historial Kardex */}
-              <li className={`nav-link ${isActive('/historial-kardex') ? 'active' : ''}`}>
-                <Link to="/historial-kardex">
-                  <i className='bx bx-history icon'></i>
-                  <span className="text nav-text">Historial Kardex</span>
-                </Link>
-              </li>
+              {(usuario?.permisos?.historialKardex ?? (esGerente || esEmpleado)) && (
+                <li className={`nav-link ${isActive('/historial-kardex') ? 'active' : ''}`}>
+                  <Link to="/historial-kardex">
+                    <i className='bx bx-history icon'></i>
+                    <span className="text nav-text">Historial Kardex</span>
+                  </Link>
+                </li>
+              )}
               
               {/* Reporte Inventario */}
-              <li className={`nav-link ${isActive('/reporte-inventario') ? 'active' : ''}`}>
-                <Link to="/reporte-inventario">
-                  <i className='bx bx-bar-chart-alt-2 icon'></i>
-                  <span className="text nav-text">Reporte Inventario</span>
-                </Link>
-              </li>
+              {(usuario?.permisos?.reporteInventario ?? (esGerente || esEmpleado)) && (
+                <li className={`nav-link ${isActive('/reporte-inventario') ? 'active' : ''}`}>
+                  <Link to="/reporte-inventario">
+                    <i className='bx bx-bar-chart-alt-2 icon'></i>
+                    <span className="text nav-text">Reporte Inventario</span>
+                  </Link>
+                </li>
+              )}
               
               {/* Alertas Stock */}
-              <li className={`nav-link ${isActive('/alertas-stock') ? 'active' : ''}`}>
-                <Link to="/alertas-stock">
-                  <i className='bx bx-bell icon'></i>
-                  <span className="text nav-text">Alertas Stock</span>
-                </Link>
-              </li>
+              {(usuario?.permisos?.alertasStock ?? (esGerente || esEmpleado)) && (
+                <li className={`nav-link ${isActive('/alertas-stock') ? 'active' : ''}`}>
+                  <Link to="/alertas-stock">
+                    <i className='bx bx-bell icon'></i>
+                    <span className="text nav-text">Alertas Stock</span>
+                  </Link>
+                </li>
+              )}
               
               {/* Sedes y Almacenes */}
-              {esGerente && (
+              {(usuario?.permisos?.sedesAlmacenes ?? esGerente) && (
                 <li className={`nav-link ${isActive('/sedes-almacenes') ? 'active' : ''}`}>
                   <Link to="/sedes-almacenes">
                     <i className='bx bx-building icon'></i>
@@ -204,7 +191,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               )}
               
               {/* Clientes */}
-              {(esGerente || esEmpleado) && (
+              {(usuario?.permisos?.clientes ?? (esGerente || esEmpleado)) && (
                 <li className={`nav-link ${isActive('/clientes') ? 'active' : ''}`}>
                   <Link to="/clientes">
                     <i className='bx bx-user icon'></i>
@@ -214,7 +201,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               )}
               
               {/* Proveedores */}
-              {esGerente && (
+              {(usuario?.permisos?.proveedores ?? esGerente) && (
                 <li className={`nav-link ${isActive('/proveedores') ? 'active' : ''}`}>
                   <Link to="/proveedores">
                     <i className='bx bx-building-house icon'></i>
@@ -223,8 +210,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </li>
               )}
               
-              {/* Unidades de Medida */}
-              {esGerente && (
+              {/* Unidades */}
+              {(usuario?.permisos?.unidades ?? esGerente) && (
                 <li className={`nav-link ${isActive('/unidades') ? 'active' : ''}`}>
                   <Link to="/unidades">
                     <i className='bx bx-ruler icon'></i>
@@ -234,7 +221,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               )}
               
               {/* Personal */}
-              {esGerente && (
+              {(usuario?.permisos?.personal ?? esGerente) && (
                 <li className={`nav-link ${isActive('/personal') ? 'active' : ''}`}>
                   <Link to="/personal">
                     <i className='bx bx-group icon'></i>
@@ -244,7 +231,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               )}
               
               {/* Categorías */}
-              {esGerente && (
+              {(usuario?.permisos?.categorias ?? esGerente) && (
                 <li className={`nav-link ${isActive('/categorias') ? 'active' : ''}`}>
                   <Link to="/categorias">
                     <i className='bx bx-category icon'></i>
@@ -254,7 +241,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               )}
               
               {/* Usuarios y Accesos */}
-              {esGerente && (
+              {(usuario?.permisos?.usuariosAccesos ?? esGerente) && (
                 <li className={`nav-link ${isActive('/usuarios') ? 'active' : ''}`}>
                   <Link to="/usuarios">
                     <i className='bx bx-shield icon'></i>
@@ -264,7 +251,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               )}
               
               {/* Ajustes */}
-              {esGerente && (
+              {(usuario?.permisos?.ajustes ?? esGerente) && (
                 <li className={`nav-link ${isActive('/ajustes') ? 'active' : ''}`}>
                   <Link to="/ajustes">
                     <i className='bx bx-cog icon'></i>
@@ -278,6 +265,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           {/* Bottom content of the sidebar */}
           <div className="bottom-content">
             <li>
+              {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
               <a href="#" onClick={(e) => { e.preventDefault(); handleLogout(); }}>
                 <i className='bx bx-log-out icon'></i>
                 <span className="text nav-text">Cerrar sesión</span>

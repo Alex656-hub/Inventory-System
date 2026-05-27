@@ -6,7 +6,7 @@ import DetalleSalida from '../models/DetalleSalida';
 import Product from '../models/Product';
 import MovimientoInventario from '../models/MovimientoInventario';
 import User from '../models/User';
-import { DailySale } from '../models/sales';
+import DailySale from '../models/sales';
 import { alertService } from '../services/alertService';
 
 export const obtenerSalidas = async (req: Request, res: Response): Promise<void> => {

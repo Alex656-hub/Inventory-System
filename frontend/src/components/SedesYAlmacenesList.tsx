@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { sedeService, Sede, Almacen, SedeFilters } from '../services/sede.service';
+import { sedeService, Sede, SedeFilters } from '../services/sede.service';
 import Modal from './Modal';
 import SedesYAlmacenesForm from './SedesYAlmacenesForm';
 import './SedesYAlmacenesList.css';
@@ -27,6 +27,7 @@ const SedesYAlmacenesList: React.FC = () => {
   
   useEffect(() => {
     cargarDatos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
 
   const cargarDatos = async () => {

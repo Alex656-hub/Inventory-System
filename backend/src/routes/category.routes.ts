@@ -7,16 +7,16 @@ import {
   eliminarCategoria,
   eliminarCategoriaHard
 } from '../controllers/category.controller';
-import { verificarToken, gerenteOEmpleado, soloGerente } from '../middleware/auth.middleware';
+import { verificarToken, verificarPermiso, soloGerente } from '../middleware/auth.middleware';
 
 const router = Router();
 
 // Todas las rutas requieren autenticación
 router.use(verificarToken);
 
-// Rutas accesibles por gerente y empleado
-router.get('/', gerenteOEmpleado, obtenerCategorias);
-router.get('/:id', gerenteOEmpleado, obtenerCategoriaPorId);
+// Rutas accesibles con permiso de categorías
+router.get('/', verificarPermiso('categorias'), obtenerCategorias);
+router.get('/:id', verificarPermiso('categorias'), obtenerCategoriaPorId);
 
 // Rutas que requieren ser gerente
 router.post('/', soloGerente, crearCategoria);

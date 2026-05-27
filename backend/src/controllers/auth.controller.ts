@@ -10,7 +10,9 @@ const generarToken = (usuario: User): string => {
   const payload: JWTPayload = {
     id: usuario.id,
     email: usuario.email,
+    usuario: usuario.usuario,
     rol: usuario.rol,
+    permisos: usuario.permisos as unknown as Record<string, boolean>,
     twoFactorEnabled: usuario.twoFactorEnabled || false
   };
 
@@ -27,9 +29,11 @@ export const generarTokenTemporal = (usuario: User): string => {
   const payload: TempJWTPayload = {
     id: usuario.id,
     email: usuario.email,
+    usuario: usuario.usuario,
     rol: usuario.rol,
+    permisos: usuario.permisos as unknown as Record<string, boolean>,
     temp: true,
-    exp: Math.floor(Date.now() / 1000) + (5 * 60) // Expira en 5 minutos
+    exp: Math.floor(Date.now() / 1000) + (5 * 60)
   };
 
   const secret: string = getJwtSecret();
@@ -39,17 +43,19 @@ export const generarTokenTemporal = (usuario: User): string => {
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password } = req.body;
+    const { email, password, usuario: usuarioInput } = req.body;
 
-    if (!email || !password) {
-      res.status(400).json({ mensaje: 'Email y contraseña son requeridos' });
+    const loginEmail = usuarioInput ? `${usuarioInput}@credisa.com` : email;
+
+    if (!loginEmail || !password) {
+      res.status(400).json({ mensaje: 'Usuario/Email y contraseña son requeridos' });
       return;
     }
 
-    // 1. Buscar usuario incluyendo el rol
+    // 1. Buscar usuario
     const usuario = await User.findOne({ 
-      where: { email },
-      attributes: ['id', 'nombre', 'email', 'password', 'rol', 'activo', 'twoFactorEnabled', 'twoFactorSecret']
+      where: { email: loginEmail },
+      attributes: ['id', 'nombre', 'usuario', 'email', 'password', 'rol', 'activo', 'permisos', 'twoFactorEnabled', 'twoFactorSecret']
     });
 
     if (!usuario) {
@@ -89,6 +95,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         token: tempToken,
         usuario: {
           id: usuario.id,
+          usuario: usuario.usuario,
           email: usuario.email
         }
       });
@@ -99,12 +106,14 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       res.json({
         mensaje: 'Inicio de sesión exitoso',
         requiere2FA: false,
-        ...tokens, // accessToken, refreshToken, expiresIn, tokenType
+        ...tokens,
         usuario: {
           id: usuario.id,
+          usuario: usuario.usuario,
           nombre: usuario.nombre,
           email: usuario.email,
           rol: usuario.rol,
+          permisos: usuario.permisos,
           twoFactorEnabled: false
         }
       });
@@ -138,9 +147,11 @@ export const obtenerPerfil = async (req: Request, res: Response): Promise<void> 
 
     res.json({
       id: usuarioCompleto.id,
+      usuario: usuarioCompleto.usuario,
       nombre: usuarioCompleto.nombre,
       email: usuarioCompleto.email,
       rol: usuarioCompleto.rol,
+      permisos: usuarioCompleto.permisos,
       twoFactorEnabled: usuarioCompleto.twoFactorEnabled || false
     });
   } catch (error) {

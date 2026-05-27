@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+import api from '../config/api';
 
 export interface Sede {
   id: number;
@@ -88,19 +86,18 @@ export interface AlmacenFilters {
 class SedeService {
   // ==================== SEDES ====================
 
-  // Obtener todas las sedes con paginación y filtros
   async obtenerSedes(filters: SedeFilters = {}): Promise<PaginatedResponse<Sede>> {
     try {
       const params = new URLSearchParams();
-      
+
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined && value !== '') {
           params.append(key, value.toString());
         }
       });
 
-      const response = await axios.get(`${API_URL}/sedes?${params.toString()}`);
-      
+      const response = await api.get(`/sedes?${params.toString()}`);
+
       return {
         data: response.data.sedes,
         paginacion: response.data.paginacion
@@ -111,10 +108,9 @@ class SedeService {
     }
   }
 
-  // Obtener una sede por ID
   async obtenerSedePorId(id: number): Promise<Sede> {
     try {
-      const response = await axios.get(`${API_URL}/sedes/${id}`);
+      const response = await api.get(`/sedes/${id}`);
       return response.data;
     } catch (error) {
       console.error('Error al obtener sede:', error);
@@ -122,10 +118,9 @@ class SedeService {
     }
   }
 
-  // Crear una nueva sede
   async crearSede(sede: SedeRequest): Promise<Sede> {
     try {
-      const response = await axios.post(`${API_URL}/sedes`, sede);
+      const response = await api.post('/sedes', sede);
       return response.data.sede;
     } catch (error) {
       console.error('Error al crear sede:', error);
@@ -133,10 +128,9 @@ class SedeService {
     }
   }
 
-  // Actualizar una sede
   async actualizarSede(id: number, sede: Partial<SedeRequest>): Promise<Sede> {
     try {
-      const response = await axios.put(`${API_URL}/sedes/${id}`, sede);
+      const response = await api.put(`/sedes/${id}`, sede);
       return response.data.sede;
     } catch (error) {
       console.error('Error al actualizar sede:', error);
@@ -144,20 +138,18 @@ class SedeService {
     }
   }
 
-  // Eliminar una sede (cambio de estado)
   async eliminarSede(id: number): Promise<void> {
     try {
-      await axios.delete(`${API_URL}/sedes/${id}`);
+      await api.delete(`/sedes/${id}`);
     } catch (error) {
       console.error('Error al eliminar sede:', error);
       throw error;
     }
   }
 
-  // Activar/Desactivar sede
   async toggleEstadoSede(id: number): Promise<{ estado: string }> {
     try {
-      const response = await axios.patch(`${API_URL}/sedes/${id}/toggle-estado`);
+      const response = await api.patch(`/sedes/${id}/toggle-estado`);
       return response.data;
     } catch (error) {
       console.error('Error al cambiar estado de sede:', error);
@@ -165,10 +157,9 @@ class SedeService {
     }
   }
 
-  // Obtener sedes para select (solo activas)
   async obtenerSedesSelect(): Promise<Sede[]> {
     try {
-      const response = await axios.get(`${API_URL}/sedes/select`);
+      const response = await api.get('/sedes/select');
       return response.data;
     } catch (error) {
       console.error('Error al obtener sedes para select:', error);
@@ -176,7 +167,6 @@ class SedeService {
     }
   }
 
-  // Obtener estadísticas de sedes
   async obtenerEstadisticasSedes(): Promise<{
     totalSedes: number;
     sedesActivas: number;
@@ -184,7 +174,7 @@ class SedeService {
     sedesPorTipo: Array<{ tipo: string; cantidad: number }>;
   }> {
     try {
-      const response = await axios.get(`${API_URL}/sedes/estadisticas`);
+      const response = await api.get('/sedes/estadisticas');
       return response.data;
     } catch (error) {
       console.error('Error al obtener estadísticas de sedes:', error);
@@ -194,19 +184,18 @@ class SedeService {
 
   // ==================== ALMACENES ====================
 
-  // Obtener todos los almacenes con paginación y filtros
   async obtenerAlmacenes(filters: AlmacenFilters = {}): Promise<PaginatedResponse<Almacen>> {
     try {
       const params = new URLSearchParams();
-      
+
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined && value !== '') {
           params.append(key, value.toString());
         }
       });
 
-      const response = await axios.get(`${API_URL}/almacenes?${params.toString()}`);
-      
+      const response = await api.get(`/almacenes?${params.toString()}`);
+
       return {
         data: response.data.almacenes,
         paginacion: response.data.paginacion
@@ -217,10 +206,9 @@ class SedeService {
     }
   }
 
-  // Obtener un almacén por ID
   async obtenerAlmacenPorId(id: number): Promise<Almacen> {
     try {
-      const response = await axios.get(`${API_URL}/almacenes/${id}`);
+      const response = await api.get(`/almacenes/${id}`);
       return response.data;
     } catch (error) {
       console.error('Error al obtener almacén:', error);
@@ -228,10 +216,9 @@ class SedeService {
     }
   }
 
-  // Crear un nuevo almacén
   async crearAlmacen(almacen: AlmacenRequest): Promise<Almacen> {
     try {
-      const response = await axios.post(`${API_URL}/almacenes`, almacen);
+      const response = await api.post('/almacenes', almacen);
       return response.data.almacen;
     } catch (error) {
       console.error('Error al crear almacén:', error);
@@ -239,10 +226,9 @@ class SedeService {
     }
   }
 
-  // Actualizar un almacén
   async actualizarAlmacen(id: number, almacen: Partial<AlmacenRequest>): Promise<Almacen> {
     try {
-      const response = await axios.put(`${API_URL}/almacenes/${id}`, almacen);
+      const response = await api.put(`/almacenes/${id}`, almacen);
       return response.data.almacen;
     } catch (error) {
       console.error('Error al actualizar almacén:', error);
@@ -250,20 +236,18 @@ class SedeService {
     }
   }
 
-  // Eliminar un almacén (cambio de estado)
   async eliminarAlmacen(id: number): Promise<void> {
     try {
-      await axios.delete(`${API_URL}/almacenes/${id}`);
+      await api.delete(`/almacenes/${id}`);
     } catch (error) {
       console.error('Error al eliminar almacén:', error);
       throw error;
     }
   }
 
-  // Activar/Desactivar almacén
   async toggleEstadoAlmacen(id: number): Promise<{ estado: string }> {
     try {
-      const response = await axios.patch(`${API_URL}/almacenes/${id}/toggle-estado`);
+      const response = await api.patch(`/almacenes/${id}/toggle-estado`);
       return response.data;
     } catch (error) {
       console.error('Error al cambiar estado de almacén:', error);
@@ -271,11 +255,10 @@ class SedeService {
     }
   }
 
-  // Obtener almacenes para select (solo activos)
   async obtenerAlmacenesSelect(sede_id?: number): Promise<Almacen[]> {
     try {
       const params = sede_id ? `?sede_id=${sede_id}` : '';
-      const response = await axios.get(`${API_URL}/almacenes/select${params}`);
+      const response = await api.get(`/almacenes/select${params}`);
       return response.data;
     } catch (error) {
       console.error('Error al obtener almacenes para select:', error);
@@ -283,7 +266,6 @@ class SedeService {
     }
   }
 
-  // Obtener almacenes por sede
   async obtenerAlmacenesPorSede(sede_id: number): Promise<{
     sede: {
       id: number;
@@ -294,7 +276,7 @@ class SedeService {
     almacenes: Almacen[];
   }> {
     try {
-      const response = await axios.get(`${API_URL}/almacenes/sede/${sede_id}`);
+      const response = await api.get(`/almacenes/sede/${sede_id}`);
       return response.data;
     } catch (error) {
       console.error('Error al obtener almacenes por sede:', error);
@@ -302,7 +284,6 @@ class SedeService {
     }
   }
 
-  // Obtener estadísticas de almacenes
   async obtenerEstadisticasAlmacenes(): Promise<{
     totalAlmacenes: number;
     almacenesActivos: number;
@@ -311,7 +292,7 @@ class SedeService {
     almacenesPorSede: Array<{ sede_id: number; cantidad: number; 'sede.nombre': string }>;
   }> {
     try {
-      const response = await axios.get(`${API_URL}/almacenes/estadisticas`);
+      const response = await api.get('/almacenes/estadisticas');
       return response.data;
     } catch (error) {
       console.error('Error al obtener estadísticas de almacenes:', error);

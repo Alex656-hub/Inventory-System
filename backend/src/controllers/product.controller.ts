@@ -183,6 +183,7 @@ export const crearProducto = async (req: Request, res: Response): Promise<void> 
     // Manejo de imagen (multipart)
     let imageFilename: string | null = null;
     const file = (req as any).file as Express.Multer.File | undefined;
+
     if (file) {
       ensureUploadsDir();
       const safeBase = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -223,6 +224,7 @@ export const crearProducto = async (req: Request, res: Response): Promise<void> 
     });
   } catch (error: any) {
     console.error('Error al crear producto:', error);
+    console.error('Stack:', error?.stack);
     if (error.name === 'SequelizeUniqueConstraintError') {
       res.status(400).json({ mensaje: 'El código de producto ya existe' });
       return;
@@ -291,6 +293,7 @@ export const actualizarProducto = async (req: Request, res: Response): Promise<v
 
     // Manejo de imagen (multipart)
     const file = (req as any).file as Express.Multer.File | undefined;
+
     if (file) {
       ensureUploadsDir();
       const safeBase = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -314,6 +317,11 @@ export const actualizarProducto = async (req: Request, res: Response): Promise<v
     if (datos.proveedor_id === '' || datos.proveedor_id === null) datos.proveedor_id = null;
     if (datos.unidad_id === '' || datos.unidad_id === null) datos.unidad_id = null;
 
+    // No permitir sobrescribir image_filename si no se subió un archivo nuevo
+    if (!file) {
+      delete datos.image_filename;
+    }
+
     await producto.update(datos);
 
     const productoActualizado = await Product.findByPk(id, {
@@ -333,6 +341,7 @@ export const actualizarProducto = async (req: Request, res: Response): Promise<v
     });
   } catch (error: any) {
     console.error('Error al actualizar producto:', error);
+    console.error('Stack:', error?.stack);
     if (error.name === 'SequelizeUniqueConstraintError') {
       res.status(400).json({ mensaje: 'El código de producto ya existe' });
       return;

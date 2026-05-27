@@ -5,19 +5,17 @@ import {
   crearEntrada,
   eliminarEntrada
 } from '../controllers/entrada.controller';
-import { verificarToken, gerenteOEmpleado, soloGerente } from '../middleware/auth.middleware';
+import { verificarToken, verificarPermiso, soloGerente } from '../middleware/auth.middleware';
 
 const router = Router();
 
 // Todas las rutas requieren autenticación
 router.use(verificarToken);
 
-// Rutas accesibles por gerente y empleado
-router.get('/', gerenteOEmpleado, obtenerEntradas);
-router.get('/:id', gerenteOEmpleado, obtenerEntradaPorId);
-
-// Rutas que requieren ser gerente para crear/eliminar
-router.post('/', gerenteOEmpleado, crearEntrada); // Empleados también pueden registrar compras
+// Rutas accesibles con permiso de operaciones stock
+router.get('/', verificarPermiso('operacionesStock'), obtenerEntradas);
+router.get('/:id', verificarPermiso('operacionesStock'), obtenerEntradaPorId);
+router.post('/', verificarPermiso('operacionesStock'), crearEntrada);
 router.delete('/:id', soloGerente, eliminarEntrada);
 
 export default router;

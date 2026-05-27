@@ -82,25 +82,6 @@ export const movimientoService = {
     return response.data;
   },
 
-  getMovimientos: async (params: {
-    pagina?: number;
-    limite?: number;
-    producto_id?: number;
-    tipo_movimiento?: string;
-    fecha_desde?: string;
-    fecha_hasta?: string;
-  }) => {
-    const queryParams = new URLSearchParams();
-    if (params.pagina) queryParams.append('pagina', String(params.pagina));
-    if (params.limite) queryParams.append('limite', String(params.limite));
-    if (params.producto_id) queryParams.append('producto_id', String(params.producto_id));
-    if (params.tipo_movimiento) queryParams.append('tipo_movimiento', params.tipo_movimiento);
-    if (params.fecha_desde) queryParams.append('fecha_desde', params.fecha_desde);
-    if (params.fecha_hasta) queryParams.append('fecha_hasta', params.fecha_hasta);
-
-    const response = await api.get(`/inventory/movimientos?${queryParams.toString()}`);
-    return response.data;
-  },
 };
 
 export default movimientoService;

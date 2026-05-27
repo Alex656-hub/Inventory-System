@@ -1,158 +1,215 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './UserAccess.css';
 import '../styles/moduleBase.css';
 import Modal from './Modal';
+import { userService } from '../services/user.service';
+import { Usuario, Permisos } from '../types';
 
-interface User {
-  id: number;
-  username: string;
-  nombre: string;
-  rol: string;
-  rolType: 'admin' | 'personalizado';
-  estado: boolean;
-}
+const PERMISOS_DEFAULT: Permisos = {
+  dashboard: false,
+  catalogoProductos: false,
+  operacionesStock: false,
+  historialKardex: false,
+  reporteInventario: false,
+  alertasStock: false,
+  clientes: false,
+  sedesAlmacenes: false,
+  proveedores: false,
+  unidades: false,
+  personal: false,
+  categorias: false,
+  usuariosAccesos: false,
+  ajustes: false,
+};
 
-interface UserPermissions {
-  dashboard: boolean;
-  stock: boolean;
-  reports: boolean;
-  products: boolean;
-  clients: boolean;
-  suppliers: boolean;
-  staff: boolean;
-  branches: boolean;
-  categories: boolean;
-  globalConfig: boolean;
-}
+type ModuloKey = keyof Permisos;
+
+const GRUPOS_PERMISOS: Array<{
+  titulo: string;
+  modulos: { key: ModuloKey; label: string }[];
+}> = [
+  {
+    titulo: 'PRINCIPAL',
+    modulos: [
+      { key: 'dashboard', label: 'Dashboard' },
+      { key: 'catalogoProductos', label: 'Catálogo Productos' },
+      { key: 'operacionesStock', label: 'Operaciones Stock' },
+      { key: 'historialKardex', label: 'Historial Kardex' },
+      { key: 'reporteInventario', label: 'Reporte Inventario' },
+      { key: 'alertasStock', label: 'Alertas Stock' },
+    ],
+  },
+  {
+    titulo: 'CATÁLOGOS',
+    modulos: [
+      { key: 'clientes', label: 'Clientes' },
+      { key: 'sedesAlmacenes', label: 'Sedes y Almacenes' },
+      { key: 'proveedores', label: 'Proveedores' },
+      { key: 'unidades', label: 'Unidades' },
+      { key: 'personal', label: 'Personal' },
+      { key: 'categorias', label: 'Categorías' },
+    ],
+  },
+  {
+    titulo: 'ADMINISTRACIÓN',
+    modulos: [
+      { key: 'usuariosAccesos', label: 'Usuarios y Accesos' },
+      { key: 'ajustes', label: 'Ajustes' },
+    ],
+  },
+];
 
 const UserAccess: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([
-    {
-      id: 1,
-      username: 'admin',
-      nombre: 'Administrador Principal',
-      rol: 'Admin Total',
-      rolType: 'admin',
-      estado: true
-    },
-    {
-      id: 2,
-      username: 'almacenero',
-      nombre: 'juan',
-      rol: 'Personalizado',
-      rolType: 'personalizado',
-      estado: false
-    }
-  ]);
-
+  const [users, setUsers] = useState<Usuario[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<Usuario | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
 
-  const filteredUsers = users.filter(user =>
-    user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+  const [formData, setFormData] = useState({
+    usuario: '',
+    nombre: '',
+    password: '',
+    rol: 'empleado' as 'gerente' | 'empleado',
+  });
+
+  const [permisos, setPermisos] = useState<Permisos>({ ...PERMISOS_DEFAULT });
+
+  const cargarUsuarios = useCallback(async () => {
+    try {
+      setFetching(true);
+      const { usuarios } = await userService.obtenerUsuarios();
+      setUsers(usuarios);
+    } catch (error) {
+      console.error('Error al cargar usuarios:', error);
+    } finally {
+      setFetching(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    cargarUsuarios();
+  }, [cargarUsuarios]);
+
+  const filteredUsers = users.filter(
+    (u) =>
+      u.usuario.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.nombre.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const [showModal, setShowModal] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [accessLevel, setAccessLevel] = useState<'admin' | 'custom'>('custom');
-  const [permissions, setPermissions] = useState<UserPermissions>({
-    dashboard: false,
-    stock: false,
-    reports: false,
-    products: false,
-    clients: false,
-    suppliers: false,
-    staff: false,
-    branches: false,
-    categories: false,
-    globalConfig: false
-  });
-  const [formData, setFormData] = useState({
-    username: '',
-    nombre: '',
-    rol: 'empleado',
-    password: ''
-  });
-
-  const handleTogglePermission = (permission: keyof UserPermissions) => {
-    setPermissions(prev => ({
-      ...prev,
-      [permission]: !prev[permission]
-    }));
+  const handleTogglePermission = (key: ModuloKey) => {
+    setPermisos((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const handleToggleStatus = (userId: number) => {
-    setUsers(users.map(user =>
-      user.id === userId ? { ...user, estado: !user.estado } : user
-    ));
+  const handleToggleStatus = async (userId: number) => {
+    const user = users.find((u) => u.id === userId);
+    if (!user) return;
+
+    try {
+      const { usuario } = await userService.actualizarUsuario(userId, {
+        activo: !user.activo,
+      });
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? usuario : u))
+      );
+    } catch (error) {
+      console.error('Error al cambiar estado:', error);
+    }
   };
 
-  const handleEdit = (user: User) => {
+  const handleEdit = (user: Usuario) => {
     setEditingUser(user);
     setFormData({
-      username: user.username,
+      usuario: user.usuario,
       nombre: user.nombre,
-      rol: user.rolType === 'admin' ? 'gerente' : 'empleado',
-      password: ''
+      password: '',
+      rol: user.rol,
     });
+    setPermisos({ ...user.permisos });
     setShowModal(true);
   };
 
-  const handleDelete = (userId: number) => {
-    if (window.confirm('¿Estás seguro de eliminar este usuario?')) {
-      setUsers(users.filter(user => user.id !== userId));
+  const handleDelete = async (userId: number) => {
+    if (!window.confirm('¿Estás seguro de desactivar este usuario?')) return;
+
+    try {
+      await userService.eliminarUsuario(userId);
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, activo: false } : u))
+      );
+    } catch (error) {
+      console.error('Error al eliminar usuario:', error);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (editingUser) {
-      setUsers(users.map(user =>
-        user.id === editingUser.id
-          ? {
-              ...user,
-              username: formData.username,
-              nombre: formData.nombre,
-              rol: formData.rol === 'gerente' ? 'Admin Total' : 'Personalizado',
-              rolType: formData.rol === 'gerente' ? 'admin' : 'personalizado'
-            }
-          : user
-      ));
-    } else {
-      const newUser: User = {
-        id: Math.max(...users.map(u => u.id)) + 1,
-        username: formData.username,
-        nombre: formData.nombre,
-        rol: formData.rol === 'gerente' ? 'Admin Total' : 'Personalizado',
-        rolType: formData.rol === 'gerente' ? 'admin' : 'personalizado',
-        estado: true
-      };
-      setUsers([...users, newUser]);
-    }
-
-    setShowModal(false);
+  const resetForm = () => {
     setEditingUser(null);
-    setFormData({ username: '', nombre: '', rol: 'empleado', password: '' });
+    setFormData({ usuario: '', nombre: '', password: '', rol: 'empleado' });
+    setPermisos({ ...PERMISOS_DEFAULT });
   };
 
   const handleNewUser = () => {
-    setEditingUser(null);
-    setFormData({ username: '', nombre: '', rol: 'empleado', password: '' });
-    setAccessLevel('custom');
-    setPermissions({
-      dashboard: false,
-      stock: false,
-      reports: false,
-      products: false,
-      clients: false,
-      suppliers: false,
-      staff: false,
-      branches: false,
-      categories: false,
-      globalConfig: false
-    });
+    resetForm();
     setShowModal(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.usuario || !formData.nombre) return;
+    if (!editingUser && !formData.password) return;
+
+    try {
+      setLoading(true);
+
+      if (editingUser) {
+        const datos: any = {
+          nombre: formData.nombre,
+          rol: formData.rol,
+        };
+
+        if (formData.usuario !== editingUser.usuario) {
+          datos.usuario = formData.usuario;
+        }
+
+        if (formData.password) {
+          datos.password = formData.password;
+        }
+
+        if (formData.rol === 'empleado') {
+          datos.permisos = permisos;
+        }
+
+        const { usuario } = await userService.actualizarUsuario(
+          editingUser.id,
+          datos
+        );
+
+        setUsers((prev) =>
+          prev.map((u) => (u.id === editingUser.id ? usuario : u))
+        );
+      } else {
+        const body: any = {
+          usuario: formData.usuario,
+          nombre: formData.nombre,
+          password: formData.password,
+          rol: formData.rol,
+        };
+        if (formData.rol === 'empleado') {
+          body.permisos = permisos;
+        }
+        const { usuario } = await userService.crearUsuario(body);
+        setUsers((prev) => [...prev, usuario]);
+      }
+
+      setShowModal(false);
+      resetForm();
+    } catch (error) {
+      console.error('Error al guardar usuario:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -160,11 +217,13 @@ const UserAccess: React.FC = () => {
       <div className="module-page-header user-access-header">
         <div>
           <h1 className="module-title">Usuarios y Accesos</h1>
-          <p className="module-subtitle subtitle">Controla quién puede ver qué módulo.</p>
+          <p className="module-subtitle subtitle">
+            Controla quién puede ver qué módulo.
+          </p>
         </div>
         <div className="module-toolbar user-access-actions">
           <div className="module-search user-search">
-            <i className='bx bx-search'></i>
+            <i className="bx bx-search"></i>
             <input
               type="text"
               placeholder="Buscar por usuario o nombre..."
@@ -173,75 +232,104 @@ const UserAccess: React.FC = () => {
             />
           </div>
           <button className="module-primary-btn new-user-btn" onClick={handleNewUser}>
-            <i className='bx bx-plus'></i>
+            <i className="bx bx-plus"></i>
             Nuevo Usuario
           </button>
         </div>
       </div>
 
       <div className="module-card users-table-container">
-        <table className="module-table users-table">
-          <thead>
-            <tr>
-              <th>Usuario</th>
-              <th>Nombre</th>
-              <th>Rol</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredUsers.map(user => (
-              <tr key={user.id}>
-                <td className="username-cell">{user.username}</td>
-                <td className="nombre-cell">{user.nombre}</td>
-                <td className="rol-cell">
-                  <span className={`rol-tag ${user.rolType}`}>
-                    {user.rol}
-                  </span>
-                </td>
-                <td className="estado-cell">
-                  <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'}}>
-                    <label className="switch">
-                      <input
-                        type="checkbox"
-                        checked={user.estado}
-                        onChange={() => handleToggleStatus(user.id)}
-                      />
-                      <span className="slider"></span>
-                    </label>
-                    <span className={`status-text ${user.estado ? 'active' : 'inactive'}`}>
-                      {user.estado ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </div>
-                </td>
-                <td className="acciones-cell">
-                  <button
-                    className="action-btn edit-btn"
-                    onClick={() => handleEdit(user)}
-                    title="Editar"
-                  >
-                    <i className='bx bx-edit'></i>
-                  </button>
-                  {user.rolType !== 'admin' && (
-                    <button
-                      className="action-btn delete-btn"
-                      onClick={() => handleDelete(user.id)}
-                      title="Eliminar"
-                    >
-                      <i className='bx bx-trash'></i>
-                    </button>
-                  )}
-                </td>
+        {fetching ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+            Cargando usuarios...
+          </div>
+        ) : (
+          <table className="module-table users-table">
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>Nombre</th>
+                <th>Rol</th>
+                <th>Estado</th>
+                <th>Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredUsers.map((user) => (
+                <tr key={user.id}>
+                  <td className="username-cell">{user.usuario}</td>
+                  <td className="nombre-cell">{user.nombre}</td>
+                  <td className="rol-cell">
+                    <span
+                      className={`rol-tag ${user.rol === 'gerente' ? 'admin' : 'personalizado'}`}
+                    >
+                      {user.rol === 'gerente' ? 'Gerente' : 'Empleado'}
+                    </span>
+                  </td>
+                  <td className="estado-cell">
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '10px',
+                      }}
+                    >
+                      <label className="switch">
+                        <input
+                          type="checkbox"
+                          checked={user.activo}
+                          onChange={() => handleToggleStatus(user.id)}
+                        />
+                        <span className="slider"></span>
+                      </label>
+                      <span
+                        className={`status-text ${user.activo ? 'active' : 'inactive'}`}
+                      >
+                        {user.activo ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="acciones-cell">
+                    <button
+                      className="action-btn edit-btn"
+                      onClick={() => handleEdit(user)}
+                      title="Editar"
+                    >
+                      <i className="bx bx-edit"></i>
+                    </button>
+                    {user.usuario !== 'gerente' && (
+                      <button
+                        className="action-btn delete-btn"
+                        onClick={() => handleDelete(user.id)}
+                        title="Desactivar"
+                      >
+                        <i className="bx bx-trash"></i>
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {filteredUsers.length === 0 && (
+                <tr>
+                  <td colSpan={5} style={{ textAlign: 'center', padding: '30px', color: '#999' }}>
+                    {searchTerm
+                      ? 'No se encontraron usuarios'
+                      : 'No hay usuarios registrados'}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
 
       <Modal
         isOpen={showModal}
-        onClose={() => setShowModal(false)}
+        onClose={() => {
+          setShowModal(false);
+          resetForm();
+        }}
         title={editingUser ? 'Editar Usuario' : 'Nuevo Usuario'}
         size="large"
         contentClassName="ua-modal"
@@ -249,17 +337,23 @@ const UserAccess: React.FC = () => {
         <form onSubmit={handleSubmit} className="mf-form user-form">
           <div className="form-row">
             <div className="mf-group">
-              <label htmlFor="username">Usuario (Login)</label>
+              <label htmlFor="usuario">Usuario (Login)</label>
               <div className="mf-field-wrap">
                 <input
                   type="text"
-                  id="username"
+                  id="usuario"
                   className="mf-field"
-                  value={formData.username}
-                  onChange={(e) => setFormData({...formData, username: e.target.value})}
+                  value={formData.usuario}
+                  onChange={(e) =>
+                    setFormData({ ...formData, usuario: e.target.value })
+                  }
                   required
+                  placeholder="ej: juan.perez"
                 />
               </div>
+              <small style={{ color: '#999', fontSize: '11px', marginTop: '2px' }}>
+                Se usará como {formData.usuario || 'usuario'}@credisa.com
+              </small>
             </div>
             <div className="mf-group">
               <label htmlFor="nombre">Nombre Completo</label>
@@ -269,7 +363,9 @@ const UserAccess: React.FC = () => {
                   id="nombre"
                   className="mf-field"
                   value={formData.nombre}
-                  onChange={(e) => setFormData({...formData, nombre: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, nombre: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -278,178 +374,101 @@ const UserAccess: React.FC = () => {
 
           <div className="form-row">
             <div className="mf-group">
-              <label htmlFor="accessLevel">Nivel de Acceso</label>
+              <label htmlFor="rol">Rol</label>
               <div className="mf-field-wrap">
                 <select
-                  id="accessLevel"
-                  className="mf-select"
-                  value={accessLevel}
-                  onChange={(e) => setAccessLevel(e.target.value as 'admin' | 'custom')}
+                  id="rol"
+                  className="mf-field"
+                  value={formData.rol}
+                  onChange={(e) => {
+                    const rol = e.target.value as 'gerente' | 'empleado';
+                    setFormData({ ...formData, rol });
+                    if (rol === 'gerente') {
+                      const p: any = {};
+                      for (const key of Object.keys(PERMISOS_DEFAULT)) {
+                        p[key] = true;
+                      }
+                      setPermisos(p as Permisos);
+                    } else {
+                      setPermisos({ ...PERMISOS_DEFAULT });
+                    }
+                  }}
                 >
-                  <option value="admin">Administrador Total</option>
-                  <option value="custom">Personalizado (Elegir módulos)</option>
+                  <option value="empleado">Empleado</option>
+                  <option value="gerente">Gerente</option>
                 </select>
               </div>
             </div>
-
-            {!editingUser && (
-              <div className="mf-group">
-                <label htmlFor="password">
-                  <i className='bx bx-lock-alt'></i> Contraseña
+            <div className="mf-group">
+              <label htmlFor="password">
+                <i className="bx bx-lock-alt"></i> Contraseña
+                {!editingUser && (
                   <span className="mf-required"> Obligatorio</span>
-                </label>
-                <div className="mf-field-wrap">
-                  <input
-                    type="password"
-                    id="password"
-                    className="mf-field"
-                    value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    required
-                  />
-                </div>
+                )}
+              </label>
+              <div className="mf-field-wrap">
+                <input
+                  type="password"
+                  id="password"
+                  className="mf-field"
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  required={!editingUser}
+                  placeholder={editingUser ? 'Dejar vacío para no cambiar' : ''}
+                />
               </div>
-            )}
+            </div>
           </div>
 
-          {accessLevel === 'custom' && (
+          {formData.rol === 'empleado' && (
             <div className="permissions-section">
               <div className="permissions-header">
-                <i className='bx bx-shield'></i>
+                <i className="bx bx-shield"></i>
                 <h3>Permisos por Módulo</h3>
               </div>
 
               <div className="permissions-grid">
-                <div className="permission-column">
-                  <h4>PRINCIPAL</h4>
-                  <div className="permission-item">
-                    <span>Ver Dashboard / Resumen</span>
-                    <label className="switch">
-                      <input
-                        type="checkbox"
-                        checked={permissions.dashboard}
-                        onChange={() => handleTogglePermission('dashboard')}
-                      />
-                      <span className="slider"></span>
-                    </label>
+                {GRUPOS_PERMISOS.map((grupo) => (
+                  <div key={grupo.titulo} className="permission-column">
+                    <h4>{grupo.titulo}</h4>
+                    {grupo.modulos.map((mod) => (
+                      <div key={mod.key} className="permission-item">
+                        <span>{mod.label}</span>
+                        <label className="switch">
+                          <input
+                            type="checkbox"
+                            checked={permisos[mod.key]}
+                            onChange={() => handleTogglePermission(mod.key)}
+                          />
+                          <span className="slider"></span>
+                        </label>
+                      </div>
+                    ))}
                   </div>
-                  <div className="permission-item">
-                    <span>Operaciones de Stock</span>
-                    <label className="switch">
-                      <input
-                        type="checkbox"
-                        checked={permissions.stock}
-                        onChange={() => handleTogglePermission('stock')}
-                      />
-                      <span className="slider"></span>
-                    </label>
-                  </div>
-                  <div className="permission-item">
-                    <span>Ver Reportes y Kardex</span>
-                    <label className="switch">
-                      <input
-                        type="checkbox"
-                        checked={permissions.reports}
-                        onChange={() => handleTogglePermission('reports')}
-                      />
-                      <span className="slider"></span>
-                    </label>
-                  </div>
-                </div>
-
-                <div className="permission-column">
-                  <h4>CATÁLOGOS</h4>
-                  <div className="permission-item">
-                    <span>Gestionar Productos</span>
-                    <label className="switch">
-                      <input
-                        type="checkbox"
-                        checked={permissions.products}
-                        onChange={() => handleTogglePermission('products')}
-                      />
-                      <span className="slider"></span>
-                    </label>
-                  </div>
-                  <div className="permission-item">
-                    <span>Gestionar Clientes</span>
-                    <label className="switch">
-                      <input
-                        type="checkbox"
-                        checked={permissions.clients}
-                        onChange={() => handleTogglePermission('clients')}
-                      />
-                      <span className="slider"></span>
-                    </label>
-                  </div>
-                  <div className="permission-item">
-                    <span>Gestionar Proveedores</span>
-                    <label className="switch">
-                      <input
-                        type="checkbox"
-                        checked={permissions.suppliers}
-                        onChange={() => handleTogglePermission('suppliers')}
-                      />
-                      <span className="slider"></span>
-                    </label>
-                  </div>
-                  <div className="permission-item">
-                    <span>Gestionar Personal</span>
-                    <label className="switch">
-                      <input
-                        type="checkbox"
-                        checked={permissions.staff}
-                        onChange={() => handleTogglePermission('staff')}
-                      />
-                      <span className="slider"></span>
-                    </label>
-                  </div>
-                  <div className="permission-item">
-                    <span>Gestionar Sedes</span>
-                    <label className="switch">
-                      <input
-                        type="checkbox"
-                        checked={permissions.branches}
-                        onChange={() => handleTogglePermission('branches')}
-                      />
-                      <span className="slider"></span>
-                    </label>
-                  </div>
-                  <div className="permission-item">
-                    <span>Categorías y Unidades</span>
-                    <label className="switch">
-                      <input
-                        type="checkbox"
-                        checked={permissions.categories}
-                        onChange={() => handleTogglePermission('categories')}
-                      />
-                      <span className="slider"></span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              <div className="global-config-section">
-                <div className="permission-item">
-                  <span>Acceso a Configuración Global</span>
-                  <label className="switch">
-                    <input
-                      type="checkbox"
-                      checked={permissions.globalConfig}
-                      onChange={() => handleTogglePermission('globalConfig')}
-                    />
-                    <span className="slider"></span>
-                  </label>
-                </div>
+                ))}
               </div>
             </div>
           )}
 
           <div className="mf-actions user-form-actions">
-            <button type="button" className="mf-btn mf-btn--ghost" onClick={() => setShowModal(false)}>
+            <button
+              type="button"
+              className="mf-btn mf-btn--ghost"
+              onClick={() => {
+                setShowModal(false);
+                resetForm();
+              }}
+            >
               Cancelar
             </button>
-            <button type="submit" className="mf-btn mf-btn--primary">
-              {editingUser ? 'Actualizar Usuario' : 'Guardar Usuario'}
+            <button type="submit" className="mf-btn mf-btn--primary" disabled={loading}>
+              {loading
+                ? 'Guardando...'
+                : editingUser
+                  ? 'Actualizar Usuario'
+                  : 'Guardar Usuario'}
             </button>
           </div>
         </form>

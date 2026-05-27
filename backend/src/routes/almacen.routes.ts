@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { body } from 'express-validator';
+import { verificarToken, verificarPermiso } from '../middleware/auth.middleware';
 import {
   obtenerAlmacenes,
   obtenerAlmacenPorId,
@@ -12,6 +13,9 @@ import {
 } from '../controllers/almacen.controller';
 
 const router = Router();
+
+router.use(verificarToken);
+router.use(verificarPermiso('sedesAlmacenes'));
 
 // Validaciones para crear/actualizar almacén
 const almacenValidation = [

@@ -6,15 +6,15 @@ import {
   eliminarLogo,
   uploadLogo
 } from '../controllers/configuracion.controller';
-import { verificarToken, gerenteOEmpleado, soloGerente } from '../middleware/auth.middleware';
+import { verificarToken, verificarPermiso, soloGerente } from '../middleware/auth.middleware';
 
 const router = Router();
 
 // Todas las rutas requieren autenticación
 router.use(verificarToken);
 
-// Rutas accesibles por gerente y empleado (lectura)
-router.get('/', gerenteOEmpleado, obtenerConfiguracion);
+// Rutas accesibles con permiso de ajustes (lectura)
+router.get('/', verificarPermiso('ajustes'), obtenerConfiguracion);
 
 // Rutas que requieren ser gerente (escritura)
 router.post('/', soloGerente, uploadLogo, guardarConfiguracion);

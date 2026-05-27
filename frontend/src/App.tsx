@@ -19,6 +19,7 @@ import SedesYAlmacenesList from './components/SedesYAlmacenesList';
 import OperacionesStock from './components/OperacionesStock';
 import HistorialKardex from './components/HistorialKardex';
 import ReporteInventario from './components/ReporteInventario';
+import AlertList from './components/AlertList';
 import PrivateRoute from './components/PrivateRoute';
 import { authService } from './services/auth.service';
 import './App.css';
@@ -40,7 +41,7 @@ function App() {
           <Route
             path="/"
             element={
-              <PrivateRoute>
+              <PrivateRoute requiredPermission="dashboard">
                 <Layout>
                   <Dashboard />
                 </Layout>
@@ -50,7 +51,7 @@ function App() {
           <Route
             path="/productos"
             element={
-              <PrivateRoute>
+              <PrivateRoute requiredPermission="catalogoProductos">
                 <Layout>
                   <ProductList />
                 </Layout>
@@ -60,7 +61,7 @@ function App() {
           <Route
             path="/categorias"
             element={
-              <PrivateRoute>
+              <PrivateRoute requiredPermission="categorias">
                 <Layout>
                   <CategoryList />
                 </Layout>
@@ -70,7 +71,7 @@ function App() {
           <Route
             path="/proveedores"
             element={
-              <PrivateRoute>
+              <PrivateRoute requiredPermission="proveedores">
                 <Layout>
                   <SupplierList />
                 </Layout>
@@ -80,7 +81,7 @@ function App() {
           <Route
             path="/clientes"
             element={
-              <PrivateRoute>
+              <PrivateRoute requiredPermission="clientes">
                 <Layout>
                   <ClientList />
                 </Layout>
@@ -90,7 +91,7 @@ function App() {
           <Route
             path="/unidades"
             element={
-              <PrivateRoute>
+              <PrivateRoute requiredPermission="unidades">
                 <Layout>
                   <UnitList />
                 </Layout>
@@ -140,7 +141,7 @@ function App() {
           <Route
             path="/personal"
             element={
-              <PrivateRoute allowedRoles={['gerente']}>
+              <PrivateRoute requiredPermission="personal">
                 <Layout>
                   <PersonalList />
                 </Layout>
@@ -150,7 +151,7 @@ function App() {
           <Route
             path="/usuarios"
             element={
-              <PrivateRoute allowedRoles={['gerente']}>
+              <PrivateRoute requiredPermission="usuariosAccesos">
                 <Layout>
                   <UserAccess />
                 </Layout>
@@ -160,7 +161,7 @@ function App() {
           <Route
             path="/sedes-almacenes"
             element={
-              <PrivateRoute allowedRoles={['gerente']}>
+              <PrivateRoute requiredPermission="sedesAlmacenes">
                 <Layout>
                   <SedesYAlmacenesList />
                 </Layout>
@@ -170,7 +171,7 @@ function App() {
           <Route
             path="/operaciones-stock"
             element={
-              <PrivateRoute>
+              <PrivateRoute requiredPermission="operacionesStock">
                 <Layout>
                   <OperacionesStock />
                 </Layout>
@@ -180,7 +181,7 @@ function App() {
           <Route
             path="/historial-kardex"
             element={
-              <PrivateRoute>
+              <PrivateRoute requiredPermission="historialKardex">
                 <Layout>
                   <HistorialKardex />
                 </Layout>
@@ -190,7 +191,7 @@ function App() {
           <Route
             path="/reporte-inventario"
             element={
-              <PrivateRoute>
+              <PrivateRoute requiredPermission="reporteInventario">
                 <Layout>
                   <ReporteInventario />
                 </Layout>
@@ -198,9 +199,19 @@ function App() {
             }
           />
           <Route
+            path="/alertas-stock"
+            element={
+              <PrivateRoute requiredPermission="alertasStock">
+                <Layout>
+                  <AlertList />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
+          <Route
             path="/ajustes"
             element={
-              <PrivateRoute allowedRoles={['gerente']}>
+              <PrivateRoute requiredPermission="ajustes">
                 <Layout>
                   <Ajustes />
                 </Layout>

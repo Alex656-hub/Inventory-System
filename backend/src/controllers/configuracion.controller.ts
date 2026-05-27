@@ -64,6 +64,7 @@ export const guardarConfiguracion = async (req: Request, res: Response): Promise
       }
 
       configuracion = await ConfiguracionSistema.create(nuevaConfig);
+      await configuracion.reload();
     } else {
       // Actualizar configuración existente
       const datosActualizados: any = {
@@ -80,6 +81,7 @@ export const guardarConfiguracion = async (req: Request, res: Response): Promise
       }
 
       await configuracion.update(datosActualizados);
+      await configuracion.reload();
     }
 
     res.json({

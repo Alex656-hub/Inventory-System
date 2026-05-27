@@ -3,32 +3,70 @@ import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '../config/database';
 import bcrypt from 'bcryptjs';
 
+export interface Permisos {
+  dashboard: boolean;
+  catalogoProductos: boolean;
+  operacionesStock: boolean;
+  historialKardex: boolean;
+  reporteInventario: boolean;
+  alertasStock: boolean;
+  clientes: boolean;
+  sedesAlmacenes: boolean;
+  proveedores: boolean;
+  unidades: boolean;
+  personal: boolean;
+  categorias: boolean;
+  usuariosAccesos: boolean;
+  ajustes: boolean;
+}
+
+export const PERMISOS_DEFAULT: Permisos = {
+  dashboard: false,
+  catalogoProductos: false,
+  operacionesStock: false,
+  historialKardex: false,
+  reporteInventario: false,
+  alertasStock: false,
+  clientes: false,
+  sedesAlmacenes: false,
+  proveedores: false,
+  unidades: false,
+  personal: false,
+  categorias: false,
+  usuariosAccesos: false,
+  ajustes: false,
+};
+
 interface UserAttributes {
   id: number;
+  usuario: string;
   nombre: string;
   email: string;
   password: string;
   rol: 'gerente' | 'empleado';
   activo: boolean;
-  twoFactorEnabled: boolean;      // Nuevo campo
-  twoFactorSecret?: string | null; // Nuevo campo
-  backupCodes?: string | null;    // Nuevo campo
+  permisos: Permisos;
+  twoFactorEnabled: boolean;
+  twoFactorSecret?: string | null;
+  backupCodes?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'activo' | 'twoFactorEnabled' | 'twoFactorSecret' | 'backupCodes' | 'createdAt' | 'updatedAt'> {}
+interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'activo' | 'permisos' | 'twoFactorEnabled' | 'twoFactorSecret' | 'backupCodes' | 'createdAt' | 'updatedAt'> {}
 
 class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   public id!: number;
+  public usuario!: string;
   public nombre!: string;
   public email!: string;
   public password!: string;
   public rol!: 'gerente' | 'empleado';
   public activo!: boolean;
-  public twoFactorEnabled!: boolean;    // Nuevo campo
-  public twoFactorSecret?: string | null; // Nuevo campo
-  public backupCodes?: string | null;   // Nuevo campo
+  public permisos!: Permisos;
+  public twoFactorEnabled!: boolean;
+  public twoFactorSecret?: string | null;
+  public backupCodes?: string | null;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
@@ -87,6 +125,11 @@ User.init(
       autoIncrement: true,
       primaryKey: true
     },
+    usuario: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      unique: true
+    },
     nombre: {
       type: DataTypes.STRING(100),
       allowNull: false
@@ -112,7 +155,10 @@ User.init(
       type: DataTypes.BOOLEAN,
       defaultValue: true
     },
-    // Nuevos campos para 2FA
+    permisos: {
+      type: DataTypes.JSONB,
+      defaultValue: { ...PERMISOS_DEFAULT }
+    },
     twoFactorEnabled: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,

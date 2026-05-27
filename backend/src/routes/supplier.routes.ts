@@ -6,16 +6,16 @@ import {
   actualizarProveedor,
   eliminarProveedor
 } from '../controllers/supplier.controller';
-import { verificarToken, gerenteOEmpleado, soloGerente } from '../middleware/auth.middleware';
+import { verificarToken, verificarPermiso, soloGerente } from '../middleware/auth.middleware';
 
 const router = Router();
 
 // Todas las rutas requieren autenticación
 router.use(verificarToken);
 
-// Rutas accesibles por gerente y empleado
-router.get('/', gerenteOEmpleado, obtenerProveedores);
-router.get('/:id', gerenteOEmpleado, obtenerProveedorPorId);
+// Rutas accesibles con permiso de proveedores
+router.get('/', verificarPermiso('proveedores'), obtenerProveedores);
+router.get('/:id', verificarPermiso('proveedores'), obtenerProveedorPorId);
 
 // Rutas que requieren ser gerente
 router.post('/', soloGerente, crearProveedor);

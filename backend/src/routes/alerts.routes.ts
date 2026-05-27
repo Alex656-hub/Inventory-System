@@ -3,18 +3,20 @@ import {
   getAlerts,
   checkAlerts,
   resolveAlert,
-  getRecommendations
+  getRecommendations,
+  getAnalytics
 } from '../controllers/alertsController';
-import { verificarToken, gerenteOEmpleado, soloGerente } from '../middleware/auth.middleware';
+import { verificarToken, verificarPermiso, soloGerente } from '../middleware/auth.middleware';
 
 const router = Router();
 
 // Todas las rutas requieren autenticación
 router.use(verificarToken);
 
-// Rutas accesibles por gerente y empleado
-router.get('/', gerenteOEmpleado, getAlerts);
-router.get('/recommendations', gerenteOEmpleado, getRecommendations);
+// Rutas accesibles con permiso de alertas stock
+router.get('/', verificarPermiso('alertasStock'), getAlerts);
+router.get('/analytics', verificarPermiso('alertasStock'), getAnalytics);
+router.get('/recommendations', verificarPermiso('alertasStock'), getRecommendations);
 
 // Rutas que requieren ser gerente (para ejecutar checks y resolver alertas)
 router.post('/check', soloGerente, checkAlerts);

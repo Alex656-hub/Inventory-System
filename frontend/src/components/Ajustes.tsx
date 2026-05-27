@@ -1,15 +1,11 @@
 // src/components/Ajustes.tsx - Página de Ajustes del Sistema
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/auth.service';
-import { ajustesService, ConfiguracionSistema } from '../services/ajustes.service';
+import { ajustesService } from '../services/ajustes.service';
 import './Ajustes.css';
 
-interface AjustesProps {}
-
-const Ajustes: React.FC<AjustesProps> = () => {
-  const navigate = useNavigate();
+const Ajustes: React.FC = () => {
   const { usuario } = authService.obtenerSesion();
 
   // Estados para los campos
@@ -39,19 +35,6 @@ const Ajustes: React.FC<AjustesProps> = () => {
 
     cargarConfiguracion();
   }, []);
-
-  // Funciones de manejo
-  const handleLogout = async () => {
-    await authService.logout();
-    navigate('/login');
-  };
-
-  const handleLogoutAll = async () => {
-    if (window.confirm('¿Estás seguro de que quieres cerrar todas las sesiones en todos los dispositivos?')) {
-      await authService.logoutAll();
-      navigate('/login');
-    }
-  };
 
   const handleRucChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -237,13 +220,13 @@ const Ajustes: React.FC<AjustesProps> = () => {
           <p className="danger-subtitle">Gestiona tus copias de seguridad y sesiones activas.</p>
 
           <div className="danger-actions">
-            <button className="btn-backup" onClick={handleLogout}>
+            <button className="btn-backup" onClick={() => alert('Función de respaldo en desarrollo')}>
               <i className='bx bx-cloud-upload'></i>
               Crear Respaldo
             </button>
 
             {esGerente && (
-              <button className="btn-restore" onClick={handleLogoutAll}>
+              <button className="btn-restore" onClick={() => alert('Función de restauración en desarrollo')}>
                 <i className='bx bx-cloud-download'></i>
                 Restaurar
               </button>
