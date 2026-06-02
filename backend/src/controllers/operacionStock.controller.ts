@@ -181,7 +181,7 @@ class OperacionStockController {
     try {
       const { productoId, sedeId } = req.params;
 
-      const stock = await StockPorSede.findOne({
+      const stocks = await StockPorSede.findAll({
         where: {
           producto_id: productoId,
           sede_id: sedeId
@@ -191,7 +191,7 @@ class OperacionStockController {
         ]
       });
 
-      if (!stock) {
+      if (stocks.length === 0) {
         return res.json({
           producto_id: parseInt(productoId),
           sede_id: parseInt(sedeId),
@@ -201,9 +201,14 @@ class OperacionStockController {
         });
       }
 
+      const cantidadTotal = stocks.reduce((sum, s) => sum + s.cantidad_actual, 0);
+      const stockMinimo = Math.min(...stocks.map(s => s.stock_minimo));
+
       res.json({
-        ...stock.toJSON(),
-        disponible: stock.cantidad_actual > 0
+        ...stocks[0].toJSON(),
+        cantidad_actual: cantidadTotal,
+        stock_minimo: stockMinimo,
+        disponible: cantidadTotal > 0
       });
     } catch (error) {
       console.error('Error al obtener stock disponible:', error);
@@ -356,19 +361,29 @@ class OperacionStockController {
   }
 
   private async procesarSalida(operacionId: number, productoId: number, sedeId: number, cantidad: number, costoUnitario: number, transaction: Transaction) {
-    const stock = await StockPorSede.findOne({
+    const stocks = await StockPorSede.findAll({
       where: { producto_id: productoId, sede_id: sedeId },
+      order: [['almacen_id', 'ASC NULLS FIRST']],
       transaction
     });
 
-    if (!stock || stock.cantidad_actual < cantidad) {
+    const totalDisponible = stocks.reduce((sum, s) => sum + s.cantidad_actual, 0);
+    if (totalDisponible < cantidad) {
       throw new Error('Stock insuficiente para la salida');
     }
 
-    await stock.update({
-      cantidad_actual: stock.cantidad_actual - cantidad,
-      ultimo_movimiento: new Date()
-    }, { transaction });
+    let restante = cantidad;
+    for (const s of stocks) {
+      if (restante <= 0) break;
+      const aDescontar = Math.min(s.cantidad_actual, restante);
+      await s.update({
+        cantidad_actual: s.cantidad_actual - aDescontar,
+        ultimo_movimiento: new Date()
+      }, { transaction });
+      restante -= aDescontar;
+    }
+
+    const stockFinal = totalDisponible - cantidad;
 
     // Crear movimiento histórico con referencia a la operación
     await MovimientoInventario.create({
@@ -378,8 +393,8 @@ class OperacionStockController {
       tipo_referencia: 'operacion_stock',
       cantidad: cantidad,
       precio_unitario: costoUnitario,
-      stock_anterior: stock.cantidad_actual + cantidad,
-      stock_nuevo: stock.cantidad_actual,
+      stock_anterior: totalDisponible,
+      stock_nuevo: stockFinal,
       usuario_id: 1, // TODO: Obtener del token
       fecha: new Date(),
       motivo: 'Salida de inventario'

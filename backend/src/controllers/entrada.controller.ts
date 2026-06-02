@@ -8,6 +8,8 @@ import MovimientoInventario from '../models/MovimientoInventario';
 import Supplier from '../models/Supplier';
 import User from '../models/User';
 import { alertService } from '../services/alertService';
+import StockPorSede from '../models/StockPorSede';
+import Sede from '../models/Sede';
 
 export const obtenerEntradas = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -157,6 +159,26 @@ export const crearEntrada = async (req: Request, res: Response): Promise<void> =
         precio_compra: detalle.precio_unitario // Actualizar último precio de compra
       }, { transaction });
 
+      // Actualizar StockPorSede (sede por defecto para compatibilidad con nuevo sistema)
+      const defaultSede = await Sede.findOne({ where: { estado: 'activo' }, order: [['id', 'ASC']], transaction });
+      if (defaultSede) {
+        const [stockSede] = await StockPorSede.findOrCreate({
+          where: { producto_id: detalle.producto_id, sede_id: defaultSede.id },
+          defaults: {
+            producto_id: detalle.producto_id,
+            sede_id: defaultSede.id,
+            cantidad_actual: 0,
+            stock_minimo: 0,
+            ultimo_movimiento: new Date()
+          },
+          transaction
+        });
+        await stockSede.update({
+          cantidad_actual: stockSede.cantidad_actual + Number(detalle.cantidad),
+          ultimo_movimiento: new Date()
+        }, { transaction });
+      }
+
       // Registrar movimiento
       await MovimientoInventario.create({
         producto_id: detalle.producto_id,
@@ -243,6 +265,21 @@ export const eliminarEntrada = async (req: Request, res: Response): Promise<void
         }
 
         await producto.update({ stock_actual: stockNuevo }, { transaction });
+
+        // Revertir StockPorSede
+        const defaultSede = await Sede.findOne({ where: { estado: 'activo' }, order: [['id', 'ASC']], transaction });
+        if (defaultSede) {
+          const stockSede = await StockPorSede.findOne({
+            where: { producto_id: detalle.producto_id, sede_id: defaultSede.id },
+            transaction
+          });
+          if (stockSede) {
+            await stockSede.update({
+              cantidad_actual: Math.max(0, stockSede.cantidad_actual - detalle.cantidad),
+              ultimo_movimiento: new Date()
+            }, { transaction });
+          }
+        }
 
         // Registrar movimiento de reversión
         await MovimientoInventario.create({

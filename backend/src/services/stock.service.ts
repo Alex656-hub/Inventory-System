@@ -4,16 +4,21 @@ import { QueryTypes } from 'sequelize';
 class StockService {
   // Buscar productos por nombre o código para selección en operaciones
   async buscarProductosParaOperacion(termino: string, sedeId?: number): Promise<any[]> {
-    let whereClause = '';
+    let sedeJoin = '';
+    let sedeCondition = '';
     let replacements: any = { termino: `%${termino}%` };
 
     if (sedeId) {
-      whereClause = 'AND s.id = :sedeId';
+      sedeJoin = 'LEFT JOIN stock_por_sede sps ON p.id = sps.producto_id AND sps.sede_id = :sedeId';
+      sedeCondition = 'WHERE p.activo = true';
       replacements.sedeId = sedeId;
+    } else {
+      sedeJoin = 'LEFT JOIN stock_por_sede sps ON p.id = sps.producto_id';
+      sedeCondition = 'WHERE p.activo = true';
     }
 
     const query = `
-      SELECT DISTINCT
+      SELECT
         p.id,
         p.codigo,
         p.nombre,
@@ -23,15 +28,15 @@ class StockService {
         p.unidad_id,
         um.nombre as unidad_nombre,
         c.nombre as categoria_nombre,
-        COALESCE(sps.cantidad_actual, 0) as stock_disponible,
-        COALESCE(sps.stock_minimo, 0) as stock_minimo
+        COALESCE(SUM(sps.cantidad_actual), 0) as stock_disponible,
+        COALESCE(MIN(sps.stock_minimo), 0) as stock_minimo
       FROM productos p
       LEFT JOIN unidades_medida um ON p.unidad_id = um.id
       LEFT JOIN categorias c ON p.categoria_id = c.id
-      CROSS JOIN sedes s
-      LEFT JOIN stock_por_sede sps ON p.id = sps.producto_id AND s.id = sps.sede_id
-      WHERE p.activo = true AND s.estado = 'activo' ${whereClause}
+      ${sedeJoin}
+      ${sedeCondition}
         AND (p.codigo ILIKE :termino OR p.nombre ILIKE :termino)
+      GROUP BY p.id, p.codigo, p.nombre, p.descripcion, p.precio_compra, p.precio_venta, p.unidad_id, um.nombre, c.nombre
       ORDER BY p.nombre
       LIMIT 50;
     `;

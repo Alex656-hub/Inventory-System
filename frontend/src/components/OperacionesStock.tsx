@@ -356,7 +356,7 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
             <tr>
               <th>Código</th>
               <th>Descripción</th>
-              <th style="text-align:center">Costo Unit.</th>
+              <th style="text-align:center">${operacion.tipo_operacion === 'SALIDA' ? 'Precio Unit.' : 'Costo Unit.'}</th>
               <th style="text-align:center">Cantidad</th>
               <th style="text-align:center">Subtotal</th>
             </tr>
@@ -366,7 +366,7 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
           </tbody>
         </table>
         <div class="totales">
-          TOTAL UNIDADES: ${operacionGuardada?.total_unidades || operacion.detalles?.length || 0} | TOTAL: S/ ${(operacionGuardada?.costo_total || calcularTotales().costo_total).toFixed(2)}
+          TOTAL UNIDADES: ${operacionGuardada?.total_unidades || operacion.detalles?.length || 0} | ${operacion.tipo_operacion === 'SALIDA' ? 'TOTAL VENTA' : 'TOTAL'}: S/ ${(operacionGuardada?.costo_total || calcularTotales().costo_total).toFixed(2)}
         </div>
         <div class="footer">
           Documento generado automáticamente por el Sistema de Inventario CREDISA
@@ -542,7 +542,7 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
             <tr>
               <th>Código</th>
               <th>Descripción</th>
-              <th style="text-align:center">Costo Unit.</th>
+              <th style="text-align:center">${operacion.tipo_operacion === 'SALIDA' ? 'Precio Unit.' : 'Costo Unit.'}</th>
               <th style="text-align:center">Cantidad</th>
               <th style="text-align:center">Subtotal</th>
             </tr>
@@ -552,7 +552,7 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
           </tbody>
         </table>
         <div class="totales">
-          TOTAL UNIDADES: ${total_unidades} | TOTAL: S/ ${costo_total.toFixed(2)}
+          TOTAL UNIDADES: ${total_unidades} | ${operacion.tipo_operacion === 'SALIDA' ? 'TOTAL VENTA' : 'TOTAL'}: S/ ${costo_total.toFixed(2)}
         </div>
       </body>
       </html>
@@ -839,6 +839,7 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
         <TablaDetalles
           detalles={operacion.detalles || []}
           onEliminarDetalle={eliminarDetalle}
+          tipoOperacion={operacion.tipo_operacion}
         />
 
         {/* Totales */}
@@ -848,7 +849,7 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
             <span className="os-total-value">{total_unidades}</span>
           </div>
           <div className="os-total-item">
-            <span className="os-total-label">COSTO TOTAL</span>
+            <span className="os-total-label">{operacion.tipo_operacion === 'SALIDA' ? 'TOTAL VENTA' : 'COSTO TOTAL'}</span>
             <span className="os-total-value os-total-value-money">S/ {costo_total.toFixed(2)}</span>
           </div>
         </div>
@@ -936,11 +937,14 @@ const ProductoSelector: React.FC<{
 
   const agregarProducto = () => {
     if (!productoSeleccionado) return;
+    const precioUnitario = operacion.tipo_operacion === 'SALIDA'
+      ? productoSeleccionado.precio_venta
+      : productoSeleccionado.precio_compra;
     const detalle: DetalleOperacion = {
       producto_id: productoSeleccionado.id,
       cantidad,
-      costo_unitario: productoSeleccionado.precio_compra,
-      subtotal: cantidad * productoSeleccionado.precio_compra,
+      costo_unitario: precioUnitario,
+      subtotal: cantidad * precioUnitario,
       producto: productoSeleccionado
     };
     onProductoSeleccionado(detalle);
@@ -1038,7 +1042,9 @@ const ProductoSelector: React.FC<{
 const TablaDetalles: React.FC<{
   detalles: DetalleOperacion[];
   onEliminarDetalle: (productoId: number) => void;
-}> = ({ detalles, onEliminarDetalle }) => {
+  tipoOperacion?: 'ENTRADA' | 'SALIDA' | 'TRASPASO';
+}> = ({ detalles, onEliminarDetalle, tipoOperacion }) => {
+  const headerPrecio = tipoOperacion === 'SALIDA' ? 'Precio Unit.' : 'Costo Unit.';
   return (
     <div className="os-table-wrap">
       <table className="os-table">
@@ -1046,7 +1052,7 @@ const TablaDetalles: React.FC<{
           <tr>
             <th>Código</th>
             <th>Descripción</th>
-            <th>Costo Unit.</th>
+            <th>{headerPrecio}</th>
             <th>Cantidad</th>
             <th>Subtotal</th>
             <th></th>
