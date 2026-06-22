@@ -32,7 +32,6 @@ const ImportSales: React.FC = () => {
       if (res.success && res.data) {
         setResult(res.data);
         setFile(null);
-        // Resetear el input para permitir seleccionar el mismo archivo nuevamente
         const fileInput = document.getElementById('file') as HTMLInputElement;
         if (fileInput) fileInput.value = '';
       } else {
@@ -47,12 +46,50 @@ const ImportSales: React.FC = () => {
 
   return (
     <div className="import-sales">
-      <h1>Importar ventas desde Excel</h1>
-      <p className="import-instructions">
-        El archivo debe tener las columnas: fecha, sku, nombre producto, cantidad vendida,
-        precio venta unitario, costo unitario, categoria, proveedor
-      </p>
-      
+      <h1>Importar datos desde Excel</h1>
+
+      <div className="import-instructions">
+        <p>El archivo Excel debe contener las siguientes columnas:</p>
+        <div className="import-columns-grid">
+          <div className="import-col-group">
+            <h4>Requeridas siempre</h4>
+            <ul>
+              <li><code>factura</code> — Número de factura/ticket</li>
+              <li><code>fecha</code> — Fecha de la operación</li>
+              <li><code>operacion</code> — <strong>compra</strong> o <strong>venta</strong></li>
+              <li><code>categoria</code> — Se crea si no existe</li>
+              <li><code>producto</code> — Nombre del producto</li>
+              <li><code>sku</code> — Código único del producto</li>
+              <li><code>unidad</code> — Unidad de medida</li>
+              <li><code>cantidad</code> — Cantidad</li>
+              <li><code>precio unitario</code> — Precio de compra o venta</li>
+            </ul>
+          </div>
+          <div className="import-col-group">
+            <h4>Para compras</h4>
+            <ul>
+              <li><code>proveedor</code> — Se crea si no existe</li>
+              <li><code>costo unitario</code> — Costo del producto</li>
+              <li><code>sede</code> — Destino de la compra</li>
+              <li><code>almacen</code> — Almacén destino</li>
+            </ul>
+            <h4>Para ventas</h4>
+            <ul>
+              <li><code>cliente</code> — Se crea si no existe</li>
+            </ul>
+            <h4>Opcionales</h4>
+            <ul>
+              <li><code>telefono_personal</code></li>
+              <li><code>telefono_cliente</code></li>
+            </ul>
+          </div>
+        </div>
+        <p className="import-note">
+          <strong>Nota:</strong> Las categorías, proveedores, unidades, sedes, almacenes, productos, clientes y personal se crean automáticamente si no existen.
+          El stock se calcula: compras - ventas.
+        </p>
+      </div>
+
       <form onSubmit={handleSubmit} className="import-form">
         <div className="form-group">
           <label htmlFor="file">Seleccionar archivo Excel</label>
@@ -64,7 +101,7 @@ const ImportSales: React.FC = () => {
             disabled={loading}
           />
         </div>
-        
+
         <button type="submit" disabled={!file || loading} className="btn-primary">
           {loading ? 'Importando...' : 'Importar'}
         </button>
@@ -75,41 +112,74 @@ const ImportSales: React.FC = () => {
       {result && (
         <div className="import-result success">
           <h3>Importación completada</h3>
-          <ul>
-            <li>Filas procesadas: {result.filasProcesadas}</li>
-            <li>Nuevas categorías: {result.nuevasCategorias}</li>
-            <li>Nuevos proveedores: {result.nuevosProveedores}</li>
-            <li>Nuevos productos: {result.nuevosProductos}</li>
-            <li>Nuevas salidas creadas: {result.nuevasSalidas}</li>
-          </ul>
-          
-          {result.proveedoresConRUCTemporal && result.proveedoresConRUCTemporal.length > 0 && (
+
+          <div className="result-grid">
+            <div className="result-item">
+              <span className="result-label">Filas procesadas</span>
+              <span className="result-value">{result.filasProcesadas}</span>
+            </div>
+            <div className="result-item">
+              <span className="result-label">Entradas creadas</span>
+              <span className="result-value">{result.nuevasEntradas}</span>
+            </div>
+            <div className="result-item">
+              <span className="result-label">Salidas creadas</span>
+              <span className="result-value">{result.nuevasSalidas}</span>
+            </div>
+            <div className="result-item">
+              <span className="result-label">Categorías nuevas</span>
+              <span className="result-value">{result.nuevasCategorias}</span>
+            </div>
+            <div className="result-item">
+              <span className="result-label">Proveedores nuevos</span>
+              <span className="result-value">{result.nuevosProveedores}</span>
+            </div>
+            <div className="result-item">
+              <span className="result-label">Productos nuevos</span>
+              <span className="result-value">{result.nuevosProductos}</span>
+            </div>
+            <div className="result-item">
+              <span className="result-label">Unidades nuevas</span>
+              <span className="result-value">{result.nuevasUnidades}</span>
+            </div>
+            <div className="result-item">
+              <span className="result-label">Sedes nuevas</span>
+              <span className="result-value">{result.nuevasSedes}</span>
+            </div>
+            <div className="result-item">
+              <span className="result-label">Almacenes nuevos</span>
+              <span className="result-value">{result.nuevosAlmacenes}</span>
+            </div>
+            <div className="result-item">
+              <span className="result-label">Clientes nuevos</span>
+              <span className="result-value">{result.nuevosClientes}</span>
+            </div>
+            <div className="result-item">
+              <span className="result-label">Personal nuevo</span>
+              <span className="result-value">{result.nuevoPersonal}</span>
+            </div>
+          </div>
+
+          {result.advertencias && result.advertencias.length > 0 && (
             <div className="import-warning">
-              <h4>⚠️ Acción requerida: Proveedores con RUC temporal</h4>
-              <p>Los siguientes proveedores se crearon con RUC temporal y deben ser completados:</p>
+              <h4>Advertencias</h4>
               <ul>
-                {result.proveedoresConRUCTemporal.map((proveedor, i) => (
-                  <li key={i}>
-                    <strong>{proveedor}</strong> - 
-                    <a href="/proveedores" className="edit-link">Editar ahora</a>
-                  </li>
+                {result.advertencias.map((warn, i) => (
+                  <li key={i}>{warn}</li>
                 ))}
               </ul>
-              <p className="warning-note">
-                Nota: Es importante actualizar el RUC/DNI para mantener la integridad de los datos fiscales.
-              </p>
             </div>
           )}
-          
+
           {result.errores && result.errores.length > 0 && (
             <div className="import-errors">
-              <h4>Errores ({result.errores.length}):</h4>
+              <h4>Errores ({result.errores.length})</h4>
               <ul>
-                {result.errores.slice(0, 10).map((err, i) => (
+                {result.errores.slice(0, 15).map((err, i) => (
                   <li key={i}>{err}</li>
                 ))}
-                {result.errores.length > 10 && (
-                  <li>... y {result.errores.length - 10} más</li>
+                {result.errores.length > 15 && (
+                  <li>... y {result.errores.length - 15} más</li>
                 )}
               </ul>
             </div>

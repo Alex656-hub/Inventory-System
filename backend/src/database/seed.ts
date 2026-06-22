@@ -36,146 +36,40 @@ const PERMISOS_TOTAL: Permisos = {
   ajustes: true,
 };
 
-const PERMISOS_BASICO: Permisos = {
-  dashboard: true,
-  catalogoProductos: true,
-  operacionesStock: true,
-  historialKardex: true,
-  reporteInventario: true,
-  alertasStock: true,
-  clientes: true,
-  sedesAlmacenes: false,
-  proveedores: false,
-  unidades: true,
-  personal: false,
-  categorias: true,
-  usuariosAccesos: false,
-  ajustes: false,
-};
-
-interface SeedData {
-  users: Array<{
-    usuario: string;
-    nombre: string;
-    email: string;
-    password: string;
-    rol: 'gerente' | 'empleado';
-    activo: boolean;
-    permisos: Permisos;
-  }>;
-  categories: Array<{
-    nombre: string;
-    descripcion: string;
-  }>;
-  suppliers: Array<{
-    nombre: string;
-    ruc_dni: string;
-    contacto_telefono: string;
-    contacto_email: string;
-    direccion: string;
-  }>;
-}
-
-const seedData: SeedData = {
-  users: [
-    {
-      usuario: 'gerente',
-      nombre: 'Gerente Principal',
-      email: 'gerente@credisa.com',
-      password: 'gerente123',
-      rol: 'gerente',
-      activo: true,
-      permisos: PERMISOS_TOTAL
-    },
-    {
-      usuario: 'empleado',
-      nombre: 'Empleado Ejemplo',
-      email: 'empleado@credisa.com',
-      password: 'empleado123',
-      rol: 'empleado',
-      activo: true,
-      permisos: PERMISOS_BASICO
-    }
-  ],
-  categories: [
-    { nombre: 'Electrodomésticos', descripcion: 'Productos electrodomésticos' },
-    { nombre: 'Tecnología', descripcion: 'Dispositivos electrónicos y accesorios' },
-    { nombre: 'Hogar', descripcion: 'Artículos para el hogar' },
-    { nombre: 'Oficina', descripcion: 'Suministros de oficina' },
-    { nombre: 'Limpieza', descripcion: 'Productos de limpieza' },
-    { nombre: 'Alimentos y Bebidas', descripcion: 'Productos alimenticios' }
-  ],
-  suppliers: [
-    {
-      nombre: 'Distribuidora del Norte S.A.',
-      ruc_dni: '20123456789',
-      contacto_telefono: '041-123456',
-      contacto_email: 'contacto@distribuidora.com',
-      direccion: 'Av. Principal 123, Bagua'
-    },
-    {
-      nombre: 'Proveedor Sur E.I.R.L.',
-      ruc_dni: '20234567890',
-      contacto_telefono: '041-234567',
-      contacto_email: 'info@proveedor.com',
-      direccion: 'Jr. Comercio 456, Bagua'
-    }
-  ]
-};
-
 const seed = async () => {
   const transaction = await sequelize.transaction();
   
   try {
-    console.log('🌱 Iniciando seed de datos iniciales...');
+    console.log('🌱 Iniciando seed...');
 
     await sequelize.authenticate();
     console.log('✅ Conexión a la base de datos establecida.');
 
-    // Sincronizar modelos (crear tablas si no existen)
-    console.log('🔄 Creando tablas en la base de datos...');
+    console.log('🔄 Sincronizando tablas...');
     await sequelize.sync({ force: false });
-    console.log('✅ Tablas creadas/sincronizadas correctamente.');
+    console.log('✅ Tablas sincronizadas.');
 
-    // Crear usuarios
-    console.log('👥 Creando usuarios de prueba...');
-    for (const userData of seedData.users) {
-      const userExists = await models.User.findOne({
-        where: { email: userData.email }
+    const adminExists = await models.User.findOne({
+      where: { email: 'gerente@credisa.com' }
+    });
+
+    if (!adminExists) {
+      await models.User.create({
+        usuario: 'gerente',
+        nombre: 'Gerente Principal',
+        email: 'gerente@credisa.com',
+        password: 'gerente123',
+        rol: 'gerente',
+        activo: true,
+        permisos: PERMISOS_TOTAL,
       });
-
-      if (!userExists) {
-        await models.User.create({
-          ...userData
-        });
-        console.log(`✅ Usuario creado: ${userData.email} / ${userData.password}`);
-      } else {
-        console.log(`ℹ️  Usuario ya existe: ${userData.email}`);
-      }
-    }
-
-    // Crear categorías
-    console.log('🏷️  Creando categorías...');
-    for (const categoryData of seedData.categories) {
-      const [category] = await models.Category.findOrCreate({
-        where: { nombre: categoryData.nombre },
-        defaults: categoryData
-      });
-      console.log(`✅ Categoría procesada: ${category.nombre}`);
-    }
-
-    // Crear proveedores
-    console.log('🏢 Creando proveedores...');
-    for (const supplierData of seedData.suppliers) {
-      const [supplier] = await models.Supplier.findOrCreate({
-        where: { ruc_dni: supplierData.ruc_dni },
-        defaults: supplierData
-      });
-      console.log(`✅ Proveedor procesado: ${supplier.nombre}`);
+      console.log('✅ Usuario gerente creado: gerente@credisa.com / gerente123');
+    } else {
+      console.log('ℹ️  Usuario gerente ya existe.');
     }
 
     await transaction.commit();
-    console.log('✨ Seed completado exitosamente!');
+    console.log('✨ Seed completado!');
   } catch (error) {
     await transaction.rollback();
     console.error('❌ Error durante el seed:', error);

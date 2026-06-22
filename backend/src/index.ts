@@ -46,6 +46,7 @@ import sedeRoutes from './routes/sede.routes';
 import almacenRoutes from './routes/almacen.routes';
 import operacionStockRoutes from './routes/operacionStock.routes';
 import personalRoutes from './routes/personal.routes';
+import backupRoutes from './routes/backup.routes';
 import path from 'path';
 
 // Cargar variables de entorno
@@ -96,6 +97,7 @@ app.use('/api/sedes', sedeRoutes);
 app.use('/api/almacenes', almacenRoutes);
 app.use('/api/stock', operacionStockRoutes);
 app.use('/api/personal', personalRoutes);
+app.use('/api/backup', backupRoutes);
 
 // Ruta de salud
 app.get('/api/health', (req, res) => {

@@ -5,9 +5,15 @@ export interface ImportResult {
   nuevasCategorias: number;
   nuevosProveedores: number;
   nuevosProductos: number;
+  nuevasUnidades: number;
+  nuevasSedes: number;
+  nuevosAlmacenes: number;
+  nuevosClientes: number;
+  nuevoPersonal: number;
+  nuevasEntradas: number;
   nuevasSalidas: number;
   errores?: string[];
-  proveedoresConRUCTemporal?: string[]; // Nombres de proveedores con RUC temporal
+  advertencias?: string[];
 }
 
 export const importService = {

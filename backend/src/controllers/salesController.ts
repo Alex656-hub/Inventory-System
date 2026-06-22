@@ -113,11 +113,15 @@ class SalesController {
             nuevasCategorias: result.newCategories,
             nuevosProveedores: result.newSuppliers,
             nuevosProductos: result.newProducts,
+            nuevasUnidades: result.newUnits,
+            nuevasSedes: result.newSedes,
+            nuevosAlmacenes: result.newAlmacenes,
+            nuevosClientes: result.newClients,
+            nuevoPersonal: result.newPersonal,
+            nuevasEntradas: result.newEntradas,
             nuevasSalidas: result.newSalidas,
             errores: result.errors.length > 0 ? result.errors : undefined,
-            proveedoresConRUCTemporal: result.proveedoresConRUCTemporal?.length 
-              ? result.proveedoresConRUCTemporal 
-              : undefined,
+            advertencias: result.warnings.length > 0 ? result.warnings : undefined,
           },
         };
 

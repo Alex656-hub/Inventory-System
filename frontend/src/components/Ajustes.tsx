@@ -1,12 +1,15 @@
 // src/components/Ajustes.tsx - Página de Ajustes del Sistema
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/auth.service';
 import { ajustesService } from '../services/ajustes.service';
+import { backupService } from '../services/backup.service';
 import './Ajustes.css';
 
 const Ajustes: React.FC = () => {
   const { usuario } = authService.obtenerSesion();
+  const navigate = useNavigate();
 
   // Estados para los campos
   const [ruc, setRuc] = useState('');
@@ -44,7 +47,45 @@ const Ajustes: React.FC = () => {
   };
 
   const handleImportExcel = () => {
-    alert('Función de importar Excel en desarrollo');
+    navigate('/importar');
+  };
+
+  const handleCreateBackup = async () => {
+    try {
+      const blob = await backupService.createBackup();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup_credis_${new Date().toISOString().slice(0, 10)}.sql`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      alert('Respaldo descargado exitosamente');
+    } catch (error: any) {
+      console.error('Error al crear respaldo:', error);
+      alert(error?.response?.data?.message || 'Error al crear el respaldo');
+    }
+  };
+
+  const handleRestoreBackup = async () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.sql';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      if (!window.confirm('⚠️ Esto sobrescribirá TODOS los datos actuales. ¿Está seguro?')) return;
+      try {
+        const result = await backupService.restoreBackup(file);
+        alert(result.message);
+        window.location.reload();
+      } catch (error: any) {
+        console.error('Error al restaurar:', error);
+        alert(error?.response?.data?.message || 'Error al restaurar la base de datos');
+      }
+    };
+    input.click();
   };
 
   const handleSaveSettings = async () => {
@@ -220,13 +261,13 @@ const Ajustes: React.FC = () => {
           <p className="danger-subtitle">Gestiona tus copias de seguridad y sesiones activas.</p>
 
           <div className="danger-actions">
-            <button className="btn-backup" onClick={() => alert('Función de respaldo en desarrollo')}>
+            <button className="btn-backup" onClick={handleCreateBackup}>
               <i className='bx bx-cloud-upload'></i>
               Crear Respaldo
             </button>
 
             {esGerente && (
-              <button className="btn-restore" onClick={() => alert('Función de restauración en desarrollo')}>
+              <button className="btn-restore" onClick={handleRestoreBackup}>
                 <i className='bx bx-cloud-download'></i>
                 Restaurar
               </button>

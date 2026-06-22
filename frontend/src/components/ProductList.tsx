@@ -146,6 +146,7 @@ const ProductList: React.FC = () => {
                 <tr>
                   <th>Img</th>
                   <th>Código</th>
+                  <th>Nombre</th>
                   <th>Categoria</th>
                   <th>Unidad</th>
                   <th>Costo</th>
@@ -157,7 +158,7 @@ const ProductList: React.FC = () => {
               <tbody>
                 {productos.length === 0 ? (
                   <tr>
-                    <td colSpan={esGerente ? 8 : 7} className="module-empty">
+                    <td colSpan={esGerente ? 9 : 8} className="module-empty">
                       No se encontraron productos
                     </td>
                   </tr>
@@ -178,6 +179,7 @@ const ProductList: React.FC = () => {
                         )}
                       </td>
                       <td>{producto.codigo}</td>
+                      <td>{producto.nombre}</td>
                       <td>{producto.categoria?.nombre}</td>
                       <td>{producto.unidad?.nombre}</td>
                       <td>S/ {Number(producto.precio_compra).toFixed(2)}</td>
