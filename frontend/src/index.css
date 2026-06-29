@@ -11,6 +11,9 @@
   --color-sky-800: #00598a;
   --color-sky-900: #024a70;
   --color-sky-950: #052f4a;
+  --color-sky-960: #041e35;
+  --color-sky-970: #031828;
+  --color-sky-980: #02121e;
 
   /* Colores base del ejemplo */
   --light: #f6f6f9;
@@ -59,6 +62,16 @@
   --gradient-primary: linear-gradient(135deg, var(--color-sky-500) 0%, var(--color-sky-700) 100%);
   --gradient-primary-hover: linear-gradient(135deg, var(--color-sky-600) 0%, var(--color-sky-800) 100%);
   --gradient-accent: linear-gradient(to right, var(--color-sky-400), var(--color-sky-600));
+
+  /* Topbar */
+  --topbar-height: 56px;
+  --color-topbar-bg: var(--color-sky-980);
+  --color-topbar-text: #ffffff;
+  --color-topbar-search-bg: rgba(255, 255, 255, 0.1);
+  --color-topbar-search-text: rgba(255, 255, 255, 0.6);
+  --color-topbar-search-placeholder: rgba(255, 255, 255, 0.35);
+  --color-topbar-search-border: rgba(255, 255, 255, 0.12);
+  --color-topbar-avatar-bg: var(--color-sky-500);
 }
 
 * {

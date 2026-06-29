@@ -288,9 +288,32 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       {/* ==================== MAIN CONTENT ==================== */}
       <section className="content">
-        {/* Navbar */}
-        <nav>
-          {/* Navbar vacía - sin iconos */}
+        {/* ==================== TOPBAR ==================== */}
+        <nav className="desktop-topbar">
+          <div className="topbar-left">
+            <i className='bx bx-package topbar-logo-icon'></i>
+            <span className="topbar-brand">InvCred</span>
+          </div>
+
+          <div className="topbar-center">
+            <i className='bx bx-search topbar-search-icon'></i>
+            <input
+              type="text"
+              className="topbar-search"
+              placeholder="Buscar productos, operaciones, clientes..."
+            />
+          </div>
+
+          <div className="topbar-right">
+            <div className="topbar-avatar">
+              {usuario?.nombre
+                .split(' ')
+                .slice(0, 2)
+                .map(w => w[0])
+                .join('')
+                .toUpperCase() || 'U'}
+            </div>
+          </div>
         </nav>
 
         {/* Main Content */}

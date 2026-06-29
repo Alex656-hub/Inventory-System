@@ -47,9 +47,9 @@ body.dark {
 /* ===== Sidebar ===== */
 .sidebar {
   position: fixed;
-  top: 0;
+  top: var(--topbar-height, 56px);
   left: 0;
-  height: 100%;
+  height: calc(100% - var(--topbar-height, 56px));
   width: 250px;
   padding: 10px 14px;
   background: var(--sidebar-color);
@@ -421,27 +421,99 @@ body.dark .switch::before {
   left: 88px;
 }
 
-/* ===== Navbar adjustments ===== */
-.content nav {
-  background: var(--sidebar-color);
-  height: 0px;
-  padding: 0;
+/* ===== Desktop Topbar ===== */
+.desktop-topbar {
+  background: var(--color-topbar-bg);
+  height: var(--topbar-height, 56px);
+  padding: 0 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
   position: fixed;
   top: 0;
-  left: 250px;
+  left: 0;
   right: 0;
-  z-index: 99;
-  box-shadow: none;
-  transition: var(--tran-05);
-  visibility: hidden;
+  z-index: 200;
 }
 
-.sidebar.close ~ .content nav {
-  left: 88px;
+/* Logo izquierda */
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.topbar-logo-icon {
+  font-size: 24px;
+  color: var(--color-topbar-avatar-bg);
+}
+
+.topbar-brand {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-topbar-text);
+  letter-spacing: 0.3px;
+}
+
+/* Buscador centro */
+.topbar-center {
+  flex: 1;
+  max-width: 480px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.topbar-search-icon {
+  position: absolute;
+  left: 14px;
+  font-size: 18px;
+  color: var(--color-topbar-search-placeholder);
+  pointer-events: none;
+}
+
+.topbar-search {
+  width: 100%;
+  height: 38px;
+  padding: 0 16px 0 42px;
+  background: var(--color-topbar-search-bg);
+  border: 1px solid var(--color-topbar-search-border);
+  border-radius: 8px;
+  color: var(--color-topbar-search-text);
+  font-size: 14px;
+  outline: none;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.topbar-search::placeholder {
+  color: var(--color-topbar-search-placeholder);
+}
+
+.topbar-search:focus {
+  border-color: var(--color-sky-500);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Avatar derecha */
+.topbar-right {
+  flex-shrink: 0;
+}
+
+.topbar-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-topbar-avatar-bg);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  cursor: default;
 }
 
 /* ===== Main content adjustments ===== */
@@ -463,16 +535,14 @@ body.dark .switch::before {
     width: calc(100% - 60px);
     left: 60px;
   }
-  .content nav {
-    left: 200px;
-  }
-  .sidebar.close ~ .content nav {
-    left: 60px;
-  }
 }
 
 @media screen and (max-width: 576px) {
-  /* Mostrar TopBar en móvil */
+  /* Ocultar topbar desktop, mostrar topbar móvil */
+  .desktop-topbar {
+    display: none;
+  }
+
   .mobile-topbar {
     display: flex;
   }
@@ -481,7 +551,7 @@ body.dark .switch::before {
     display: block;
   }
 
-  /* En móvil el sidebar no debe "comerse" ancho: se comporta como drawer */
+  /* En móvil el sidebar se comporta como drawer */
   .sidebar {
     width: 250px;
     transform: translateX(0);
@@ -490,7 +560,7 @@ body.dark .switch::before {
   }
 
   .sidebar.close {
-    width: 250px; /* mantener el ancho para animar */
+    width: 250px;
     transform: translateX(-100%);
   }
 
@@ -505,17 +575,12 @@ body.dark .switch::before {
     left: 0;
   }
 
-  .content nav,
-  .sidebar.close ~ .content nav {
-    left: 0;
-  }
-
   /* El botón dentro del sidebar no hace falta en móvil */
   .sidebar-toggle-btn {
     display: none;
   }
 
-  /* Evitar que el contenido quede debajo de la TopBar */
+  /* Evitar que el contenido quede debajo de la TopBar móvil */
   .content main {
     padding-top: 76px; /* 56px topbar + 20px espacio */
   }
