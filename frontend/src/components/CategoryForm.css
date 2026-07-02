@@ -30,11 +30,3 @@
     padding: 16px;
   }
 }
-
-body.dark .mf-group > label {
-  color: var(--color-sky-300, #b8e6fe);
-}
-
-body.dark .category-form-actions {
-  border-top-color: var(--color-sky-700, #0069a8);
-}

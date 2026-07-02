@@ -41,8 +41,16 @@
   --color-primary-lighter: var(--color-sky-100);
   
   /* Colores de fondo */
-  --color-background: var(--color-sky-100);
+  --color-background: #e8f6fe;
   --color-surface: #ffffff;
+
+  /* Sidebar azul claro */
+  --color-sidebar-bg: #e8f6fe;
+  --color-sidebar-text: #0a2540;
+  --color-sidebar-text-muted: rgba(10, 37, 64, 0.5);
+  --color-sidebar-hover: var(--color-sky-400);
+  --color-sidebar-active: #96ddff;
+  --color-sidebar-border: rgba(10, 37, 64, 0.1);
   
   /* Bordes */
   --color-border: #e0e0e0;
@@ -78,11 +86,6 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-}
-
-html {
-  /* Reserva espacio del scrollbar para evitar “saltos” al abrir modales */
-  scrollbar-gutter: stable;
 }
 
 body {
