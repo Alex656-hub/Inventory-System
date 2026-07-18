@@ -588,7 +588,7 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
       return (
         <div className="os-field-group">
           <label className="os-label">
-            <i className="os-label-icon">📍</i> Sede Destino (Entra en)
+            <i className="bx bx-map os-label-icon"></i> Sede Destino (Entra en)
           </label>
           <div className="os-select-wrapper">
             <select
@@ -609,9 +609,9 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
     // SALIDA y TRASPASO muestran Sede Origen
     return (
       <div className="os-field-group">
-        <label className="os-label">
-          <i className="os-label-icon">📍</i> Sede Origen (Sale de)
-        </label>
+          <label className="os-label">
+            <i className="bx bx-map os-label-icon"></i> Sede Origen (Sale de)
+          </label>
         <div className="os-select-wrapper">
           <select
             className="os-select"
@@ -636,7 +636,7 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
         return (
           <div className="os-field-group">
             <label className="os-label">
-              <i className="os-label-icon">👤</i> Proveedor
+              <i className="bx bx-user os-label-icon"></i> Proveedor
             </label>
             <div className="os-select-wrapper">
               <select
@@ -658,7 +658,7 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
         return (
           <div className="os-field-group">
             <label className="os-label">
-              <i className="os-label-icon">👤</i> Cliente
+              <i className="bx bx-user os-label-icon"></i> Cliente
             </label>
             <div className="os-select-wrapper">
               <select
@@ -680,7 +680,7 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
         return (
           <div className="os-field-group">
             <label className="os-label os-label-highlight">
-              <i className="os-label-icon">📍</i> Hacia Sede Destino
+              <i className="bx bx-map os-label-icon"></i> Hacia Sede Destino
             </label>
             <div className="os-select-wrapper os-select-wrapper-highlight">
               <select
@@ -708,21 +708,21 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
       {/* ── Header ── */}
       <div className="os-page-header">
         <div className="os-page-title-block">
-          <h1 className="os-page-title">Operaciones de Stock</h1>
-          <p className="os-page-subtitle">Registra entradas, salidas y traspasos entre almacenes.</p>
+          <h1 className="module-title">Operaciones de Stock</h1>
+          <p className="module-subtitle">Registra entradas, salidas y traspasos entre almacenes.</p>
         </div>
         <div className="os-page-actions">
           <button className="os-btn os-btn-ghost" onClick={limpiarFormulario} disabled={loading}>
-            <span className="os-btn-icon">↺</span> Limpiar
+            <i className="bx bx-reset os-btn-icon"></i> Limpiar
           </button>
           <button className="os-btn os-btn-outline" onClick={generarPrevisualizacion} disabled={loading || (operacion.detalles?.length === 0)}>
-            <span className="os-btn-icon">🖨</span> Imprimir
+            <i className="bx bx-printer os-btn-icon"></i> Imprimir
           </button>
           <button className="os-btn os-btn-primary" onClick={procesarOperacion} disabled={loading}>
             {loading ? (
               <><span className="os-spinner"></span> Procesando...</>
             ) : (
-              <><span className="os-btn-icon">✦</span> Procesar Movimiento</>
+              <><i className="bx bx-check-circle os-btn-icon"></i> Procesar Movimiento</>
             )}
           </button>
         </div>
@@ -742,9 +742,9 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
         <div className="os-form-row os-form-row-3">
           {/* Tipo Operación */}
           <div className="os-field-group">
-            <label className="os-label">
-              <i className="os-label-icon">⇄</i> Tipo de Operación
-            </label>
+          <label className="os-label">
+            <i className="bx bx-transfer os-label-icon"></i> Tipo de Operación
+          </label>
             <div className="os-select-wrapper">
               <select
                 className={`os-select os-select-tipo ${getTipoClass(operacion.tipo_operacion || 'ENTRADA')}`}
@@ -767,9 +767,9 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
 
           {/* Responsable Físico */}
           <div className="os-field-group">
-            <label className="os-label">
-              <i className="os-label-icon">👤</i> Responsable Físico
-            </label>
+          <label className="os-label">
+            <i className="bx bx-user os-label-icon"></i> Responsable Físico
+          </label>
             <div className="os-select-wrapper">
               <select
                 className="os-select"
@@ -792,9 +792,9 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
         <div className="os-form-row os-form-row-3">
           {/* Fecha de Emisión */}
           <div className="os-field-group">
-            <label className="os-label">
-              <i className="os-label-icon">📅</i> Fecha de Emisión
-            </label>
+          <label className="os-label">
+            <i className="bx bx-calendar os-label-icon"></i> Fecha de Emisión
+          </label>
             <input
               type="date"
               className={`os-input ${!validarCamposRequeridos() ? 'os-input-disabled' : ''}`}
@@ -812,7 +812,7 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
           {/* Referencia / Comentario */}
           <div className="os-field-group">
             <label className="os-label">
-              <i className="os-label-icon">📋</i> Referencia / Comentario
+              <i className="bx bx-note os-label-icon"></i> Referencia / Comentario
             </label>
             <input
               type="text"
@@ -1063,7 +1063,7 @@ const TablaDetalles: React.FC<{
             <tr>
               <td colSpan={6}>
                 <div className="os-table-empty">
-                  <span className="os-table-empty-icon">⬡</span>
+                  <i className="bx bx-package os-table-empty-icon"></i>
                   <span className="os-table-empty-text">Lista vacía. Selecciona un producto arriba.</span>
                 </div>
               </td>
@@ -1084,7 +1084,7 @@ const TablaDetalles: React.FC<{
                     onClick={() => onEliminarDetalle(d.producto_id)}
                     title="Eliminar"
                   >
-                    ✕
+                    <i className="bx bx-x"></i>
                   </button>
                 </td>
               </tr>;

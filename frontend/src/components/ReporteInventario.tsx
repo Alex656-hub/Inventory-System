@@ -23,7 +23,7 @@ interface SedeOption {
 const ReporteInventario: React.FC = () => {
   const [stockData, setStockData] = useState<StockItem[]>([]);
   const [sedes, setSedes] = useState<SedeOption[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [showExportModal, setShowExportModal] = useState(false);
   const [filtro, setFiltro] = useState('');
   const [filasVisibles, setFilasVisibles] = useState(20);
@@ -81,18 +81,59 @@ const ReporteInventario: React.FC = () => {
   const totalValorInventario = filteredData.reduce((sum, item) => sum + item.valor_total, 0);
   const totalStock = filteredData.reduce((sum, item) => sum + item.stock_actual, 0);
 
+  const renderSkeleton = () => (
+    <div className="ri-container">
+      <div className="ri-skeleton-header ri-skeleton">
+        <div>
+          <div className="ri-skeleton-title"></div>
+          <div className="ri-skeleton-subtitle"></div>
+        </div>
+        <div className="ri-skeleton-metricas">
+          <div className="ri-skeleton-metrica"></div>
+          <div className="ri-skeleton-metrica"></div>
+        </div>
+      </div>
+      <div className="ri-skeleton-filtros ri-skeleton">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="ri-skeleton-filter">
+            <div className="ri-skeleton-filter-label"></div>
+            <div className="ri-skeleton-filter-input"></div>
+          </div>
+        ))}
+      </div>
+      <div className="ri-skeleton-table ri-skeleton">
+        <div className="ri-skeleton-table-header">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <div key={i} className="ri-skeleton-table-header-cell"></div>
+          ))}
+        </div>
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="ri-skeleton-table-row">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((j) => (
+              <div key={j} className={`ri-skeleton-table-cell ${j === 2 ? 'short' : ''}`}></div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  if (loading) {
+    return renderSkeleton();
+  }
+
   return (
     <div className="ri-container">
       <div className="ri-header">
         <div className="ri-header-left">
-          <h2>Reporte de Inventario</h2>
-          <p>Estado actual del stock por sede.</p>
+          <h1 className="module-title">Reporte de Inventario</h1>
+          <p className="module-subtitle">Estado actual del stock por sede.</p>
         </div>
 
         <div className="ri-metricas">
           <div className="ri-metrica-item">
             <span className="ri-metrica-label">Total Unidades</span>
-            <span className="ri-metrica-valor">{totalStock}</span>
+            <span className="ri-metrica-valor">{totalStock.toLocaleString('es-PE')}</span>
           </div>
           <div className="ri-metrica-item verde">
             <span className="ri-metrica-label">Valorizado</span>
@@ -105,7 +146,8 @@ const ReporteInventario: React.FC = () => {
         <div className="ri-filtro-grupo">
           <label>Exportar</label>
           <button className="ri-btn-excel" onClick={() => setShowExportModal(true)}>
-            📊 Excel
+            <i className='bx bx-spreadsheet'></i>
+            Excel
           </button>
         </div>
 
@@ -142,7 +184,7 @@ const ReporteInventario: React.FC = () => {
         <div className="ri-filtro-grupo" style={{ flex: 1 }}>
           <label>Buscar</label>
           <div className="ri-buscar-wrapper">
-            <span className="ri-buscar-icono">🔍</span>
+            <i className='bx bx-search ri-buscar-icono'></i>
             <input
               type="text"
               placeholder="Nombre o Código..."
@@ -168,13 +210,16 @@ const ReporteInventario: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {loading ? (
-              <tr><td colSpan={8} className="ri-loading">Cargando...</td></tr>
-            ) : paginatedData.length === 0 ? (
-              <tr><td colSpan={8} className="ri-empty">No hay datos de inventario</td></tr>
+            {paginatedData.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="ri-empty">
+                  <i className='bx bx-package'></i>
+                  No hay datos de inventario
+                </td>
+              </tr>
             ) : (
               paginatedData.map((item, index) => (
-                <tr key={index} className={index % 2 === 0 ? 'ri-row-even' : 'ri-row-odd'}>
+                <tr key={index}>
                   <td>{item.codigo}</td>
                   <td>{item.nombre}</td>
                   <td><span className="ri-badge">{item.categoria}</span></td>
@@ -187,15 +232,17 @@ const ReporteInventario: React.FC = () => {
               ))
             )}
           </tbody>
-          <tfoot>
-            <tr className="ri-footer">
-              <td colSpan={4}><strong>RESUMEN</strong></td>
-              <td className="ri-numero"><strong>{totalStock}</strong></td>
-              <td></td>
-              <td></td>
-              <td className="ri-numero"><strong>S/ {totalValorInventario.toFixed(2)}</strong></td>
-            </tr>
-          </tfoot>
+          {paginatedData.length > 0 && (
+            <tfoot>
+              <tr className="ri-footer">
+                <td colSpan={4}><strong>RESUMEN</strong></td>
+                <td className="ri-numero"><strong>{totalStock.toLocaleString('es-PE')}</strong></td>
+                <td></td>
+                <td></td>
+                <td className="ri-numero"><strong>S/ {totalValorInventario.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</strong></td>
+              </tr>
+            </tfoot>
+          )}
         </table>
       </div>
 

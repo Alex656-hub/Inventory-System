@@ -100,7 +100,29 @@ const PersonalList: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="module-page personal-list-container">Cargando...</div>;
+    return (
+      <div className="module-page personal-list-container">
+        <div className="module-page-header personal-header">
+          <div>
+            <h1 className="module-title">Personal</h1>
+            <p className="module-subtitle">Empleados y responsables de almacén.</p>
+          </div>
+        </div>
+        <div className="module-card personal-table-wrapper">
+          <div className="module-skeleton">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="module-skeleton-row" style={{ animationDelay: `${i * 0.1}s` }}>
+                <div className="module-skeleton-cell module-skeleton-cell--avatar"></div>
+                <div className="module-skeleton-cell module-skeleton-cell--pill"></div>
+                <div className="module-skeleton-cell"></div>
+                <div className="module-skeleton-cell module-skeleton-cell--small"></div>
+                <div className="module-skeleton-cell module-skeleton-cell--actions"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -3,8 +3,8 @@
    ============================================= */
 
 .ri-container {
-  padding: 28px 32px;
-  background: #ffffff;
+  background: transparent;
+  padding: 24px;
 }
 
 /* ── Header ── */
@@ -12,56 +12,48 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 28px;
-}
-
-.ri-header-left h2 {
-  color: #111827;
-  font-size: 22px;
-  font-weight: 700;
-  margin: 0 0 4px 0;
-}
-
-.ri-header-left p {
-  color: #6b7280;
-  font-size: 13px;
-  margin: 0;
+  margin-bottom: 24px;
+  gap: 24px;
 }
 
 /* ── Cards métricas ── */
 .ri-metricas {
   display: flex;
-  align-items: stretch;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  overflow: hidden;
+  gap: 12px;
 }
 
 .ri-metrica-item {
-  padding: 12px 24px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 14px 20px;
   text-align: center;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 160px;
+  transition: all 0.15s ease;
 }
 
-.ri-metrica-item:first-child {
-  border-right: 1px solid #e5e7eb;
+.ri-metrica-item:hover {
+  border-color: var(--color-sky-200);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .ri-metrica-label {
   font-size: 11px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--color-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 
 .ri-metrica-valor {
   font-size: 22px;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text);
   line-height: 1.1;
+  font-variant-numeric: tabular-nums;
 }
 
 .ri-metrica-item.verde .ri-metrica-valor {
@@ -73,61 +65,72 @@
   display: flex;
   align-items: flex-end;
   gap: 12px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   flex-wrap: wrap;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 16px;
 }
 
 .ri-filtro-grupo {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .ri-filtro-grupo label {
   font-size: 11px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--color-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.3px;
 }
 
 .ri-btn-excel {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 16px;
-  background: #f9fafb;
-  color: #374151;
-  border: 1px solid #d1d5db;
+  padding: 0 16px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.15s;
-  height: 36px;
+  transition: all 0.15s ease;
+  height: 38px;
 }
 
 .ri-btn-excel:hover {
-  background: #f3f4f6;
+  background: var(--color-primary-lighter);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.ri-btn-excel i {
+  font-size: 16px;
 }
 
 .ri-filtro-grupo select {
   padding: 8px 32px 8px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   font-size: 13px;
-  color: #374151;
-  background: #ffffff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%236b7280' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") no-repeat right 10px center;
+  color: var(--color-text);
+  background: var(--color-surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%236b7280' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") no-repeat right 10px center;
   appearance: none;
   cursor: pointer;
   min-width: 160px;
-  height: 36px;
+  height: 38px;
+  transition: all 0.15s ease;
 }
 
 .ri-filtro-grupo select:focus {
   outline: none;
-  border-color: #9ca3af;
-  box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.15);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 166, 244, 0.12);
 }
 
 .ri-filtro-grupo select.ri-select-sm {
@@ -142,41 +145,43 @@
 
 .ri-buscar-wrapper input {
   width: 100%;
-  padding: 9px 12px 9px 36px;
-  border: 1px solid #d1d5db;
+  padding: 8px 12px 8px 36px;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   font-size: 13px;
-  color: #374151;
-  background: #ffffff;
+  color: var(--color-text);
+  background: var(--color-surface);
   box-sizing: border-box;
-  height: 36px;
+  height: 38px;
+  transition: all 0.15s ease;
 }
 
 .ri-buscar-wrapper input::placeholder {
-  color: #9ca3af;
+  color: var(--color-text-muted);
 }
 
 .ri-buscar-wrapper input:focus {
   outline: none;
-  border-color: #9ca3af;
-  box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.15);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 166, 244, 0.12);
 }
 
 .ri-buscar-icono {
   position: absolute;
-  left: 11px;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #9ca3af;
-  font-size: 15px;
+  color: var(--color-text-muted);
+  font-size: 16px;
   pointer-events: none;
 }
 
 /* ── Tabla ── */
 .ri-tabla-container {
   overflow-x: auto;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
 }
 
 .ri-tabla {
@@ -186,19 +191,21 @@
 }
 
 .ri-tabla thead {
-  background: #f9fafb;
+  background: #fbfcfe;
 }
 
 .ri-tabla thead tr {
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .ri-tabla th {
-  padding: 11px 14px;
+  padding: 14px 16px;
   text-align: left;
   font-weight: 600;
   font-size: 12px;
-  color: #6b7280;
+  color: #667085;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
   white-space: nowrap;
 }
 
@@ -209,18 +216,18 @@
 }
 
 .ri-tabla td {
-  padding: 12px 14px;
-  border-bottom: 1px solid #f3f4f6;
-  color: #111827;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  color: var(--color-text);
 }
 
 .ri-row-even,
 .ri-row-odd {
-  background: #ffffff;
+  background: var(--color-surface);
 }
 
 .ri-tabla tbody tr:hover {
-  background: #f9fafb;
+  background: rgba(0, 166, 244, 0.03);
 }
 
 .ri-tabla tbody tr:last-child td {
@@ -228,24 +235,23 @@
 }
 
 .ri-tabla td:first-child {
-  color: #6b7280;
+  color: var(--color-text-muted);
   font-size: 12px;
 }
 
 .ri-tabla td:nth-child(2) {
   font-weight: 600;
-  color: #111827;
+  color: var(--color-text);
 }
 
 .ri-badge {
   display: inline-block;
-  padding: 3px 10px;
-  border-radius: 20px;
+  padding: 4px 10px;
+  border-radius: 6px;
   font-size: 11px;
   font-weight: 500;
-  background: #f3f4f6;
-  color: #374151;
-  border: 1px solid #e5e7eb;
+  background: var(--color-sky-50);
+  color: var(--color-sky-700);
 }
 
 .ri-numero {
@@ -254,34 +260,175 @@
 }
 
 .ri-stock-und {
-  color: #9ca3af;
+  color: var(--color-text-muted);
   font-size: 11px;
   margin-left: 2px;
 }
 
 .ri-footer {
-  background: #f9fafb;
+  background: #fbfcfe;
 }
 
 .ri-footer td {
-  padding: 12px 14px;
-  border-top: 1px solid #e5e7eb;
+  padding: 14px 16px;
+  border-top: 1px solid var(--color-border);
   border-bottom: none;
   font-weight: 600;
   font-size: 13px;
-  color: #111827;
+  color: var(--color-text);
 }
 
+/* ── Loading & Empty ── */
 .ri-loading,
 .ri-empty {
   text-align: center;
   padding: 48px;
-  color: #9ca3af;
+  color: var(--color-text-muted);
   font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
+.ri-loading i {
+  font-size: 20px;
+  animation: ri-spin 1s linear infinite;
+}
+
+@keyframes ri-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ── Skeleton Loading ── */
+.ri-skeleton {
+  animation: ri-skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes ri-skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.ri-skeleton-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.ri-skeleton-title {
+  width: 200px;
+  height: 28px;
+  background: var(--color-sky-50);
+  border-radius: 6px;
+}
+
+.ri-skeleton-subtitle {
+  width: 160px;
+  height: 14px;
+  background: var(--color-sky-50);
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
+.ri-skeleton-metricas {
+  display: flex;
+  gap: 12px;
+}
+
+.ri-skeleton-metrica {
+  width: 160px;
+  height: 70px;
+  background: var(--color-sky-50);
+  border-radius: 10px;
+}
+
+.ri-skeleton-filtros {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.ri-skeleton-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ri-skeleton-filter-label {
+  width: 80px;
+  height: 12px;
+  background: var(--color-sky-50);
+  border-radius: 4px;
+}
+
+.ri-skeleton-filter-input {
+  width: 160px;
+  height: 38px;
+  background: var(--color-sky-50);
+  border-radius: 8px;
+}
+
+.ri-skeleton-table {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.ri-skeleton-table-header {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 16px;
+  padding: 14px 16px;
+  background: #fbfcfe;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ri-skeleton-table-header-cell {
+  height: 14px;
+  background: var(--color-sky-50);
+  border-radius: 4px;
+}
+
+.ri-skeleton-table-row {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 16px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.ri-skeleton-table-row:last-child {
+  border-bottom: none;
+}
+
+.ri-skeleton-table-cell {
+  height: 16px;
+  background: var(--color-sky-50);
+  border-radius: 4px;
+}
+
+.ri-skeleton-table-cell.short {
+  width: 60%;
+}
+
+/* ── Responsive ── */
 @media (max-width: 768px) {
-  .ri-container { padding: 16px; }
+  .ri-container { padding: 0; }
   .ri-header { flex-direction: column; gap: 16px; }
+  .ri-metricas { flex-direction: column; }
+  .ri-metrica-item { min-width: auto; }
   .ri-filtros { flex-direction: column; align-items: stretch; }
+  .ri-filtro-grupo select { width: 100%; }
+  .ri-skeleton-table-header,
+  .ri-skeleton-table-row {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }

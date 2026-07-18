@@ -90,7 +90,28 @@ const UnitList: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="module-page unit-list-container">Cargando unidades de medida...</div>;
+    return (
+      <div className="module-page unit-list-container">
+        <div className="module-page-header unit-list-header">
+          <div>
+            <h1 className="module-title">Unidades de Medida</h1>
+            <p className="module-subtitle subtitle">Gestión de unidades (Unidad, Paquete, Caja).</p>
+          </div>
+        </div>
+        <div className="module-card unit-table-container">
+          <div className="module-skeleton">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="module-skeleton-row" style={{ animationDelay: `${i * 0.1}s` }}>
+                <div className="module-skeleton-cell module-skeleton-cell--icon"></div>
+                <div className="module-skeleton-cell module-skeleton-cell--pill"></div>
+                <div className="module-skeleton-cell module-skeleton-cell--small"></div>
+                <div className="module-skeleton-cell module-skeleton-cell--actions"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -133,7 +154,7 @@ const UnitList: React.FC = () => {
             {filteredUnidades.map((unidad) => (
               <tr key={unidad.id} className={!unidad.estado ? 'inactive' : ''}>
                 <td className="unit-name">
-                  <span className="unit-icon">📏</span>
+                  <i className='bx bx-ruler unit-icon'></i>
                   {unidad.nombre}
                 </td>
                 <td className="unit-abbreviation">
@@ -184,6 +205,7 @@ const UnitList: React.FC = () => {
 
         {unidades.length === 0 && (
           <div className="no-data">
+            <i className='bx bx-ruler' style={{ fontSize: '32px', color: 'var(--color-sky-200)', marginBottom: '8px' }}></i>
             <p>No se encontraron unidades de medida</p>
           </div>
         )}

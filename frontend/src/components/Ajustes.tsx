@@ -1,15 +1,15 @@
 // src/components/Ajustes.tsx - Página de Ajustes del Sistema
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
 import { authService } from '../services/auth.service';
 import { ajustesService } from '../services/ajustes.service';
 import { backupService } from '../services/backup.service';
+import { importService, ImportResult } from '../services/import.service';
 import './Ajustes.css';
 
 const Ajustes: React.FC = () => {
   const { usuario } = authService.obtenerSesion();
-  const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Estados para los campos
   const [ruc, setRuc] = useState('');
@@ -18,6 +18,13 @@ const Ajustes: React.FC = () => {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingConfig, setLoadingConfig] = useState(true);
+
+  // Estados para modal de importación
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
 
   // Cargar configuración existente
   useEffect(() => {
@@ -47,7 +54,43 @@ const Ajustes: React.FC = () => {
   };
 
   const handleImportExcel = () => {
-    navigate('/importar');
+    setImportFile(null);
+    setImportResult(null);
+    setImportError(null);
+    setShowImportModal(true);
+  };
+
+  const handleImportFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f && ['.xlsx', '.xls'].some(ext => f.name.toLowerCase().endsWith(ext))) {
+      setImportFile(f);
+      setImportResult(null);
+      setImportError(null);
+    } else {
+      setImportFile(null);
+      setImportError('Solo archivos Excel (.xlsx, .xls)');
+    }
+  };
+
+  const handleImportSubmit = async () => {
+    if (!importFile) return;
+    setImportLoading(true);
+    setImportError(null);
+    setImportResult(null);
+    try {
+      const res = await importService.importSales(importFile);
+      if (res.success && res.data) {
+        setImportResult(res.data);
+        setImportFile(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      } else {
+        setImportError(res.message || 'Error al importar');
+      }
+    } catch (err: any) {
+      setImportError(err.response?.data?.message || err.message || 'Error al importar');
+    } finally {
+      setImportLoading(false);
+    }
   };
 
   const handleCreateBackup = async () => {
@@ -150,15 +193,37 @@ const Ajustes: React.FC = () => {
   const esGerente = usuario?.rol === 'gerente';
 
   if (loadingConfig) {
-    return <div className="ajustes-container">Cargando configuración...</div>;
+    return (
+      <div className="ajustes-container">
+        <div className="ajustes-header">
+          <div className="ajustes-skeleton-header"></div>
+          <div className="ajustes-skeleton-subtitle"></div>
+        </div>
+        <div className="ajustes-content">
+          <div className="ajustes-top-row">
+            <div className="settings-section">
+              <div className="ajustes-skeleton-section-title"></div>
+              <div className="ajustes-skeleton-logo"></div>
+              <div className="ajustes-skeleton-btn"></div>
+            </div>
+            <div className="settings-section">
+              <div className="ajustes-skeleton-section-title"></div>
+              <div className="ajustes-skeleton-field"></div>
+              <div className="ajustes-skeleton-field"></div>
+              <div className="ajustes-skeleton-btn-small"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="ajustes-container">
       {/* Header */}
       <div className="ajustes-header">
-        <h1>Ajustes del Sistema</h1>
-        <p>Configuración general y preferencias del sistema</p>
+        <h1 className="module-title">Ajustes del Sistema</h1>
+        <p className="module-subtitle">Configuración general y preferencias del sistema</p>
       </div>
 
       <div className="ajustes-content">
@@ -256,7 +321,7 @@ const Ajustes: React.FC = () => {
         {/* ── Bloque inferior: Zona de Peligro/Datos (fondo blanco) ── */}
         <div className="danger-zone">
           <h2>
-            <span>⚠️</span> Zona de Peligro / Datos
+            <i className='bx bx-error'></i> Zona de Peligro / Datos
           </h2>
           <p className="danger-subtitle">Gestiona tus copias de seguridad y sesiones activas.</p>
 
@@ -281,6 +346,116 @@ const Ajustes: React.FC = () => {
         </div>
 
       </div>
+
+      {/* ==================== MODAL IMPORTAR EXCEL ==================== */}
+      {showImportModal && (
+        <div className="modal-overlay" onClick={() => setShowImportModal(false)}>
+          <div className="modal-content modal-small" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Importar Excel</h2>
+              <button className="modal-close" onClick={() => setShowImportModal(false)}>
+                <i className='bx bx-x'></i>
+              </button>
+            </div>
+            <div className="modal-body">
+              <p className="import-modal-hint">
+                Selecciona un archivo Excel (.xlsx o .xls) para importar datos de ventas y compras.
+              </p>
+
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept=".xlsx,.xls"
+                onChange={handleImportFileSelect}
+                className="file-input"
+              />
+
+              <button
+                type="button"
+                className="import-modal-select-btn"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={importLoading}
+              >
+                <i className='bx bx-file'></i>
+                {importFile ? importFile.name : 'Seleccionar archivo'}
+              </button>
+
+              {importFile && (
+                <p className="import-modal-file-name">
+                  <i className='bx bx-check-circle'></i>
+                  {importFile.name}
+                </p>
+              )}
+
+              {importError && (
+                <div className="import-modal-error">
+                  <i className='bx bx-error-circle'></i>
+                  {importError}
+                </div>
+              )}
+
+              {importResult && (
+                <div className="import-modal-result">
+                  <div className="import-modal-result-header">
+                    <i className='bx bx-check-circle'></i>
+                    Importación completada
+                  </div>
+                  <div className="import-modal-result-grid">
+                    <div className="import-modal-result-item">
+                      <span>{importResult.filasProcesadas}</span>
+                      <small>Filas</small>
+                    </div>
+                    <div className="import-modal-result-item">
+                      <span>{importResult.nuevasEntradas}</span>
+                      <small>Entradas</small>
+                    </div>
+                    <div className="import-modal-result-item">
+                      <span>{importResult.nuevasSalidas}</span>
+                      <small>Salidas</small>
+                    </div>
+                    <div className="import-modal-result-item">
+                      <span>{importResult.nuevosProductos}</span>
+                      <small>Productos</small>
+                    </div>
+                  </div>
+                  {importResult.errores && importResult.errores.length > 0 && (
+                    <div className="import-modal-errors">
+                      <small>Errores: {importResult.errores.length}</small>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="modal-actions">
+                <button
+                  className="btn-cancel"
+                  onClick={() => setShowImportModal(false)}
+                  disabled={importLoading}
+                >
+                  Cerrar
+                </button>
+                <button
+                  className="btn-save"
+                  onClick={handleImportSubmit}
+                  disabled={!importFile || importLoading}
+                >
+                  {importLoading ? (
+                    <>
+                      <span className="btn-spinner"></span>
+                      Importando...
+                    </>
+                  ) : (
+                    <>
+                      <i className='bx bx-import'></i>
+                      Importar
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

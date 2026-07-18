@@ -1,0 +1,296 @@
+/* ============================================================
+   buttons.css — Botones unificados (estilo OperacionesStock)
+   ============================================================ */
+
+/* ── Base ────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+  line-height: 1;
+  font-family: inherit;
+  text-decoration: none;
+}
+
+.btn i {
+  font-size: 16px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ── Primario ────────────────────────────────────────────────── */
+.btn-primary {
+  background: var(--color-primary-dark);
+  color: var(--color-text-light);
+  border: 1px solid transparent;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-sky-900);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 132, 209, 0.25);
+}
+
+/* ── Secundario ──────────────────────────────────────────────── */
+.btn-secondary {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--color-sky-50);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* ── Peligro ─────────────────────────────────────────────────── */
+.btn-danger {
+  background: var(--danger);
+  color: white;
+  border: 1px solid transparent;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(211, 47, 47, 0.25);
+}
+
+/* ── Éxito ───────────────────────────────────────────────────── */
+.btn-success {
+  background: rgba(22, 163, 74, 0.1);
+  color: #16a34a;
+  border: 1px solid rgba(22, 163, 74, 0.2);
+}
+
+.btn-success:hover:not(:disabled) {
+  background: #16a34a;
+  color: white;
+}
+
+/* ── Warning ─────────────────────────────────────────────────── */
+.btn-warning {
+  background: var(--color-sky-500);
+  color: white;
+  border: 1px solid transparent;
+}
+
+.btn-warning:hover:not(:disabled) {
+  background: var(--color-sky-600);
+  box-shadow: 0 4px 12px rgba(0, 166, 244, 0.25);
+  transform: translateY(-1px);
+}
+
+/* ── Ghost (Cancelar) ────────────────────────────────────────── */
+.btn-ghost {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--color-sky-50);
+  border-color: var(--color-primary);
+}
+
+/* ── Outline ─────────────────────────────────────────────────── */
+.btn-outline {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: var(--color-sky-50);
+  border-color: var(--color-primary);
+}
+
+/* ── Tamaño pequeño ──────────────────────────────────────────── */
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+/* ── Ancho completo ──────────────────────────────────────────── */
+.btn-block {
+  width: 100%;
+  box-sizing: border-box;
+  justify-content: center;
+}
+
+/* ============================================================
+   Action Buttons (tabla: editar / eliminar)
+   ============================================================ */
+.action-btn {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.18s ease;
+}
+
+.action-btn i {
+  font-size: 16px;
+  color: var(--color-text-muted);
+}
+
+.action-btn:hover {
+  transform: translateY(-1px);
+}
+
+/* Editar */
+.action-btn.edit-btn,
+.edit-btn {
+  color: var(--color-primary);
+  border-color: rgba(0, 166, 244, 0.2);
+}
+
+.action-btn.edit-btn:hover,
+.edit-btn:hover {
+  background: rgba(0, 166, 244, 0.08);
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 8px rgba(0, 166, 244, 0.2);
+}
+
+.action-btn.edit-btn:hover i,
+.edit-btn:hover i {
+  color: var(--color-primary-dark);
+}
+
+/* Eliminar */
+.action-btn.delete-btn,
+.delete-btn {
+  color: var(--danger);
+  border-color: rgba(211, 47, 47, 0.2);
+}
+
+.action-btn.delete-btn:hover,
+.delete-btn:hover {
+  background: rgba(211, 47, 47, 0.08);
+  border-color: var(--danger);
+  box-shadow: 0 2px 8px rgba(211, 47, 47, 0.2);
+}
+
+.action-btn.delete-btn:hover i,
+.delete-btn:hover i {
+  color: #b91c1c;
+}
+
+/* ============================================================
+   Pagination Buttons
+   ============================================================ */
+.pagination-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.18s ease;
+  color: var(--color-text);
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: var(--color-primary-lighter);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-btn i {
+  font-size: 18px;
+}
+
+/* ============================================================
+   Modal Actions (Layout modal)
+   ============================================================ */
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn-cancel {
+  padding: 10px 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+}
+
+.btn-cancel:hover {
+  background: var(--color-sky-50);
+}
+
+.btn-save {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background: var(--color-primary-dark);
+  color: var(--color-text-light);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+}
+
+.btn-save:hover {
+  background: var(--color-sky-900);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 132, 209, 0.25);
+}
+
+.btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ============================================================
+   Alias de compatibilidad (módulos que usan .btn-primary en formularios)
+   ============================================================ */
+.btn.btn-primary {
+  background: var(--color-primary-dark);
+  color: var(--color-text-light);
+}
+
+.btn.btn-primary:hover:not(:disabled) {
+  background: var(--color-sky-900);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 132, 209, 0.25);
+}

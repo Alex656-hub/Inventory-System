@@ -143,11 +143,11 @@
 .mf-btn {
   height: 40px;
   padding: 0 20px;
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.18s ease;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -164,25 +164,27 @@
 }
 
 .mf-btn--ghost:hover:not(:disabled) {
-  background: var(--color-primary-light);
+  background: var(--color-sky-50);
   border-color: var(--color-primary);
 }
 
 .mf-btn--primary {
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  background: var(--gradient-primary, linear-gradient(135deg, var(--color-sky-500) 0%, var(--color-sky-700) 100%));
-  color: #fff;
+  background: var(--color-primary-dark);
+  color: var(--color-text-light);
+  border: 1px solid transparent;
 }
 
 .mf-btn--primary:hover:not(:disabled) {
-  background: var(--gradient-primary-hover, linear-gradient(135deg, var(--color-sky-600) 0%, var(--color-sky-800) 100%));
+  background: var(--color-sky-900);
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+  box-shadow: 0 4px 12px rgba(0, 132, 209, 0.25);
 }
 
 .mf-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 .mf-form .mf-spinning {

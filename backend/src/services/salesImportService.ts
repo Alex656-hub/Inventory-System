@@ -48,6 +48,7 @@ const COLUMN_ALIASES: Record<string, string[]> = {
   'sede': ['sede', 'location', 'local', 'tienda'],
   'almacen': ['almacen', 'almacén', 'warehouse'],
   'cliente': ['cliente', 'customer', 'client', 'cliente nombre'],
+  'personal': ['personal', 'nombre personal', 'empleado', 'encargado', 'operador'],
   'telefono_personal': ['telefono personal', 'tel personal', 'telefono_personal'],
   'telefono_cliente': ['telefono cliente', 'tel cliente', 'telefono_cliente'],
   'dni_ruc_cliente': ['dni', 'dni cliente', 'ruc cliente', 'documento cliente', 'dni/ruc cliente', 'dni_ruc_cliente']
@@ -114,6 +115,7 @@ interface ExcelRow {
   sede: string;
   almacen: string;
   cliente: string;
+  personal?: string;
   'telefono_personal'?: string;
   'telefono_cliente'?: string;
   'dni_ruc_cliente'?: string;
@@ -442,8 +444,8 @@ export class SalesImportService {
       const key = nombre.toLowerCase();
       if (!clientDataMap.has(key)) {
         clientDataMap.set(key, {
-          telefono: (r['telefono cliente'] || r['telefono_cliente'] || '').toString().trim(),
-          dni: (r['dni'] || r['dni_ruc_cliente'] || '').toString().trim()
+          telefono: (r['telefono_cliente'] || '').toString().trim(),
+          dni: (r['dni_ruc_cliente'] || '').toString().trim()
         });
       }
     }
@@ -504,7 +506,7 @@ export class SalesImportService {
   ): Promise<void> {
     const personalDataMap = new Map<string, { operacion: string; telefono: string }>();
     for (const r of rows) {
-      const nombre = ((r as any).personal || '').toString().trim();
+      const nombre = (r.personal || '').toString().trim();
       if (!nombre) continue;
       const key = nombre.toLowerCase();
       if (!personalDataMap.has(key)) {

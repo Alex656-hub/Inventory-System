@@ -1,5 +1,5 @@
 import { sequelize } from '../config/database';
-import * as models from '../models';
+import '../models';
 import { ensureProductosProveedorOptional } from './ensure-schema-patches';
 
 export async function initializeDatabase(force = false) {

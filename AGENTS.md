@@ -35,7 +35,8 @@ Login accepts `usuario` (auto-appends `@credisa.com`) or full `email`.
 
 - ORM: Sequelize with PostgreSQL
 - Models auto-sync on backend startup (no migrations required)
-- Reset: `npm run db:reset` in backend
+- Reset (solo tablas): `npm run db:reset` in backend
+- Full reset + seed (recomendado): `npm run db:full-reset` in backend
 
 ## Key entry points
 

@@ -145,39 +145,73 @@ const AlertList: React.FC = () => {
     return 'metric-neutral';
   };
 
+  const renderSkeletonTable = () => (
+    <div className="skeleton-table skeleton">
+      <div className="skeleton-table-header">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div key={i} className="skeleton-table-header-cell"></div>
+        ))}
+      </div>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <div key={i} className="skeleton-table-row">
+          {[1, 2, 3, 4, 5, 6].map((j) => (
+            <div key={j} className={`skeleton-table-cell ${j === 2 ? 'short' : ''}`}></div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+
   const renderMetricsGrid = () => {
     if (loadingMetrics) {
-      return <div className="loading">Cargando métricas...</div>;
+      return (
+        <div className="skeleton-metrics">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <div key={i} className="skeleton-metric-card skeleton">
+              <div className="skeleton-metric-icon"></div>
+              <div className="skeleton-metric-value"></div>
+              <div className="skeleton-metric-label"></div>
+            </div>
+          ))}
+        </div>
+      );
     }
 
     if (!metrics) {
-      return <div className="error">No se pudieron cargar las métricas</div>;
+      return (
+        <div className="empty-state">
+          <i className='bx bx-error-circle'></i>
+          <p>No se pudieron cargar las métricas</p>
+        </div>
+      );
     }
 
     const metricItems = [
-      { label: 'Stock Bajo', value: metrics.stockBajo, type: 'low' as const, icon: '⚠️' },
-      { label: 'Agotados', value: metrics.agotados, type: 'low' as const, icon: '❌' },
-      { label: 'Total Productos', value: metrics.totalProductos, type: 'neutral' as const, icon: '📦' },
-      { label: 'Rotación', value: metrics.rotacion, type: 'high' as const, icon: '🔄', suffix: 'x' },
-      { label: 'Días Inventario', value: metrics.diasInventario, type: 'neutral' as const, icon: '📅', suffix: ' días' },
-      { label: 'Capital Inmovilizado', value: metrics.capitalInmovilizado, type: 'neutral' as const, icon: '💰', prefix: 'S/ ', isCurrency: true },
-      { label: 'Productos Lentos', value: metrics.productosLentos, type: 'low' as const, icon: '🐢' },
-      { label: 'Sin Movimiento', value: metrics.sinMovimiento, type: 'low' as const, icon: '⏸️' },
-      { label: 'Stock Muerto', value: metrics.stockMuerto, type: 'low' as const, icon: '💀' },
-      { label: 'Margen Bruto', value: metrics.margenBruto, type: 'high' as const, icon: '📈', suffix: '%' },
-      { label: 'ROI Inventario', value: metrics.roiInventario, type: 'high' as const, icon: '💹', suffix: '%' },
-      { label: 'Precisión Inventario', value: metrics.precisionInventario, type: 'percentage' as const, icon: '🎯', suffix: '%' },
-      { label: 'Ciclo Conversión', value: metrics.cicloConversion, type: 'neutral' as const, icon: '⏱️', suffix: ' días' },
-      { label: 'Antigüedad Promedio', value: metrics.antiguedadPromedio, type: 'low' as const, icon: '📆', suffix: ' días' },
-      { label: 'Tasa Agotamiento', value: metrics.tasaAgotamiento, type: 'low' as const, icon: '📉', suffix: '%' },
-      { label: 'Valor Stock Muerto', value: metrics.valorStockMuerto, type: 'low' as const, icon: '🪙', prefix: 'S/ ', isCurrency: true },
+      { label: 'Stock Bajo', value: metrics.stockBajo, type: 'low' as const, icon: 'bx-error' },
+      { label: 'Agotados', value: metrics.agotados, type: 'low' as const, icon: 'bx-x-circle' },
+      { label: 'Total Productos', value: metrics.totalProductos, type: 'neutral' as const, icon: 'bx-package' },
+      { label: 'Rotación', value: metrics.rotacion, type: 'high' as const, icon: 'bx-refresh', suffix: 'x' },
+      { label: 'Días Inventario', value: metrics.diasInventario, type: 'neutral' as const, icon: 'bx-calendar', suffix: ' días' },
+      { label: 'Capital Inmovilizado', value: metrics.capitalInmovilizado, type: 'neutral' as const, icon: 'bx-dollar', prefix: 'S/ ', isCurrency: true },
+      { label: 'Productos Lentos', value: metrics.productosLentos, type: 'low' as const, icon: 'bx-trending-down' },
+      { label: 'Sin Movimiento', value: metrics.sinMovimiento, type: 'low' as const, icon: 'bx-pause' },
+      { label: 'Stock Muerto', value: metrics.stockMuerto, type: 'low' as const, icon: 'bx-trash' },
+      { label: 'Margen Bruto', value: metrics.margenBruto, type: 'high' as const, icon: 'bx-bar-chart', suffix: '%' },
+      { label: 'ROI Inventario', value: metrics.roiInventario, type: 'high' as const, icon: 'bx-line-chart', suffix: '%' },
+      { label: 'Precisión Inventario', value: metrics.precisionInventario, type: 'percentage' as const, icon: 'bx-target-lock', suffix: '%' },
+      { label: 'Ciclo Conversión', value: metrics.cicloConversion, type: 'neutral' as const, icon: 'bx-time', suffix: ' días' },
+      { label: 'Antigüedad Promedio', value: metrics.antiguedadPromedio, type: 'low' as const, icon: 'bx-calendar-alt', suffix: ' días' },
+      { label: 'Tasa Agotamiento', value: metrics.tasaAgotamiento, type: 'low' as const, icon: 'bx-trending-down', suffix: '%' },
+      { label: 'Valor Stock Muerto', value: metrics.valorStockMuerto, type: 'low' as const, icon: 'bx-money', prefix: 'S/ ', isCurrency: true },
     ];
 
     return (
       <div className="metrics-grid">
         {metricItems.map((metric, index) => (
           <div key={index} className={`metric-card ${getMetricColor(metric.value, metric.type)}`}>
-            <div className="metric-icon">{metric.icon}</div>
+            <div className="metric-icon">
+              <i className={`bx ${metric.icon}`}></i>
+            </div>
             <div className="metric-value">
               {metric.prefix || ''}{typeof metric.value === 'number' ? (metric.isCurrency ? metric.value.toLocaleString('es-PE') : metric.value) : metric.value}{metric.suffix || ''}
             </div>
@@ -190,13 +224,23 @@ const AlertList: React.FC = () => {
 
   const renderRecommendations = () => {
     if (loadingRecommendations) {
-      return <div className="loading">Cargando recomendaciones...</div>;
+      return (
+        <div className="skeleton-recommendations">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="skeleton-recommendation skeleton">
+              <div className="skeleton-recommendation-number"></div>
+              <div className="skeleton-recommendation-text"></div>
+            </div>
+          ))}
+        </div>
+      );
     }
 
     if (recommendations.length === 0) {
       return (
         <div className="empty-state">
-          <p>No hay recomendaciones en este momento.</p>
+          <i className='bx bx-check-circle'></i>
+          <p>No hay recomendaciones en este momento</p>
           <p className="empty-hint">Las recomendaciones se generan automáticamente basándose en las alertas activas.</p>
         </div>
       );
@@ -261,7 +305,7 @@ const AlertList: React.FC = () => {
             <>
               <div className="filters">
                 <div className="filter-group">
-                  <label>Tipo:</label>
+                  <label>Tipo</label>
                   <select
                     value={typeFilter}
                     onChange={(e) => setTypeFilter(e.target.value)}
@@ -274,7 +318,7 @@ const AlertList: React.FC = () => {
                 </div>
 
                 <div className="filter-group">
-                  <label>Severidad:</label>
+                  <label>Severidad</label>
                   <select
                     value={severityFilter}
                     onChange={(e) => setSeverityFilter(e.target.value as any)}
@@ -287,7 +331,7 @@ const AlertList: React.FC = () => {
                 </div>
 
                 <div className="filter-group">
-                  <label>Estado:</label>
+                  <label>Estado</label>
                   <select
                     value={resolvedFilter.toString()}
                     onChange={(e) => setResolvedFilter(e.target.value === '' ? '' : e.target.value === 'true')}
@@ -300,7 +344,7 @@ const AlertList: React.FC = () => {
               </div>
 
               {loading ? (
-                <div className="loading">Cargando alertas...</div>
+                renderSkeletonTable()
               ) : (
                 <>
                   <div className="table-container">
@@ -340,6 +384,7 @@ const AlertList: React.FC = () => {
                                     className="btn btn-sm btn-success"
                                     onClick={() => handleResolveAlert(alert.id)}
                                   >
+                                    <i className='bx bx-check'></i>
                                     Resolver
                                   </button>
                                 )}
@@ -358,6 +403,7 @@ const AlertList: React.FC = () => {
                         onClick={() => setPagina(pagina - 1)}
                         disabled={pagina === 1}
                       >
+                        <i className='bx bx-chevron-left'></i>
                         Anterior
                       </button>
                       <span>Página {pagina} de {totalPaginas}</span>
@@ -367,6 +413,7 @@ const AlertList: React.FC = () => {
                         disabled={pagina === totalPaginas}
                       >
                         Siguiente
+                        <i className='bx bx-chevron-right'></i>
                       </button>
                     </div>
                   )}
@@ -378,7 +425,10 @@ const AlertList: React.FC = () => {
           {activeTab === 'analytics' && (
             <div className="analytics-section">
               <div className="section-header">
-                <h2>Métricas del Inventario</h2>
+                <h2>
+                  <i className='bx bx-bar-chart-alt-2'></i>
+                  Métricas del Inventario
+                </h2>
                 <button className="btn btn-secondary" onClick={cargarMetrics}>
                   <i className='bx bx-refresh'></i> Actualizar
                 </button>
@@ -390,7 +440,10 @@ const AlertList: React.FC = () => {
           {activeTab === 'recommendations' && (
             <div className="recommendations-section">
               <div className="section-header">
-                <h2>Acciones Sugeridas</h2>
+                <h2>
+                  <i className='bx bx-lightbulb'></i>
+                  Acciones Sugeridas
+                </h2>
                 <button className="btn btn-secondary" onClick={cargarRecommendations}>
                   <i className='bx bx-refresh'></i> Actualizar
                 </button>

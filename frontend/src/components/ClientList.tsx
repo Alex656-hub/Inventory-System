@@ -112,12 +112,25 @@ const ClientList: React.FC = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={5} className="module-empty">Cargando...</td>
+                <td colSpan={5}>
+                  <div className="module-skeleton">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div key={i} className="module-skeleton-row" style={{ animationDelay: `${i * 0.1}s` }}>
+                        <div className="module-skeleton-cell module-skeleton-cell--avatar"></div>
+                        <div className="module-skeleton-cell"></div>
+                        <div className="module-skeleton-cell"></div>
+                        <div className="module-skeleton-cell module-skeleton-cell--small"></div>
+                        <div className="module-skeleton-cell module-skeleton-cell--actions"></div>
+                      </div>
+                    ))}
+                  </div>
+                </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
                 <td colSpan={5} className="module-empty">
-                  No se encontraron clientes
+                  <i className="bx bx-user" style={{ fontSize: '32px', color: 'var(--color-sky-200)', marginBottom: '8px' }}></i>
+                  <p>No se encontraron clientes</p>
                 </td>
               </tr>
             ) : (
@@ -148,7 +161,7 @@ const ClientList: React.FC = () => {
                     <div className="client-actions">
                       <button
                         type="button"
-                        className="icon-btn"
+                        className="action-btn edit-btn"
                         title="Editar"
                         onClick={() => handleEditar(c)}
                       >
@@ -156,7 +169,7 @@ const ClientList: React.FC = () => {
                       </button>
                       <button
                         type="button"
-                        className="icon-btn danger"
+                        className="action-btn delete-btn"
                         title="Eliminar"
                         onClick={() => handleEliminar(c.id)}
                       >

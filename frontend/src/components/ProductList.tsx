@@ -6,6 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import Modal from './Modal';
 import ProductForm from './ProductForm';
 import '../styles/moduleBase.css';
+import './ProductList.css';
 
 const ProductList: React.FC = () => {
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -110,6 +111,41 @@ const ProductList: React.FC = () => {
     cargarDatos({ showLoading: true });
   };
 
+  const renderSkeleton = () => (
+    <div className="module-page">
+      <div className="module-page-header">
+        <div>
+          <div className="skeleton-title"></div>
+          <div className="skeleton-subtitle"></div>
+        </div>
+        <div className="module-toolbar">
+          <div className="skeleton-search"></div>
+          {esGerente && <div className="skeleton-btn"></div>}
+        </div>
+      </div>
+      <div className="module-card">
+        <div className="skeleton-table">
+          <div className="skeleton-table-header">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+              <div key={i} className="skeleton-table-header-cell"></div>
+            ))}
+          </div>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="skeleton-table-row">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((j) => (
+                <div key={j} className={`skeleton-table-cell ${j === 3 ? 'short' : ''}`}></div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (loading) {
+    return renderSkeleton();
+  }
+
   return (
     <div className="module-page">
       <div className="module-page-header">
@@ -136,118 +172,118 @@ const ProductList: React.FC = () => {
         </div>
       </div>
 
-      {loading ? (
-        <div className="module-loading">Cargando productos...</div>
-      ) : (
-        <>
-          <div className="module-card">
-              <table className="module-table">
-              <thead>
-                <tr>
-                  <th>Img</th>
-                  <th>Código</th>
-                  <th>Nombre</th>
-                  <th>Categoria</th>
-                  <th>Unidad</th>
-                  <th>Costo</th>
-                  <th>Precio</th>
-                  <th>Estado</th>
-                  {esGerente && <th>Acciones</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {productos.length === 0 ? (
-                  <tr>
-                    <td colSpan={esGerente ? 9 : 8} className="module-empty">
-                      No se encontraron productos
+      <div className="module-card">
+        <table className="module-table">
+          <thead>
+            <tr>
+              <th>Img</th>
+              <th>Código</th>
+              <th>Nombre</th>
+              <th>Categoría</th>
+              <th>Unidad</th>
+              <th>Costo</th>
+              <th>Precio</th>
+              <th>Estado</th>
+              {esGerente && <th>Acciones</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {productos.length === 0 ? (
+              <tr>
+                <td colSpan={esGerente ? 9 : 8} className="module-empty">
+                  <i className='bx bx-package'></i>
+                  No se encontraron productos
+                </td>
+              </tr>
+            ) : (
+              productos.map((producto) => (
+                <tr
+                  key={producto.id}
+                  id={`product-${producto.id}`}
+                  className={hayStockBajo(producto) ? 'stock-bajo' : undefined}
+                >
+                  <td>
+                    {producto.imageUrl ? (
+                      <img src={producto.imageUrl} alt="" className="product-thumb" />
+                    ) : (
+                      <span className="product-thumb-placeholder">
+                        <i className="bx bx-image-alt" />
+                      </span>
+                    )}
+                  </td>
+                  <td className="product-code">{producto.codigo}</td>
+                  <td className="product-name">{producto.nombre}</td>
+                  <td><span className="product-badge">{producto.categoria?.nombre}</span></td>
+                  <td>{producto.unidad?.nombre}</td>
+                  <td className="product-price">S/ {Number(producto.precio_compra).toFixed(2)}</td>
+                  <td className="product-price">S/ {Number(producto.precio_venta).toFixed(2)}</td>
+                  <td>
+                    {hayStockBajo(producto) ? (
+                      <span className="product-status warning">
+                        <i className='bx bx-error'></i>
+                        Stock Bajo
+                      </span>
+                    ) : (
+                      <span className="product-status success">
+                        <i className='bx bx-check-circle'></i>
+                        Disponible
+                      </span>
+                    )}
+                  </td>
+                  {esGerente && (
+                    <td>
+                      <div className="product-actions">
+                        <button
+                          onClick={() => handleEditarProducto(producto)}
+                          className="action-btn edit-btn"
+                          title="Editar"
+                          type="button"
+                        >
+                          <i className='bx bx-edit'></i>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setProductoEliminar(producto);
+                            setShowDeleteConfirm(true);
+                          }}
+                          className="action-btn delete-btn"
+                          title="Eliminar"
+                          type="button"
+                        >
+                          <i className='bx bx-trash-alt'></i>
+                        </button>
+                      </div>
                     </td>
-                  </tr>
-                ) : (
-                  productos.map((producto) => (
-                    <tr
-                      key={producto.id}
-                      id={`product-${producto.id}`}
-                      className={hayStockBajo(producto) ? 'stock-bajo' : undefined}
-                    >
-                      <td>
-                        {producto.imageUrl ? (
-                          <img src={producto.imageUrl} alt="" className="product-thumb" />
-                        ) : (
-                          <span className="product-thumb-placeholder">
-                            <i className="bx bx-image-alt" />
-                          </span>
-                        )}
-                      </td>
-                      <td>{producto.codigo}</td>
-                      <td>{producto.nombre}</td>
-                      <td>{producto.categoria?.nombre}</td>
-                      <td>{producto.unidad?.nombre}</td>
-                      <td>S/ {Number(producto.precio_compra).toFixed(2)}</td>
-                      <td>S/ {Number(producto.precio_venta).toFixed(2)}</td>
-                      <td>
-                        {hayStockBajo(producto) ? (
-                          <span className="badge warning">⚠️ Stock Bajo</span>
-                        ) : (
-                          <span className="badge success">✓ Disponible</span>
-                        )}
-                      </td>
-                      {esGerente && (
-                        <td>
-                          <div className="actions">
-                            <button
-                              onClick={() => handleEditarProducto(producto)}
-                              className="action-btn edit-btn"
-                              title="Editar"
-                              type="button"
-                            >
-                              <i className='bx bx-edit'></i>
-                            </button>
-                            <button
-                              onClick={() => {
-                                setProductoEliminar(producto);
-                                setShowDeleteConfirm(true);
-                              }}
-                              className="action-btn delete-btn"
-                              title="Eliminar"
-                              type="button"
-                            >
-                              <i className='bx bx-trash-alt'></i>
-                            </button>
-                          </div>
-                        </td>
-                      )}
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  )}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
-          {totalPaginas > 1 && (
-            <div className="pagination">
-              <button
-                onClick={() => setPagina(pagina - 1)}
-                disabled={pagina === 1}
-                className="pagination-btn"
-              >
-                <i className='bx bx-chevron-left'></i>
-              </button>
-              <span className="pagination-info">
-                Página {pagina} de {totalPaginas}
-              </span>
-              <button
-                onClick={() => setPagina(pagina + 1)}
-                disabled={pagina === totalPaginas}
-                className="pagination-btn"
-              >
-                <i className='bx bx-chevron-right'></i>
-              </button>
-            </div>
-          )}
-        </>
+      {totalPaginas > 1 && (
+        <div className="pagination">
+          <button
+            onClick={() => setPagina(pagina - 1)}
+            disabled={pagina === 1}
+            className="pagination-btn"
+          >
+            <i className='bx bx-chevron-left'></i>
+          </button>
+          <span className="pagination-info">
+            Página {pagina} de {totalPaginas}
+          </span>
+          <button
+            onClick={() => setPagina(pagina + 1)}
+            disabled={pagina === totalPaginas}
+            className="pagination-btn"
+          >
+            <i className='bx bx-chevron-right'></i>
+          </button>
+        </div>
       )}
 
-      {/* Modal formulario — size="medium" para layout compacto */}
       <Modal
         isOpen={showForm}
         onClose={() => {
@@ -268,7 +304,6 @@ const ProductList: React.FC = () => {
         />
       </Modal>
 
-      {/* Modal confirmación eliminar */}
       <Modal
         isOpen={showDeleteConfirm}
         onClose={() => {
@@ -278,22 +313,28 @@ const ProductList: React.FC = () => {
         title="Confirmar Eliminación"
         size="small"
       >
-        <p>¿Estás seguro de que deseas eliminar el producto <strong>{productoEliminar?.nombre}</strong>?</p>
+        <div className="delete-confirm-content">
+          <div className="delete-confirm-icon">
+            <i className='bx bx-trash-alt'></i>
+          </div>
+          <p>¿Estás seguro de que deseas eliminar el producto <strong>{productoEliminar?.nombre}</strong>?</p>
+          <p className="delete-confirm-hint">Esta acción no se puede deshacer.</p>
+        </div>
         <div className="form-actions">
           <button
             onClick={() => {
               setShowDeleteConfirm(false);
               setProductoEliminar(null);
             }}
-            className="btn-secondary"
+            className="btn-cancel"
           >
             Cancelar
           </button>
           <button
             onClick={handleEliminarProducto}
-            className="btn-primary"
-            style={{ backgroundColor: '#dc3545' }}
+            className="btn-delete"
           >
+            <i className='bx bx-trash-alt'></i>
             Eliminar
           </button>
         </div>

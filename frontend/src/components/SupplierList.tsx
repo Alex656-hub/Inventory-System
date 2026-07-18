@@ -145,7 +145,19 @@ const SupplierList: React.FC = () => {
       </div>
 
       {loading ? (
-        <div className="module-loading loading">Cargando proveedores...</div>
+        <div className="module-card supplier-table-wrapper">
+          <div className="module-skeleton">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="module-skeleton-row" style={{ animationDelay: `${i * 0.1}s` }}>
+                <div className="module-skeleton-cell module-skeleton-cell--avatar"></div>
+                <div className="module-skeleton-cell"></div>
+                <div className="module-skeleton-cell"></div>
+                <div className="module-skeleton-cell module-skeleton-cell--small"></div>
+                {esGerente && <div className="module-skeleton-cell module-skeleton-cell--actions"></div>}
+              </div>
+            ))}
+          </div>
+        </div>
       ) : (
         <>
           <div className="module-card supplier-table-wrapper">
@@ -213,7 +225,7 @@ const SupplierList: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => handleEditar(proveedor)}
-                            className="supplier-action-btn supplier-edit-btn"
+                            className="action-btn edit-btn"
                             title="Editar proveedor"
                           >
                             <i className="bx bx-pencil" />
@@ -224,7 +236,7 @@ const SupplierList: React.FC = () => {
                               setProveedorEliminar(proveedor);
                               setShowDeleteConfirm(true);
                             }}
-                            className="supplier-action-btn supplier-delete-btn"
+                            className="action-btn delete-btn"
                             title="Eliminar proveedor"
                           >
                             <i className="bx bx-trash" />

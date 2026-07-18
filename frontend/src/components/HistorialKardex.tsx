@@ -173,7 +173,8 @@ const HistorialKardex: React.FC = () => {
   return (
     <div className="historial-kardex-container">
       <div className="hk-header">
-        <h2>Kardex - Historial de Movimientos</h2>
+        <h1 className="module-title">Kardex - Historial de Movimientos</h1>
+        <p className="module-subtitle">Consulta el historial completo de movimientos de inventario</p>
       </div>
 
       <div className="hk-encabezado-card">
@@ -196,7 +197,7 @@ const HistorialKardex: React.FC = () => {
           </div>
 
           <div className="hk-rango-fechas">
-            <span className="hk-rango-icono">📅</span>
+            <span className="hk-rango-icono"><i className="bx bx-calendar"></i></span>
             <input
               type="date"
               value={filtros.fecha_desde}
@@ -217,7 +218,7 @@ const HistorialKardex: React.FC = () => {
           <div className="hk-filtro-group">
             <label>Reportes</label>
             <button className="hk-btn-reporte" onClick={() => setShowKardexModal(true)}>
-              <span>📄</span> Kardex PDF
+              <i className="bx bx-file-blank"></i> Kardex PDF
             </button>
           </div>
 
@@ -274,6 +275,35 @@ const HistorialKardex: React.FC = () => {
         </div>
       </div>
 
+      {loading ? (
+        <div className="hk-skeleton-table">
+          <div className="hk-skeleton-table-header">
+            <div className="hk-skeleton-table-header-cell"></div>
+            <div className="hk-skeleton-table-header-cell"></div>
+            <div className="hk-skeleton-table-header-cell"></div>
+            <div className="hk-skeleton-table-header-cell"></div>
+            <div className="hk-skeleton-table-header-cell"></div>
+            <div className="hk-skeleton-table-header-cell"></div>
+            <div className="hk-skeleton-table-header-cell"></div>
+          </div>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="hk-skeleton-table-row hk-skeleton" style={{ animationDelay: `${i * 0.1}s` }}>
+              <div className="hk-skeleton-table-cell"></div>
+              <div className="hk-skeleton-table-cell"></div>
+              <div className="hk-skeleton-table-cell"></div>
+              <div className="hk-skeleton-table-cell"></div>
+              <div className="hk-skeleton-table-cell"></div>
+              <div className="hk-skeleton-table-cell"></div>
+              <div className="hk-skeleton-table-cell"></div>
+            </div>
+          ))}
+        </div>
+      ) : movimientos.length === 0 ? (
+        <div className="hk-empty">
+          <i className="bx bx-package"></i>
+          <p>No se encontraron movimientos</p>
+        </div>
+      ) : (
       <div className="hk-tabla-container">
         <table className="hk-tabla">
           <thead>
@@ -288,11 +318,7 @@ const HistorialKardex: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {loading ? (
-              <tr><td colSpan={7} className="hk-loading">Cargando...</td></tr>
-            ) : movimientos.length === 0 ? (
-              <tr><td colSpan={7} className="hk-empty">No se encontraron movimientos</td></tr>
-            ) : (
+            {
               movimientos.map((mov, index) => (
                 <tr key={mov.id} className={index % 2 === 0 ? 'hk-row-even' : 'hk-row-odd'}>
                   <td>{formatFecha(mov.fecha)}</td>
@@ -319,19 +345,20 @@ const HistorialKardex: React.FC = () => {
                       <button className="hk-btn-action hk-btn-preview"
                         onClick={() => handlePrevisualizar(mov)}
                         disabled={previewLoading || !mov.tiene_pdf}
-                        title="Previsualizar">👁</button>
+                        title="Previsualizar"><i className="bx bx-show"></i></button>
                       <button className="hk-btn-action hk-btn-print"
                         onClick={() => handleImprimirPdf(mov)}
                         disabled={!mov.tiene_pdf}
-                        title="Imprimir PDF">🖨</button>
+                        title="Imprimir PDF"><i className="bx bx-printer"></i></button>
                     </div>
                   </td>
                 </tr>
               ))
-            )}
+            }
           </tbody>
         </table>
       </div>
+      )}
 
       {paginacion.totalPaginas > 1 && (
         <div className="hk-pagination">

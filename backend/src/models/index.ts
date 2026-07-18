@@ -14,6 +14,12 @@ import ConfiguracionSistema from './ConfiguracionSistema';
 import Sede from './Sede';
 import Almacen from './Almacen';
 import Personal from './Personal';
+import RefreshToken from './RefreshToken';
+import Client from './Client';
+import OperacionStock from './OperacionStock';
+import StockPorSede from './StockPorSede';
+import DetalleOperacion from './DetalleOperacion';
+import DailySale from './sales';
 
 // Exportar modelos
 export {
@@ -31,7 +37,13 @@ export {
   ConfiguracionSistema,
   Sede,
   Almacen,
-  Personal
+  Personal,
+  RefreshToken,
+  Client,
+  OperacionStock,
+  StockPorSede,
+  DetalleOperacion,
+  DailySale
 };
 
 // Exportar tipos

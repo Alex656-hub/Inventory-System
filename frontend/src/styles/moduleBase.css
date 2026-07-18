@@ -72,27 +72,35 @@
 
 .module-primary-btn {
   height: 40px;
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 0 16px;
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.10);
-  background: var(--gradient-primary, linear-gradient(135deg, var(--color-sky-500) 0%, var(--color-sky-700) 100%));
-  color: #fff;
+  border: 1px solid transparent;
+  background: var(--color-primary-dark);
+  color: var(--color-text-light);
   font-weight: 600;
   font-size: 14px;
-  transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+  cursor: pointer;
+  transition: all 0.18s ease;
 }
 
 .module-primary-btn:hover {
-  background: var(--gradient-primary-hover, linear-gradient(135deg, var(--color-sky-600) 0%, var(--color-sky-800) 100%));
+  background: var(--color-sky-900);
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+  box-shadow: 0 4px 12px rgba(0, 132, 209, 0.25);
 }
 
 .module-primary-btn i {
   font-size: 18px;
+}
+
+.module-primary-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 .module-card {

@@ -108,8 +108,16 @@ const CategoryList: React.FC = () => {
       </div>
 
       {loading ? (
-        <div className="module-loading" style={{textAlign: 'center'}}>
-          Cargando categorías...
+        <div className="module-card unit-table-container">
+          <div className="module-skeleton">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="module-skeleton-row" style={{ animationDelay: `${i * 0.1}s` }}>
+                <div className="module-skeleton-cell module-skeleton-cell--icon"></div>
+                <div className="module-skeleton-cell module-skeleton-cell--small"></div>
+                <div className="module-skeleton-cell module-skeleton-cell--actions"></div>
+              </div>
+            ))}
+          </div>
         </div>
       ) : (
         <div className="module-card unit-table-container">
@@ -171,6 +179,7 @@ const CategoryList: React.FC = () => {
 
           {categories.length === 0 && (
             <div className="no-data">
+              <i className='bx bx-category' style={{ fontSize: '32px', color: 'var(--color-sky-200)', marginBottom: '8px' }}></i>
               <p>No se encontraron categorías</p>
             </div>
           )}

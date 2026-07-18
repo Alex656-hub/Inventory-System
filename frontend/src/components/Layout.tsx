@@ -1,9 +1,11 @@
 // src/components/Layout.tsx - Layout con topbar + sidebar segmentado
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../services/auth.service';
 import { userService } from '../services/user.service';
+import { searchService } from '../services/search.service';
+import { GlobalSearchResponse } from '../types';
 import './Layout.css';
 
 interface LayoutProps {
@@ -24,6 +26,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     password: ''
   });
   const [saving, setSaving] = useState(false);
+
+  // Búsqueda global
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<GlobalSearchResponse | null>(null);
+  const [showResults, setShowResults] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -67,6 +77,49 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   const esGerente = usuario?.rol === 'gerente';
+
+  // Búsqueda global con debounce
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+
+    if (value.trim().length < 2) {
+      setSearchResults(null);
+      setShowResults(false);
+      return;
+    }
+
+    searchTimerRef.current = setTimeout(async () => {
+      setSearchLoading(true);
+      try {
+        const results = await searchService.busquedaGlobal(value.trim(), 4);
+        setSearchResults(results);
+        setShowResults(true);
+      } catch {
+        setSearchResults(null);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300);
+  }, []);
+
+  const handleSearchResultClick = (path: string) => {
+    setShowResults(false);
+    setSearchQuery('');
+    setSearchResults(null);
+    navigate(path);
+  };
+
+  // Cerrar dropdown al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowResults(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const renderNavLink = (
     path: string,
@@ -189,13 +242,126 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <span className="topbar-brand">InvCred</span>
           </div>
 
-          <div className="topbar-center">
+          <div className="topbar-center" ref={searchRef}>
             <i className='bx bx-search topbar-search-icon'></i>
             <input
               type="text"
               className="topbar-search"
-              placeholder="Buscar productos, operaciones, clientes..."
+              placeholder="Buscar productos, ventas, categorías, proveedores..."
+              value={searchQuery}
+              onChange={e => handleSearchChange(e.target.value)}
+              onFocus={() => searchResults && setShowResults(true)}
             />
+
+            {/* Dropdown de resultados */}
+            {showResults && searchResults && (
+              <div className="search-dropdown">
+                {searchLoading && (
+                  <div className="search-dropdown-loading">
+                    <span className="search-spinner"></span>
+                    Buscando...
+                  </div>
+                )}
+
+                {!searchLoading && (
+                  <>
+                    {searchResults.productos.length === 0 &&
+                     searchResults.ventas.length === 0 &&
+                     searchResults.categorias.length === 0 &&
+                     searchResults.proveedores.length === 0 && (
+                      <div className="search-dropdown-empty">
+                        <i className='bx bx-search'></i>
+                        <span>No se encontraron resultados</span>
+                      </div>
+                    )}
+
+                    {searchResults.productos.length > 0 && (
+                      <div className="search-group">
+                        <div className="search-group-header">
+                          <i className='bx bx-package'></i>
+                          Productos
+                          <span className="search-group-count">{searchResults.productos.length}</span>
+                        </div>
+                        {searchResults.productos.map(p => (
+                          <div
+                            key={p.id}
+                            className="search-item"
+                            onClick={() => handleSearchResultClick('/productos')}
+                          >
+                            <div className="search-item-name">{p.nombre}</div>
+                            <div className="search-item-meta">
+                              {p.codigo}
+                              {p.categoria && <> · {p.categoria.nombre}</>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {searchResults.ventas.length > 0 && (
+                      <div className="search-group">
+                        <div className="search-group-header">
+                          <i className='bx bx-cart'></i>
+                          Ventas
+                          <span className="search-group-count">{searchResults.ventas.length}</span>
+                        </div>
+                        {searchResults.ventas.map(v => (
+                          <div
+                            key={v.id}
+                            className="search-item"
+                            onClick={() => handleSearchResultClick('/ventas')}
+                          >
+                            <div className="search-item-name">Venta {v.numero}</div>
+                            <div className="search-item-meta">
+                              {new Date(v.fecha).toLocaleDateString('es-PE')} · S/ {v.total.toFixed(2)}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {searchResults.categorias.length > 0 && (
+                      <div className="search-group">
+                        <div className="search-group-header">
+                          <i className='bx bx-category'></i>
+                          Categorías
+                          <span className="search-group-count">{searchResults.categorias.length}</span>
+                        </div>
+                        {searchResults.categorias.map(c => (
+                          <div
+                            key={c.id}
+                            className="search-item"
+                            onClick={() => handleSearchResultClick('/categorias')}
+                          >
+                            <div className="search-item-name">{c.nombre}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {searchResults.proveedores.length > 0 && (
+                      <div className="search-group">
+                        <div className="search-group-header">
+                          <i className='bx bx-building-house'></i>
+                          Proveedores
+                          <span className="search-group-count">{searchResults.proveedores.length}</span>
+                        </div>
+                        {searchResults.proveedores.map(p => (
+                          <div
+                            key={p.id}
+                            className="search-item"
+                            onClick={() => handleSearchResultClick('/proveedores')}
+                          >
+                            <div className="search-item-name">{p.nombre}</div>
+                            <div className="search-item-meta">{p.ruc_dni}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="topbar-right">

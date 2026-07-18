@@ -240,8 +240,16 @@ const UserAccess: React.FC = () => {
 
       <div className="module-card users-table-container">
         {fetching ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
-            Cargando usuarios...
+          <div className="module-skeleton">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="module-skeleton-row" style={{ animationDelay: `${i * 0.1}s` }}>
+                <div className="module-skeleton-cell"></div>
+                <div className="module-skeleton-cell"></div>
+                <div className="module-skeleton-cell module-skeleton-cell--pill"></div>
+                <div className="module-skeleton-cell module-skeleton-cell--small"></div>
+                <div className="module-skeleton-cell module-skeleton-cell--actions"></div>
+              </div>
+            ))}
           </div>
         ) : (
           <table className="module-table users-table">
@@ -313,6 +321,7 @@ const UserAccess: React.FC = () => {
               {filteredUsers.length === 0 && (
                 <tr>
                   <td colSpan={5} style={{ textAlign: 'center', padding: '30px', color: '#999' }}>
+                    <i className='bx bx-user' style={{ fontSize: '32px', color: 'var(--color-sky-200)', marginBottom: '8px', display: 'block' }}></i>
                     {searchTerm
                       ? 'No se encontraron usuarios'
                       : 'No hay usuarios registrados'}

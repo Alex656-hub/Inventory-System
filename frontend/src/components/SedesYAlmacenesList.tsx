@@ -103,7 +103,29 @@ const SedesYAlmacenesList: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="module-page sedes-almacenes-container module-loading">Cargando...</div>;
+    return (
+      <div className="module-page sedes-almacenes-container">
+        <div className="module-page-header">
+          <div>
+            <h1 className="module-title">Sedes y Almacenes</h1>
+            <p className="module-subtitle">Gestión de sedes y espacios de almacenamiento.</p>
+          </div>
+        </div>
+        <div className="module-card">
+          <div className="module-skeleton">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="module-skeleton-row" style={{ animationDelay: `${i * 0.1}s` }}>
+                <div className="module-skeleton-cell module-skeleton-cell--icon"></div>
+                <div className="module-skeleton-cell"></div>
+                <div className="module-skeleton-cell"></div>
+                <div className="module-skeleton-cell module-skeleton-cell--small"></div>
+                <div className="module-skeleton-cell module-skeleton-cell--actions"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -138,7 +160,7 @@ const SedesYAlmacenesList: React.FC = () => {
               <tr key={sede.id} className={!sede.estado ? 'inactive' : ''}>
                 <td className="name-cell">
                   <div className="sede-name-cell">
-                    <span className="sede-icon">{'\ud83c\udfe2'}</span>
+                    <i className='bx bx-building-house sede-icon'></i>
                     <div>
                       {sede.nombre}
                     </div>
@@ -185,7 +207,10 @@ const SedesYAlmacenesList: React.FC = () => {
         </table>
 
         {sedes.length === 0 && (
-          <div className="module-empty">No se encontraron registros.</div>
+          <div className="module-empty">
+            <i className='bx bx-building' style={{ fontSize: '32px', color: 'var(--color-sky-200)', marginBottom: '8px' }}></i>
+            <p>No se encontraron registros.</p>
+          </div>
         )}
       </div>
 
