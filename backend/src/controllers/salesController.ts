@@ -50,7 +50,7 @@ const fileFilter = (
 const upload = multer({
   storage,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB
+    fileSize: 50 * 1024 * 1024, // 50MB - soporta Excels grandes (3600+ filas)
   },
   fileFilter,
 });
@@ -100,7 +100,7 @@ class SalesController {
         }
 
         console.log('Iniciando procesamiento del archivo...');
-        // Procesar el archivo
+        // Procesar el archivo (síncrono, pero con lotes internos)
         const result = await SalesImportService.importFromExcel(req.file, req.usuario.id);
 
         console.log('Procesamiento completado:', result);
@@ -218,8 +218,6 @@ class SalesController {
       });
     }
   }
-  
-  // ... (código anterior)
 
   // Get sales summary
   public async getSalesSummary(req: Request, res: Response): Promise<void> {

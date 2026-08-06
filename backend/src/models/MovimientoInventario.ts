@@ -17,6 +17,9 @@ interface MovimientoInventarioAttributes {
   fecha: Date;
   motivo?: string;
   observaciones?: string;
+  sede_origen?: string;  // Nombre de la sede origen (para importaciones)
+  sede_destino?: string; // Nombre de la sede destino (para importaciones)
+  responsable?: string;  // Nombre del responsable (para importaciones)
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -37,6 +40,9 @@ class MovimientoInventario extends Model<MovimientoInventarioAttributes, Movimie
   public fecha!: Date;
   public motivo?: string;
   public observaciones?: string;
+  public sede_origen?: string;
+  public sede_destino?: string;
+  public responsable?: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
@@ -107,6 +113,18 @@ MovimientoInventario.init(
     },
     observaciones: {
       type: DataTypes.TEXT,
+      allowNull: true
+    },
+    sede_origen: {
+      type: DataTypes.STRING(200),
+      allowNull: true
+    },
+    sede_destino: {
+      type: DataTypes.STRING(200),
+      allowNull: true
+    },
+    responsable: {
+      type: DataTypes.STRING(200),
       allowNull: true
     }
   },

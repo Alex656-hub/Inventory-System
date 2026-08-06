@@ -13,10 +13,10 @@ export const sequelize = new Sequelize(
     dialect: 'postgres',
     logging: false,
     pool: {
-      max: 5,
+      max: 10,
       min: 0,
-      acquire: 30000,
-      idle: 10000
+      acquire: 300000, // 5 minutos para importaciones grandes
+      idle: 60000
     }
   }
 );

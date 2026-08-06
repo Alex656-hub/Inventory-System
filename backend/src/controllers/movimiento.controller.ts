@@ -293,11 +293,11 @@ export const obtenerHistorialMovimientos = async (req: Request, res: Response): 
           codigo: mov.producto.codigo,
           nombre: mov.producto.nombre
         } : null,
-        // Datos de la operación de stock relacionada
+        // Datos de la operación de stock relacionada (o del movimiento directamente)
         operacion_tipo: operacion?.tipo || null,
-        sede_origen: operacion?.sede_origen || null,
-        sede_destino: operacion?.sede_destino || null,
-        responsable: operacion?.personal || null,
+        sede_origen: operacion?.sede_origen || mov.sede_origen || null,
+        sede_destino: operacion?.sede_destino || mov.sede_destino || null,
+        responsable: operacion?.personal || mov.responsable || null,
         // Flag para indicar si tiene PDF guardado
         tiene_pdf: mov.referencia_id && operacionesMap.has(mov.referencia_id)
       };

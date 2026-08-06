@@ -138,6 +138,8 @@ export interface ImportResult {
   warnings: string[];
 }
 
+const BATCH_SIZE = 500; // Lotes de 500 facturas
+
 export class SalesImportService {
   static async importFromExcel(
     file: Express.Multer.File,
@@ -204,28 +206,97 @@ export class SalesImportService {
         return n as ExcelRow;
       });
 
+      // FASE 1: Procesar entidades en 1 transacción (categorías, proveedores, etc.)
+      let categoryMap: Map<string, Category>;
+      let supplierMap: Map<string, Supplier>;
+      let unitMap: Map<string, UnidadMedida>;
+      let sedeMap: Map<string, Sede>;
+      let almacenMap: Map<string, Almacen>;
+      let productMap: Map<string, Product>;
+      let clientMap: Map<string, Client>;
+
       await sequelize.transaction(async (t) => {
-        const categoryMap = await this.processCategories(normalizedRows, t, result);
-        const supplierMap = await this.processSuppliers(normalizedRows, t, result);
-        const unitMap = await this.processUnits(normalizedRows, t, result);
-        const sedeMap = await this.processSedes(normalizedRows, t, result);
-        const almacenMap = await this.processAlmacenes(normalizedRows, t, result);
-        const productMap = await this.processProducts(
+        categoryMap = await this.processCategories(normalizedRows, t, result);
+        supplierMap = await this.processSuppliers(normalizedRows, t, result);
+        unitMap = await this.processUnits(normalizedRows, t, result);
+        sedeMap = await this.processSedes(normalizedRows, t, result);
+        almacenMap = await this.processAlmacenes(normalizedRows, t, result);
+        productMap = await this.processProducts(
           normalizedRows, categoryMap, supplierMap, unitMap, t, result
         );
-        const clientMap = await this.processClients(normalizedRows, t, result);
+        clientMap = await this.processClients(normalizedRows, t, result);
         await this.processPersonal(normalizedRows, t, result);
-        await this.processOperations(
-          normalizedRows, productMap, supplierMap, clientMap, sedeMap, almacenMap,
-          usuarioId, t, result
-        );
-        await this.updateProductStocks(productMap, t);
       });
+
+      // FASE 2: Procesar operaciones por lotes
+      await this.processOperationsInBatches(
+        normalizedRows, productMap!, supplierMap!, clientMap!, sedeMap!, almacenMap!,
+        usuarioId, result
+      );
+
+      // FASE 3: Actualizar stocks finales
+      await this.updateProductStocks(productMap!);
 
       return result;
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Error desconocido';
       throw new Error(msg);
+    }
+  }
+
+  private static async processOperationsInBatches(
+    rows: ExcelRow[],
+    productMap: Map<string, Product>,
+    supplierMap: Map<string, Supplier>,
+    clientMap: Map<string, Client>,
+    sedeMap: Map<string, Sede>,
+    almacenMap: Map<string, Almacen>,
+    usuarioId: number,
+    result: ImportResult
+  ): Promise<void> {
+    // Agrupar por factura
+    const sortedRows = [...rows].sort((a, b) => {
+      const da = new Date(a.fecha).getTime();
+      const db = new Date(b.fecha).getTime();
+      return da - db;
+    });
+
+    const facturas = new Map<string, ExcelRow[]>();
+    for (const row of sortedRows) {
+      const factura = (row.factura || '').toString().trim();
+      if (!factura) continue;
+      if (!facturas.has(factura)) facturas.set(factura, []);
+      facturas.get(factura)!.push(row);
+    }
+
+    const facturaEntries = Array.from(facturas.entries());
+    const totalBatches = Math.ceil(facturaEntries.length / BATCH_SIZE);
+
+    console.log(`Procesando ${facturaEntries.length} facturas en ${totalBatches} lotes...`);
+
+    // Procesar cada lote en su propia transacción
+    for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+      const start = batchIndex * BATCH_SIZE;
+      const end = Math.min(start + BATCH_SIZE, facturaEntries.length);
+      const batch = facturaEntries.slice(start, end);
+
+      console.log(`Lote ${batchIndex + 1}/${totalBatches}: procesando ${batch.length} facturas...`);
+
+      await sequelize.transaction(async (t) => {
+        for (const [factura, facturaRows] of batch) {
+          const op = (facturaRows[0].operacion || '').toString().trim().toLowerCase();
+
+          if (op === 'compra') {
+            await this.processCompra(factura, facturaRows, productMap, supplierMap, sedeMap, almacenMap, usuarioId, t, result);
+          } else if (op === 'venta') {
+            await this.processVenta(factura, facturaRows, productMap, clientMap, usuarioId, t, result);
+          } else {
+            result.errors.push(`Factura ${factura}: Operación "${facturaRows[0].operacion}" no válida (use "compra" o "venta")`);
+          }
+        }
+      });
+
+      console.log(`Lote ${batchIndex + 1}/${totalBatches} completado (${result.processedRows} filas procesadas)`);
     }
   }
 
@@ -541,44 +612,6 @@ export class SalesImportService {
     }
   }
 
-  private static async processOperations(
-    rows: ExcelRow[],
-    productMap: Map<string, Product>,
-    supplierMap: Map<string, Supplier>,
-    clientMap: Map<string, Client>,
-    sedeMap: Map<string, Sede>,
-    almacenMap: Map<string, Almacen>,
-    usuarioId: number,
-    t: Transaction,
-    result: ImportResult
-  ): Promise<void> {
-    const sortedRows = [...rows].sort((a, b) => {
-      const da = new Date(a.fecha).getTime();
-      const db = new Date(b.fecha).getTime();
-      return da - db;
-    });
-
-    const facturas = new Map<string, ExcelRow[]>();
-    for (const row of sortedRows) {
-      const factura = (row.factura || '').toString().trim();
-      if (!factura) continue;
-      if (!facturas.has(factura)) facturas.set(factura, []);
-      facturas.get(factura)!.push(row);
-    }
-
-    for (const [factura, facturaRows] of facturas) {
-      const op = (facturaRows[0].operacion || '').toString().trim().toLowerCase();
-
-      if (op === 'compra') {
-        await this.processCompra(factura, facturaRows, productMap, supplierMap, sedeMap, almacenMap, usuarioId, t, result);
-      } else if (op === 'venta') {
-        await this.processVenta(factura, facturaRows, productMap, clientMap, usuarioId, t, result);
-      } else {
-        result.errors.push(`Factura ${factura}: Operación "${facturaRows[0].operacion}" no válida (use "compra" o "venta")`);
-      }
-    }
-  }
-
   private static async processCompra(
     factura: string,
     rows: ExcelRow[],
@@ -601,10 +634,6 @@ export class SalesImportService {
     }
     if (!sedeNombre && !almacenNombre) {
       result.errors.push(`Factura ${factura}: Falta sede o almacén (compra requiere un destino)`);
-      return;
-    }
-    if (sedeNombre && almacenNombre) {
-      result.errors.push(`Factura ${factura}: No puede tener sede y almacén a la vez (use solo uno)`);
       return;
     }
 
@@ -682,22 +711,64 @@ export class SalesImportService {
         stock_nuevo: stockNuevo,
         usuario_id: usuarioId,
         fecha,
-        motivo: `Importación compra ${factura}`
+        motivo: `Importación compra ${factura}`,
+        sede_destino: (firstRow.sede || '').toString().trim() || undefined,
+        responsable: (firstRow.personal || '').toString().trim() || undefined
       }, { transaction: t });
 
       await item.producto.update({ stock_actual: stockNuevo }, { transaction: t });
 
       // Actualizar StockPorSede
-      const sedeNombre = (firstRow.sede || '').toString().trim();
-      const almacenNombre = (firstRow.almacen || '').toString().trim();
-      if (sedeNombre) {
-        const sede = sedeMap.get(sedeNombre.toLowerCase());
-        if (sede) {
+      const sedeNombre2 = (firstRow.sede || '').toString().trim();
+      const almacenNombre2 = (firstRow.almacen || '').toString().trim();
+      const sede = sedeNombre2 ? sedeMap.get(sedeNombre2.toLowerCase()) : undefined;
+      const almacen = almacenNombre2 ? almacenMap.get(almacenNombre2.toLowerCase()) : undefined;
+
+      if (sede && almacen) {
+        // Caso: sede + almacén juntos
+        const [stockSede] = await StockPorSede.findOrCreate({
+          where: { producto_id: item.producto.id, sede_id: sede.id, almacen_id: almacen.id },
+          defaults: {
+            producto_id: item.producto.id,
+            sede_id: sede.id,
+            almacen_id: almacen.id,
+            cantidad_actual: 0,
+            stock_minimo: item.producto.stock_minimo,
+            ultimo_movimiento: new Date()
+          },
+          transaction: t
+        });
+        await stockSede.update({
+          cantidad_actual: stockSede.cantidad_actual + item.cantidad,
+          ultimo_movimiento: new Date()
+        }, { transaction: t });
+      } else if (sede) {
+        // Caso: solo sede
+        const [stockSede] = await StockPorSede.findOrCreate({
+          where: { producto_id: item.producto.id, sede_id: sede.id },
+          defaults: {
+            producto_id: item.producto.id,
+            sede_id: sede.id,
+            cantidad_actual: 0,
+            stock_minimo: item.producto.stock_minimo,
+            ultimo_movimiento: new Date()
+          },
+          transaction: t
+        });
+        await stockSede.update({
+          cantidad_actual: stockSede.cantidad_actual + item.cantidad,
+          ultimo_movimiento: new Date()
+        }, { transaction: t });
+      } else if (almacen) {
+        // Caso: solo almacén (usar sede por defecto)
+        const defaultSede = await Sede.findOne({ where: { estado: 'activo' }, order: [['id', 'ASC']], transaction: t });
+        if (defaultSede) {
           const [stockSede] = await StockPorSede.findOrCreate({
-            where: { producto_id: item.producto.id, sede_id: sede.id },
+            where: { producto_id: item.producto.id, sede_id: defaultSede.id, almacen_id: almacen.id },
             defaults: {
               producto_id: item.producto.id,
-              sede_id: sede.id,
+              sede_id: defaultSede.id,
+              almacen_id: almacen.id,
               cantidad_actual: 0,
               stock_minimo: item.producto.stock_minimo,
               ultimo_movimiento: new Date()
@@ -708,29 +779,6 @@ export class SalesImportService {
             cantidad_actual: stockSede.cantidad_actual + item.cantidad,
             ultimo_movimiento: new Date()
           }, { transaction: t });
-        }
-      } else if (almacenNombre) {
-        const almacen = almacenMap.get(almacenNombre.toLowerCase());
-        if (almacen) {
-          const defaultSede = await Sede.findOne({ where: { estado: 'activo' }, order: [['id', 'ASC']], transaction: t });
-          if (defaultSede) {
-            const [stockSede] = await StockPorSede.findOrCreate({
-              where: { producto_id: item.producto.id, sede_id: defaultSede.id, almacen_id: almacen.id },
-              defaults: {
-                producto_id: item.producto.id,
-                sede_id: defaultSede.id,
-                almacen_id: almacen.id,
-                cantidad_actual: 0,
-                stock_minimo: item.producto.stock_minimo,
-                ultimo_movimiento: new Date()
-              },
-              transaction: t
-            });
-            await stockSede.update({
-              cantidad_actual: stockSede.cantidad_actual + item.cantidad,
-              ultimo_movimiento: new Date()
-            }, { transaction: t });
-          }
         }
       }
 
@@ -829,7 +877,9 @@ export class SalesImportService {
         stock_nuevo: stockNuevo,
         usuario_id: usuarioId,
         fecha,
-        motivo: `Importación venta ${factura}`
+        motivo: `Importación venta ${factura}`,
+        sede_origen: (firstRow.sede || '').toString().trim() || undefined,
+        responsable: (firstRow.personal || '').toString().trim() || undefined
       }, { transaction: t });
 
       await item.producto.update({ stock_actual: stockNuevo }, { transaction: t });
@@ -869,12 +919,11 @@ export class SalesImportService {
   }
 
   private static async updateProductStocks(
-    productMap: Map<string, Product>,
-    t: Transaction
+    productMap: Map<string, Product>
   ): Promise<void> {
     for (const [, product] of productMap) {
       const stock = Math.max(0, product.stock_actual);
-      await product.update({ stock_actual: stock }, { transaction: t });
+      await product.update({ stock_actual: stock });
     }
   }
 }

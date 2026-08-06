@@ -71,7 +71,7 @@ const ImportSales: React.FC = () => {
               <li><code>proveedor</code> — Se crea si no existe</li>
               <li><code>costo unitario</code> — Costo del producto</li>
               <li><code>sede</code> — Destino de la compra</li>
-              <li><code>almacen</code> — Almacén destino</li>
+              <li><code>almacen</code> — Almacén destino (puede ir junto con sede)</li>
             </ul>
             <h4>Para ventas</h4>
             <ul>
