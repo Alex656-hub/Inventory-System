@@ -4,7 +4,10 @@ import {
   checkAlerts,
   resolveAlert,
   getRecommendations,
-  getAnalytics
+  getAnalytics,
+  acceptRecommendation,
+  rejectRecommendation,
+  executeRecommendation
 } from '../controllers/alertsController';
 import { verificarToken, verificarPermiso, soloGerente } from '../middleware/auth.middleware';
 
@@ -21,5 +24,10 @@ router.get('/recommendations', verificarPermiso('alertasStock'), getRecommendati
 // Rutas que requieren ser gerente (para ejecutar checks y resolver alertas)
 router.post('/check', soloGerente, checkAlerts);
 router.put('/:id/resolve', soloGerente, resolveAlert);
+
+// Acciones de recomendaciones
+router.put('/recommendations/:id/accept', soloGerente, acceptRecommendation);
+router.put('/recommendations/:id/reject', soloGerente, rejectRecommendation);
+router.put('/recommendations/:id/execute', soloGerente, executeRecommendation);
 
 export default router;

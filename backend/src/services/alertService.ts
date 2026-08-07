@@ -7,10 +7,9 @@ import { getDemandForecast } from '../analytics';
  * Servicio para gestión de alertas del sistema de inventario
  */
 class AlertService {
-  // Método para verificar productos con stock bajo
-  async checkLowStock(): Promise<void> {
+  // Método para verificar productos agotados (stock_actual = 0)
+  async checkOutOfStock(): Promise<void> {
     try {
-      // Obtener usuario del sistema (primer gerente activo)
       const systemUser = await User.findOne({
         where: { rol: 'gerente', activo: true }
       });
@@ -20,32 +19,101 @@ class AlertService {
         return;
       }
 
-      // Consultar productos con stock bajo
+      const outOfStockProducts = await Product.findAll({
+        where: {
+          stock_actual: 0,
+          activo: true
+        }
+      });
+
+      for (const product of outOfStockProducts) {
+        const existingAlert = await Alert.findOne({
+          where: {
+            product_id: product.id,
+            type: 'out_of_stock'
+          }
+        });
+
+        if (!existingAlert) {
+          await Alert.create({
+            type: 'out_of_stock',
+            message: `El producto "${product.nombre}" está agotado (0 unidades disponibles)`,
+            severity: 'high',
+            product_id: product.id,
+            user_id: systemUser.id
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error al verificar productos agotados:', error);
+      throw new Error('No se pudieron verificar los productos agotados');
+    }
+  }
+
+  // Método para verificar productos con stock bajo
+  async checkLowStock(): Promise<void> {
+    try {
+      const systemUser = await User.findOne({
+        where: { rol: 'gerente', activo: true }
+      });
+
+      if (!systemUser) {
+        console.warn('No se encontró un usuario gerente activo para asignar alertas');
+        return;
+      }
+
+      // Productos donde stock_actual <= stock_minimo (y stock_minimo > 0)
       const lowStockProducts = await Product.findAll({
         where: {
           stock_actual: {
             [Op.lte]: sequelize.col('stock_minimo')
           },
+          stock_minimo: { [Op.gt]: 0 },
           activo: true
         }
       });
 
       for (const product of lowStockProducts) {
-        // Verificar si ya existe una alerta no resuelta para este producto
         const existingAlert = await Alert.findOne({
           where: {
             product_id: product.id,
-            type: 'low_stock',
-            resolved: false
+            type: 'low_stock'
           }
         });
 
         if (!existingAlert) {
-          // Crear nueva alerta
           await Alert.create({
             type: 'low_stock',
             message: `El producto "${product.nombre}" tiene stock bajo (${product.stock_actual} unidades, mínimo: ${product.stock_minimo})`,
             severity: 'high',
+            product_id: product.id,
+            user_id: systemUser.id
+          });
+        }
+      }
+
+      // También alertar productos con stock_minimo=0 pero stock_actual muy bajo (<=5)
+      const criticalProducts = await Product.findAll({
+        where: {
+          stock_minimo: 0,
+          stock_actual: { [Op.and]: { [Op.gt]: 0, [Op.lte]: 5 } },
+          activo: true
+        }
+      });
+
+      for (const product of criticalProducts) {
+        const existingAlert = await Alert.findOne({
+          where: {
+            product_id: product.id,
+            type: 'low_stock'
+          }
+        });
+
+        if (!existingAlert) {
+          await Alert.create({
+            type: 'low_stock',
+            message: `El producto "${product.nombre}" tiene stock crítico (${product.stock_actual} unidades)`,
+            severity: 'medium',
             product_id: product.id,
             user_id: systemUser.id
           });
@@ -231,8 +299,28 @@ class AlertService {
     }
   }
 
+  // Método para resolver alertas de un producto cuando se compra más stock
+  async resolveAlertsForProduct(productId: number): Promise<void> {
+    try {
+      // Resolver alertas de low_stock y out_of_stock para este producto
+      await Alert.update(
+        { resolved: true },
+        {
+          where: {
+            product_id: productId,
+            type: { [Op.in]: ['low_stock', 'out_of_stock'] },
+            resolved: false
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Error al resolver alertas para producto:', error);
+    }
+  }
+
   // Método para ejecutar todas las verificaciones de alertas
   async checkAllAlerts(): Promise<void> {
+    await this.checkOutOfStock();
     await this.checkLowStock();
     await this.checkOverstock();
     await this.checkDemandTrends();

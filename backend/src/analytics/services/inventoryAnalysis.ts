@@ -6,6 +6,11 @@ import { subMonths, subDays } from 'date-fns';
  * Servicio para análisis de inventario
  */
 
+export interface DateRange {
+  fechaInicio?: string;
+  fechaFin?: string;
+}
+
 export interface FullInventoryMetrics {
   // Métricas básicas de stock
   stockBajo: number;
@@ -109,7 +114,8 @@ export const getInventoryMetrics = async (): Promise<InventoryMetrics> => {
       },
       include: [{
         model: DetalleSalida,
-        include: [Product]
+        as: 'detalles',
+        include: [{ model: Product, as: 'producto' }]
       }]
     });
 
@@ -161,9 +167,16 @@ export const getInventoryMetrics = async (): Promise<InventoryMetrics> => {
 /**
  * Obtiene las 16 métricas completas del inventario
  */
-export const getFullInventoryMetrics = async (): Promise<FullInventoryMetrics> => {
+export const getFullInventoryMetrics = async (dateRange?: DateRange): Promise<FullInventoryMetrics> => {
   try {
-    // 1. Métricas básicas de stock
+    // Determinar rango de fechas para ventas y movimientos
+    const fechaFin = dateRange?.fechaFin ? new Date(dateRange.fechaFin) : new Date();
+    const fechaInicio = dateRange?.fechaInicio 
+      ? new Date(dateRange.fechaInicio) 
+      : subMonths(fechaFin, 3);
+    const diasPeriodo = Math.max(1, Math.ceil((fechaFin.getTime() - fechaInicio.getTime()) / (1000 * 60 * 60 * 24)));
+
+    // 1. Métricas básicas de stock (punto en tiempo, no dependen de fecha)
     const [totalProductos, stockBajo, agotados] = await Promise.all([
       Product.count({ where: { activo: true } }),
       Product.count({
@@ -194,9 +207,6 @@ export const getFullInventoryMetrics = async (): Promise<FullInventoryMetrics> =
     let stockMuerto = 0;
     let valorStockMuerto = 0;
 
-    const threeMonthsAgo = subMonths(new Date(), 3);
-    const sixMonthsAgo = subMonths(new Date(), 6);
-
     for (const product of products) {
       const stockValue = product.stock_actual * (product.precio_venta || 0);
       const costValue = product.stock_actual * (product.precio_compra || 0);
@@ -208,12 +218,12 @@ export const getFullInventoryMetrics = async (): Promise<FullInventoryMetrics> =
         productosLentos++;
       }
 
-      // Productos sin movimiento en 3 meses (stock > 0)
+      // Productos sin movimiento en el periodo (stock > 0)
       if (product.stock_actual > 0) {
         const tieneMovimiento = await MovimientoInventario.findOne({
           where: {
             producto_id: product.id,
-            fecha: { [Op.gte]: threeMonthsAgo }
+            fecha: { [Op.gte]: fechaInicio }
           },
           limit: 1
         });
@@ -222,12 +232,13 @@ export const getFullInventoryMetrics = async (): Promise<FullInventoryMetrics> =
         }
       }
 
-      // Stock muerto: productos sin movimiento en 6 meses
+      // Stock muerto: sin movimiento en el doble del periodo o 6 meses
+      const fechaLimiteMuerto = subMonths(fechaFin, 6);
       if (product.stock_actual > 0) {
         const tieneMovimientoReciente = await MovimientoInventario.findOne({
           where: {
             producto_id: product.id,
-            fecha: { [Op.gte]: sixMonthsAgo }
+            fecha: { [Op.gte]: fechaLimiteMuerto }
           },
           limit: 1
         });
@@ -238,16 +249,16 @@ export const getFullInventoryMetrics = async (): Promise<FullInventoryMetrics> =
       }
     }
 
-    // 4. Obtener datos de ventas de los últimos 90 días
-    const ninetyDaysAgo = subMonths(new Date(), 3);
+    // 4. Obtener datos de ventas del periodo seleccionado
     const salesData = await SalidaInventario.findAll({
       where: {
-        fecha: { [Op.gte]: ninetyDaysAgo },
+        fecha: { [Op.gte]: fechaInicio, [Op.lte]: fechaFin },
         estado: 'completado'
       },
       include: [{
         model: DetalleSalida,
-        include: [Product]
+        as: 'detalles',
+        include: [{ model: Product, as: 'producto' }]
       }]
     });
 
@@ -271,13 +282,17 @@ export const getFullInventoryMetrics = async (): Promise<FullInventoryMetrics> =
     const entradas = await DetalleEntrada.findAll({
       include: [{
         model: EntradaInventario,
-        where: { estado: 'completado' }
+        as: 'entrada',
+        where: { 
+          estado: 'pagado',
+          fecha: { [Op.gte]: fechaInicio, [Op.lte]: fechaFin }
+        }
       }],
       order: [['createdAt', 'DESC']],
-      limit: 100
+      limit: 200
     });
 
-    const ahora = new Date();
+    const ahora = fechaFin;
     let sumaDias = 0;
     let conteo = 0;
 
@@ -297,7 +312,7 @@ export const getFullInventoryMetrics = async (): Promise<FullInventoryMetrics> =
       : 0;
 
     const diasInventario = salesMetrics.totalUnitsSold > 0
-      ? parseFloat((totalProductos * 90 / salesMetrics.totalUnitsSold).toFixed(1))
+      ? parseFloat((totalProductos * diasPeriodo / salesMetrics.totalUnitsSold).toFixed(1))
       : 0;
 
     const margenBruto = salesMetrics.totalSales > 0

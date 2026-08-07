@@ -1,5 +1,5 @@
 import api from '../config/api';
-import { Alert } from '../types';
+import { Alert, Recommendation } from '../types';
 
 interface Paginacion {
   total: number;
@@ -14,7 +14,13 @@ interface AlertsResponse {
 }
 
 interface RecommendationsResponse {
-  recomendaciones: string[];
+  recomendaciones: Recommendation[];
+  resumen: {
+    total: number;
+    pendientes: number;
+    urgentes: number;
+    costoTotalEstimado: number;
+  };
 }
 
 export interface InventoryMetrics {
@@ -64,8 +70,14 @@ export const alertService = {
     return data;
   },
 
-  getAnalytics: async (): Promise<InventoryMetrics> => {
-    const { data } = await api.get<InventoryMetrics>('/alerts/analytics');
+  updateRecommendationStatus: async (id: number, action: 'accept' | 'reject' | 'execute'): Promise<{ mensaje: string }> => {
+    const endpoint = action === 'accept' ? 'accept' : action === 'reject' ? 'reject' : 'execute';
+    const { data } = await api.put<{ mensaje: string }>(`/alerts/recommendations/${id}/${endpoint}`);
+    return data;
+  },
+
+  getAnalytics: async (params?: { fechaInicio?: string; fechaFin?: string }): Promise<InventoryMetrics> => {
+    const { data } = await api.get<InventoryMetrics>('/alerts/analytics', { params });
     return data;
   }
 };

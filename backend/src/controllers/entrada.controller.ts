@@ -197,11 +197,15 @@ export const crearEntrada = async (req: Request, res: Response): Promise<void> =
 
     await transaction.commit();
 
-    // Verificar alertas de sobrestock después de la entrada
+    // Resolver alertas de stock bajo/agotado para productos comprados y verificar sobrestock
     try {
+      const productIds = detalles.map((d: any) => d.producto_id);
+      for (const productId of productIds) {
+        await alertService.resolveAlertsForProduct(productId);
+      }
       await alertService.checkOverstock();
     } catch (alertError) {
-      console.error('Error al verificar alertas de sobrestock después de entrada:', alertError);
+      console.error('Error al verificar alertas después de entrada:', alertError);
     }
 
     const entradaCompleta = await EntradaInventario.findByPk(entrada.id, {

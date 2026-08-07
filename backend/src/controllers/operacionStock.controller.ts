@@ -167,6 +167,13 @@ class OperacionStockController {
         operacion
       });
 
+      // Resolver alertas para productos de ENTRADA
+      if (operacion.tipo_operacion === 'ENTRADA') {
+        const productIds = operacion.detalles.map(d => d.producto_id);
+        for (const pid of productIds) {
+          await alertService.resolveAlertsForProduct(pid);
+        }
+      }
       alertService.checkLowStock().catch(err => {
         console.warn('Background alert check failed:', err.message);
       });
@@ -344,6 +351,12 @@ class OperacionStockController {
       }, { transaction });
     }
 
+    // Actualizar stock global del producto
+    await Product.update(
+      { stock_actual: sequelize.literal(`"stock_actual" + ${cantidad}`) },
+      { where: { id: productoId }, transaction }
+    );
+
     // Crear movimiento histórico con referencia a la operación
     await MovimientoInventario.create({
       producto_id: productoId,
@@ -384,6 +397,12 @@ class OperacionStockController {
     }
 
     const stockFinal = totalDisponible - cantidad;
+
+    // Actualizar stock global del producto
+    await Product.update(
+      { stock_actual: sequelize.literal(`GREATEST("stock_actual" - ${cantidad}, 0)`) },
+      { where: { id: productoId }, transaction }
+    );
 
     // Crear movimiento histórico con referencia a la operación
     await MovimientoInventario.create({

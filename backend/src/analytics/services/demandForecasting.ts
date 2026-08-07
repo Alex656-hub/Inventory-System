@@ -131,9 +131,9 @@ async function getHistoricalSalesData(
 
   // Aplicar filtros
   if (productId) {
-    include[0].include[0].where = { producto_id: productId };
+    include[0].where = { producto_id: productId };
   } else if (categoryId) {
-    include[0].include[0].include[0].where = { categoria_id: categoryId };
+    include[0].include[0].where = { categoria_id: categoryId };
   }
 
   // Obtener datos de salidas de inventario (ventas)

@@ -5,7 +5,7 @@ import User from './User';
 
 interface AlertAttributes {
   id: number;
-  type: 'low_stock' | 'overstock' | 'demand_trend';
+  type: 'out_of_stock' | 'low_stock' | 'overstock' | 'demand_trend';
   message: string;
   severity: 'high' | 'medium' | 'low';
   product_id: number;
@@ -19,7 +19,7 @@ interface AlertCreationAttributes extends Optional<AlertAttributes, 'id' | 'reso
 
 class Alert extends Model<AlertAttributes, AlertCreationAttributes> implements AlertAttributes {
   public id!: number;
-  public type!: 'low_stock' | 'overstock' | 'demand_trend';
+  public type!: 'out_of_stock' | 'low_stock' | 'overstock' | 'demand_trend';
   public message!: string;
   public severity!: 'high' | 'medium' | 'low';
   public product_id!: number;
@@ -41,7 +41,7 @@ Alert.init(
       primaryKey: true
     },
     type: {
-      type: DataTypes.ENUM('low_stock', 'overstock', 'demand_trend'),
+      type: DataTypes.ENUM('out_of_stock', 'low_stock', 'overstock', 'demand_trend'),
       allowNull: false
     },
     message: {

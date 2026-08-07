@@ -151,6 +151,26 @@ export interface GlobalSearchResponse {
   proveedores: ProveedorSearchResult[];
 }
 
+export interface Recommendation {
+  id: number;
+  alert_id: number;
+  product_id: number;
+  proveedor_id?: number;
+  tipo: 'REORDEN' | 'PROMOCION' | 'INVESTIGAR' | 'DESCARTAR' | 'AJUSTE';
+  prioridad: 'URGENTE' | 'ALTA' | 'MEDIA' | 'BAJA';
+  titulo: string;
+  descripcion: string;
+  cantidad_sugerida: number | null;
+  costo_estimado: number | null;
+  impacto_estimado: number | null;
+  estado: 'PENDIENTE' | 'ACEPTADA' | 'RECHAZADA' | 'EJECUTADA';
+  user_id: number;
+  product?: Producto;
+  supplier?: any; // Use Supplier type if available
+  alert?: Alert;
+  created_at: string;
+}
+
 export interface Alert {
   id: number;
   type: string;

@@ -10,6 +10,7 @@ import Supplier from './models/Supplier';
 import Alert from './models/Alert';
 import UnidadMedida from './models/UnidadMedida';
 import ConfiguracionSistema from './models/ConfiguracionSistema';
+import { alertService } from './services/alertService';
 import './models/EntradaInventario';
 import './models/DetalleEntrada';
 import './models/SalidaInventario';
@@ -150,6 +151,19 @@ const startServer = async () => {
     
     app.listen(PORT, () => {
       console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+
+      // Verificar alertas automáticamente al iniciar
+      alertService.checkAllAlerts()
+        .then(() => console.log('✅ Verificación inicial de alertas completada'))
+        .catch((err: unknown) => console.error('⚠️ Error en verificación inicial de alertas:', err));
+
+      // Verificar alertas cada 6 horas
+      const SIX_HOURS = 6 * 60 * 60 * 1000;
+      setInterval(() => {
+        alertService.checkAllAlerts()
+          .then(() => console.log('✅ Verificación periódica de alertas completada'))
+          .catch((err: unknown) => console.error('⚠️ Error en verificación periódica de alertas:', err));
+      }, SIX_HOURS);
     });
   } catch (error) {
     console.error('❌ Error al iniciar el servidor:', error);

@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { alertService, InventoryMetrics } from '../services/alert.service';
-import { Alert } from '../types';
+import { Alert, Recommendation } from '../types';
 import { useAuth } from '../hooks/useAuth';
+import RecommendationSummary from './RecommendationSummary';
+import RecommendationCard from './RecommendationCard';
+import AnalyticsDashboard from './AnalyticsDashboard';
 import './AlertList.css';
 
 type TabType = 'alerts' | 'analytics' | 'recommendations';
@@ -12,14 +15,20 @@ const AlertList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState<string>('');
   const [severityFilter, setSeverityFilter] = useState<'high' | 'medium' | 'low' | ''>('');
-  const [resolvedFilter, setResolvedFilter] = useState<boolean | ''>('');
+  const [resolvedFilter, setResolvedFilter] = useState<boolean | ''>(false);
   const [pagina, setPagina] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
 
   const [metrics, setMetrics] = useState<InventoryMetrics | null>(null);
   const [loadingMetrics, setLoadingMetrics] = useState(false);
 
-  const [recommendations, setRecommendations] = useState<string[]>([]);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [summary, setSummary] = useState<{
+    total: number;
+    pendientes: number;
+    urgentes: number;
+    costoTotalEstimado: number;
+  } | null>(null);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
 
   const { usuario } = useAuth();
@@ -55,10 +64,10 @@ const AlertList: React.FC = () => {
     }
   };
 
-  const cargarMetrics = async () => {
+  const cargarMetrics = async (params?: { fechaInicio?: string; fechaFin?: string }) => {
     setLoadingMetrics(true);
     try {
-      const data = await alertService.getAnalytics();
+      const data = await alertService.getAnalytics(params);
       setMetrics(data);
     } catch (error) {
       console.error('Error al cargar métricas:', error);
@@ -72,6 +81,7 @@ const AlertList: React.FC = () => {
     try {
       const response = await alertService.getRecommendations();
       setRecommendations(response.recomendaciones);
+      setSummary(response.resumen);
     } catch (error) {
       console.error('Error al cargar recomendaciones:', error);
     } finally {
@@ -98,6 +108,17 @@ const AlertList: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
+  const handleCheckAlerts = async () => {
+    if (!esGerente) return;
+
+    try {
+      await alertService.checkAlerts();
+      cargarAlerts();
+    } catch (error) {
+      console.error('Error al verificar alertas:', error);
+    }
+  };
+
   const handleResolveAlert = async (alertId: number) => {
     if (!esGerente) return;
 
@@ -109,14 +130,15 @@ const AlertList: React.FC = () => {
     }
   };
 
-  const handleCheckAlerts = async () => {
+  const handleRecommendationAction = async (id: number, action: 'accept' | 'reject' | 'execute') => {
     if (!esGerente) return;
-
     try {
-      await alertService.checkAlerts();
-      cargarAlerts();
+      const result = await alertService.updateRecommendationStatus(id, action);
+      alert(result.mensaje);
+      cargarRecommendations();
     } catch (error) {
-      console.error('Error al verificar alertas:', error);
+      console.error(`Error al procesar acción ${action}:`, error);
+      alert('Error al procesar la acción');
     }
   };
 
@@ -131,18 +153,12 @@ const AlertList: React.FC = () => {
 
   const getTypeLabel = (type: string) => {
     const labels = {
+      out_of_stock: 'Agotado',
       low_stock: 'Stock Bajo',
       overstock: 'Sobrestock',
       demand_trend: 'Tendencia de Demanda'
     };
     return labels[type as keyof typeof labels] || type;
-  };
-
-  const getMetricColor = (value: number, type: 'low' | 'high' | 'neutral' | 'percentage') => {
-    if (type === 'low') return value <= 0 ? 'metric-danger' : value <= 5 ? 'metric-warning' : 'metric-success';
-    if (type === 'high') return value >= 10 ? 'metric-danger' : value >= 5 ? 'metric-warning' : 'metric-success';
-    if (type === 'percentage') return value >= 80 ? 'metric-success' : value >= 50 ? 'metric-warning' : 'metric-danger';
-    return 'metric-neutral';
   };
 
   const renderSkeletonTable = () => (
@@ -161,66 +177,6 @@ const AlertList: React.FC = () => {
       ))}
     </div>
   );
-
-  const renderMetricsGrid = () => {
-    if (loadingMetrics) {
-      return (
-        <div className="skeleton-metrics">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <div key={i} className="skeleton-metric-card skeleton">
-              <div className="skeleton-metric-icon"></div>
-              <div className="skeleton-metric-value"></div>
-              <div className="skeleton-metric-label"></div>
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    if (!metrics) {
-      return (
-        <div className="empty-state">
-          <i className='bx bx-error-circle'></i>
-          <p>No se pudieron cargar las métricas</p>
-        </div>
-      );
-    }
-
-    const metricItems = [
-      { label: 'Stock Bajo', value: metrics.stockBajo, type: 'low' as const, icon: 'bx-error' },
-      { label: 'Agotados', value: metrics.agotados, type: 'low' as const, icon: 'bx-x-circle' },
-      { label: 'Total Productos', value: metrics.totalProductos, type: 'neutral' as const, icon: 'bx-package' },
-      { label: 'Rotación', value: metrics.rotacion, type: 'high' as const, icon: 'bx-refresh', suffix: 'x' },
-      { label: 'Días Inventario', value: metrics.diasInventario, type: 'neutral' as const, icon: 'bx-calendar', suffix: ' días' },
-      { label: 'Capital Inmovilizado', value: metrics.capitalInmovilizado, type: 'neutral' as const, icon: 'bx-dollar', prefix: 'S/ ', isCurrency: true },
-      { label: 'Productos Lentos', value: metrics.productosLentos, type: 'low' as const, icon: 'bx-trending-down' },
-      { label: 'Sin Movimiento', value: metrics.sinMovimiento, type: 'low' as const, icon: 'bx-pause' },
-      { label: 'Stock Muerto', value: metrics.stockMuerto, type: 'low' as const, icon: 'bx-trash' },
-      { label: 'Margen Bruto', value: metrics.margenBruto, type: 'high' as const, icon: 'bx-bar-chart', suffix: '%' },
-      { label: 'ROI Inventario', value: metrics.roiInventario, type: 'high' as const, icon: 'bx-line-chart', suffix: '%' },
-      { label: 'Precisión Inventario', value: metrics.precisionInventario, type: 'percentage' as const, icon: 'bx-target-lock', suffix: '%' },
-      { label: 'Ciclo Conversión', value: metrics.cicloConversion, type: 'neutral' as const, icon: 'bx-time', suffix: ' días' },
-      { label: 'Antigüedad Promedio', value: metrics.antiguedadPromedio, type: 'low' as const, icon: 'bx-calendar-alt', suffix: ' días' },
-      { label: 'Tasa Agotamiento', value: metrics.tasaAgotamiento, type: 'low' as const, icon: 'bx-trending-down', suffix: '%' },
-      { label: 'Valor Stock Muerto', value: metrics.valorStockMuerto, type: 'low' as const, icon: 'bx-money', prefix: 'S/ ', isCurrency: true },
-    ];
-
-    return (
-      <div className="metrics-grid">
-        {metricItems.map((metric, index) => (
-          <div key={index} className={`metric-card ${getMetricColor(metric.value, metric.type)}`}>
-            <div className="metric-icon">
-              <i className={`bx ${metric.icon}`}></i>
-            </div>
-            <div className="metric-value">
-              {metric.prefix || ''}{typeof metric.value === 'number' ? (metric.isCurrency ? metric.value.toLocaleString('es-PE') : metric.value) : metric.value}{metric.suffix || ''}
-            </div>
-            <div className="metric-label">{metric.label}</div>
-          </div>
-        ))}
-      </div>
-    );
-  };
 
   const renderRecommendations = () => {
     if (loadingRecommendations) {
@@ -247,13 +203,19 @@ const AlertList: React.FC = () => {
     }
 
     return (
-      <div className="recommendations-list">
-        {recommendations.map((rec, index) => (
-          <div key={index} className="recommendation-item">
-            <div className="recommendation-number">{index + 1}</div>
-            <div className="recommendation-text">{rec}</div>
-          </div>
-        ))}
+      <div className="recommendations-container">
+        {summary && <RecommendationSummary resumen={summary} />}
+        <div className="recommendations-list">
+          {recommendations.map((rec) => (
+            <RecommendationCard 
+              key={rec.id} 
+              recommendation={rec} 
+              onAccept={(id) => handleRecommendationAction(id, 'accept')}
+              onReject={(id) => handleRecommendationAction(id, 'reject')}
+              onExecute={(id) => handleRecommendationAction(id, 'execute')}
+            />
+          ))}
+        </div>
       </div>
     );
   };
@@ -311,6 +273,7 @@ const AlertList: React.FC = () => {
                     onChange={(e) => setTypeFilter(e.target.value)}
                   >
                     <option value="">Todos</option>
+                    <option value="out_of_stock">Agotado</option>
                     <option value="low_stock">Stock Bajo</option>
                     <option value="overstock">Sobrestock</option>
                     <option value="demand_trend">Tendencia de Demanda</option>
@@ -357,7 +320,6 @@ const AlertList: React.FC = () => {
                           <th>Producto</th>
                           <th>Fecha</th>
                           <th>Estado</th>
-                          {esGerente && <th>Acciones</th>}
                         </tr>
                       </thead>
                       <tbody>
@@ -377,19 +339,6 @@ const AlertList: React.FC = () => {
                                 {alert.resolved ? 'Resuelta' : 'Activa'}
                               </span>
                             </td>
-                            {esGerente && (
-                              <td>
-                                {!alert.resolved && (
-                                  <button
-                                    className="btn btn-sm btn-success"
-                                    onClick={() => handleResolveAlert(alert.id)}
-                                  >
-                                    <i className='bx bx-check'></i>
-                                    Resolver
-                                  </button>
-                                )}
-                              </td>
-                            )}
                           </tr>
                         ))}
                       </tbody>
@@ -424,16 +373,11 @@ const AlertList: React.FC = () => {
 
           {activeTab === 'analytics' && (
             <div className="analytics-section">
-              <div className="section-header">
-                <h2>
-                  <i className='bx bx-bar-chart-alt-2'></i>
-                  Métricas del Inventario
-                </h2>
-                <button className="btn btn-secondary" onClick={cargarMetrics}>
-                  <i className='bx bx-refresh'></i> Actualizar
-                </button>
-              </div>
-              {renderMetricsGrid()}
+              <AnalyticsDashboard 
+                metrics={metrics} 
+                loading={loadingMetrics}
+                onRefresh={cargarMetrics}
+              />
             </div>
           )}
 

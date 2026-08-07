@@ -1,12 +1,43 @@
 import React, { useEffect, useState } from 'react';
 import { productService } from '../services/product.service';
+import { salesService, SalesSummary } from '../services/sales.service';
+import { alertService, InventoryMetrics } from '../services/alert.service';
+import {
+  LineChart, Line, PieChart, Pie, Cell, BarChart, Bar,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
+} from 'recharts';
 import { Producto } from '../types';
 import './Dashboard.css';
+
+const COLORS = {
+  primary: '#00a6f4',
+  success: '#16a34a',
+  warning: '#d97706',
+  danger: '#dc2626',
+  muted: '#94a3b8',
+  pie: ['#00a6f4', '#16a34a', '#d97706', '#dc2626', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'],
+};
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="dash-tooltip">
+      <p className="dash-tooltip-label">{label}</p>
+      {payload.map((entry: any, i: number) => (
+        <p key={i} style={{ color: entry.color }} className="dash-tooltip-value">
+          {entry.name}: {typeof entry.value === 'number' ? `S/ ${entry.value.toLocaleString('es-PE')}` : entry.value}
+        </p>
+      ))}
+    </div>
+  );
+};
 
 const Dashboard: React.FC = () => {
   const [productosStockBajo, setProductosStockBajo] = useState<Producto[]>([]);
   const [totalProductos, setTotalProductos] = useState(0);
   const [valorInventario, setValorInventario] = useState(0);
+  const [salesSummary, setSalesSummary] = useState<SalesSummary | null>(null);
+  const [inventoryMetrics, setInventoryMetrics] = useState<InventoryMetrics | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -16,16 +47,32 @@ const Dashboard: React.FC = () => {
   const cargarDatos = async () => {
     setLoading(true);
     try {
-      const stockBajo = await productService.obtenerProductosStockBajo();
-      setProductosStockBajo(stockBajo.productos);
+      const [stockBajo, todos, summary, metrics] = await Promise.allSettled([
+        productService.obtenerProductosStockBajo(),
+        productService.obtenerProductos({ limite: 1000, activo: true }),
+        salesService.getSalesSummary(),
+        alertService.getAnalytics()
+      ]);
 
-      const todos = await productService.obtenerProductos({ limite: 1000, activo: true });
-      setTotalProductos(todos.paginacion.total);
+      if (stockBajo.status === 'fulfilled') {
+        setProductosStockBajo(stockBajo.value.productos);
+      }
 
-      const valorTotal = todos.productos.reduce((sum, prod) => {
-        return sum + Number(prod.stock_actual) * Number(prod.precio_compra);
-      }, 0);
-      setValorInventario(valorTotal);
+      if (todos.status === 'fulfilled') {
+        setTotalProductos(todos.value.paginacion.total);
+        const valorTotal = todos.value.productos.reduce((sum, prod) => {
+          return sum + Number(prod.stock_actual) * Number(prod.precio_compra);
+        }, 0);
+        setValorInventario(valorTotal);
+      }
+
+      if (summary.status === 'fulfilled' && summary.value.success) {
+        setSalesSummary(summary.value.data);
+      }
+
+      if (metrics.status === 'fulfilled') {
+        setInventoryMetrics(metrics.value);
+      }
     } catch (error) {
       console.error('Error al cargar datos del dashboard:', error);
     } finally {
@@ -33,13 +80,37 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const getStockStatus = (producto: Producto) => {
-    const stock = Number(producto.stock_actual);
-    const minimo = Number(producto.stock_minimo);
-    if (stock === 0) return 'critical';
-    if (stock <= minimo * 0.5) return 'critical';
-    return 'warning';
-  };
+  const formatCurrency = (value: number) =>
+    `S/ ${value.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  // Chart data
+  const salesTrendData = salesSummary?.salesTrend?.map(d => ({
+    date: new Date(d.date).toLocaleDateString('es-PE', { day: '2-digit', month: 'short' }),
+    Ventas: d.totalSales,
+    Ganancia: d.totalProfit,
+  })) || [];
+
+  const categoryData = salesSummary?.byCategory?.slice(0, 6).map(c => ({
+    name: c.categoryName,
+    value: c.totalSales,
+  })) || [];
+
+  const topProductsData = salesSummary?.byProduct?.slice(0, 5).map(p => ({
+    name: p.producto.nombre.length > 20 ? p.producto.nombre.substring(0, 20) + '...' : p.producto.nombre,
+    Cantidad: p.totalQuantity,
+  })) || [];
+
+  const stockStatusData = inventoryMetrics ? [
+    { name: 'Sin Problemas', value: Math.max(0, inventoryMetrics.totalProductos - inventoryMetrics.stockBajo - inventoryMetrics.agotados) },
+    { name: 'Stock Bajo', value: inventoryMetrics.stockBajo },
+    { name: 'Agotados', value: inventoryMetrics.agotados },
+  ].filter(d => d.value > 0) : [];
+
+  const stagnantData = inventoryMetrics ? [
+    { name: 'Lentos', value: inventoryMetrics.productosLentos, fill: COLORS.warning },
+    { name: 'Sin Movimiento', value: inventoryMetrics.sinMovimiento, fill: COLORS.danger },
+    { name: 'Stock Muerto', value: inventoryMetrics.stockMuerto, fill: '#6b7280' },
+  ] : [];
 
   if (loading) {
     return (
@@ -59,16 +130,11 @@ const Dashboard: React.FC = () => {
             </div>
           ))}
         </div>
-        <div className="skeleton-alerts">
-          <div className="skeleton-alerts-title skeleton"></div>
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="skeleton-alert-item skeleton">
-              <div className="skeleton-alert-dot"></div>
-              <div className="skeleton-alert-content">
-                <div className="skeleton-alert-name"></div>
-                <div className="skeleton-alert-code"></div>
-              </div>
-              <div className="skeleton-alert-stock"></div>
+        <div className="charts-grid">
+          {[1, 2].map((i) => (
+            <div key={i} className="skeleton-chart skeleton">
+              <div className="skeleton-chart-title"></div>
+              <div className="skeleton-chart-area"></div>
             </div>
           ))}
         </div>
@@ -78,9 +144,14 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="dashboard">
-      <h1 className="module-title">Dashboard de Inventario</h1>
-      <p className="module-subtitle">Resumen general del estado de tu inventario</p>
+      <div className="dashboard-header">
+        <div>
+          <h1 className="module-title">Dashboard de Inventario</h1>
+          <p className="module-subtitle">Resumen general del estado de tu inventario</p>
+        </div>
+      </div>
 
+      {/* Row 1: Inventory Stats */}
       <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-card-header">
@@ -104,7 +175,7 @@ const Dashboard: React.FC = () => {
           </div>
           <div className="stat-card-content">
             <p className="stat-card-label">Valor del Inventario</p>
-            <p className="stat-card-value">S/ {valorInventario.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+            <p className="stat-card-value">{formatCurrency(valorInventario)}</p>
             <p className="stat-card-meta">valor total en almacén</p>
           </div>
         </div>
@@ -126,53 +197,182 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {productosStockBajo.length > 0 ? (
-        <div className="alerts-section">
-          <div className="alerts-header">
-            <h2 className="alerts-title">
-              <span className="alerts-title-icon">
-                <i className='bx bx-bell'></i>
-              </span>
-              Alertas de Stock Bajo
-            </h2>
-            <span className="alerts-count">{productosStockBajo.length} alertas</span>
+      {/* Row 2: Sales KPIs */}
+      <div className="kpi-row">
+        <div className="kpi-card">
+          <div className="kpi-icon kpi-sales">
+            <i className='bx bx-bar-chart'></i>
           </div>
-          <div className="alerts-list">
-            {productosStockBajo.map((producto) => {
-              const status = getStockStatus(producto);
-              return (
-                <div key={producto.id} className="alert-item">
-                  <div className={`alert-item-dot ${status}`}></div>
-                  <div className="alert-item-content">
-                    <p className="alert-item-name">{producto.nombre}</p>
-                    <p className="alert-item-code">{producto.codigo}</p>
-                  </div>
-                  <div className="alert-item-stock">
-                    <div className="stock-info-item">
-                      <span className="stock-info-label">Actual</span>
-                      <span className={`stock-info-value ${status}`}>{producto.stock_actual}</span>
-                    </div>
-                    <div className="stock-info-item">
-                      <span className="stock-info-label">Mínimo</span>
-                      <span className="stock-info-value">{producto.stock_minimo}</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="kpi-content">
+            <p className="kpi-value">{formatCurrency(salesSummary?.totals?.totalSales || 0)}</p>
+            <p className="kpi-label">Ventas Totales</p>
           </div>
         </div>
-      ) : (
-        <div className="alerts-section">
-          <div className="empty-alerts">
-            <div className="empty-alerts-icon">
-              <i className='bx bx-check-circle'></i>
-            </div>
-            <p className="empty-alerts-title">Todo en orden</p>
-            <p className="empty-alerts-text">No hay productos con stock bajo en este momento</p>
+        <div className="kpi-card">
+          <div className="kpi-icon kpi-profit">
+            <i className='bx bx-trending-up'></i>
+          </div>
+          <div className="kpi-content">
+            <p className="kpi-value">{formatCurrency(salesSummary?.totals?.totalProfit || 0)}</p>
+            <p className="kpi-label">Ganancia</p>
           </div>
         </div>
-      )}
+        <div className="kpi-card">
+          <div className="kpi-icon kpi-transactions">
+            <i className='bx bx-shopping-bag'></i>
+          </div>
+          <div className="kpi-content">
+            <p className="kpi-value">{(salesSummary?.totals?.totalTransactions || 0).toLocaleString('es-PE')}</p>
+            <p className="kpi-label">Transacciones</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Charts Row 1: 2 charts */}
+      <div className="charts-grid">
+        {/* Sales Trend */}
+        <div className="chart-card chart-wide">
+          <div className="chart-card-header">
+            <h3>Tendencia de Ventas</h3>
+          </div>
+          <div className="chart-card-body">
+            {salesTrendData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={260}>
+                <LineChart data={salesTrendData} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend formatter={(value) => <span className="legend-text">{value}</span>} />
+                  <Line type="monotone" dataKey="Ventas" stroke={COLORS.primary} strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                  <Line type="monotone" dataKey="Ganancia" stroke={COLORS.success} strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="chart-no-data">Sin datos de ventas</div>
+            )}
+          </div>
+        </div>
+
+        {/* Category Pie */}
+        <div className="chart-card">
+          <div className="chart-card-header">
+            <h3>Ventas por Categoría</h3>
+          </div>
+          <div className="chart-card-body">
+            {categoryData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Pie
+                    data={categoryData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={85}
+                    paddingAngle={3}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {categoryData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS.pie[index % COLORS.pie.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value: number) => [formatCurrency(value), '']} />
+                  <Legend formatter={(value) => <span className="legend-text">{value}</span>} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="chart-no-data">Sin datos por categoría</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Charts Row 2: 2 charts */}
+      <div className="charts-grid">
+        {/* Top Products Bar */}
+        <div className="chart-card">
+          <div className="chart-card-header">
+            <h3>Top 5 Productos</h3>
+          </div>
+          <div className="chart-card-body">
+            {topProductsData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={topProductsData} layout="vertical" margin={{ left: 10, right: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis type="number" tick={{ fontSize: 11 }} />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={120} />
+                  <Tooltip />
+                  <Bar dataKey="Cantidad" fill={COLORS.primary} radius={[0, 4, 4, 0]} barSize={24} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="chart-no-data">Sin datos de productos</div>
+            )}
+          </div>
+        </div>
+
+        {/* Stock Status Pie */}
+        <div className="chart-card">
+          <div className="chart-card-header">
+            <h3>Estado del Inventario</h3>
+          </div>
+          <div className="chart-card-body">
+            {stockStatusData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Pie
+                    data={stockStatusData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={85}
+                    paddingAngle={3}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    <Cell fill={COLORS.success} />
+                    <Cell fill={COLORS.warning} />
+                    <Cell fill={COLORS.danger} />
+                  </Pie>
+                  <Tooltip />
+                  <Legend formatter={(value) => <span className="legend-text">{value}</span>} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="chart-no-data">Sin datos de inventario</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Charts Row 3: Stagnant Products */}
+      <div className="charts-grid charts-single">
+        <div className="chart-card">
+          <div className="chart-card-header">
+            <h3>Productos Estancados</h3>
+          </div>
+          <div className="chart-card-body">
+            {stagnantData.some(d => d.value > 0) ? (
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={stagnantData} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={50}>
+                    {stagnantData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="chart-no-data">No hay productos estancados</div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

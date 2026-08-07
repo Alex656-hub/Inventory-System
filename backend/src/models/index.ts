@@ -9,6 +9,7 @@ import SalidaInventario from './SalidaInventario';
 import DetalleSalida from './DetalleSalida';
 import MovimientoInventario from './MovimientoInventario';
 import Alert from './Alert';
+import Recommendation from './Recommendation';
 import UnidadMedida from './UnidadMedida';
 import ConfiguracionSistema from './ConfiguracionSistema';
 import Sede from './Sede';
@@ -33,6 +34,7 @@ export {
   DetalleSalida,
   MovimientoInventario,
   Alert,
+  Recommendation,
   UnidadMedida,
   ConfiguracionSistema,
   Sede,
@@ -57,6 +59,7 @@ export * from './SalidaInventario';
 export * from './DetalleSalida';
 export * from './MovimientoInventario';
 export * from './Alert';
+export * from './Recommendation';
 export * from './UnidadMedida';
 export * from './ConfiguracionSistema';
 export * from './Sede';
@@ -66,3 +69,6 @@ export * from './Personal';
 // Definir asociaciones adicionales
 Product.hasMany(Alert, { foreignKey: 'product_id', as: 'alerts' });
 User.hasMany(Alert, { foreignKey: 'user_id', as: 'alerts' });
+Product.hasMany(Recommendation, { foreignKey: 'product_id', as: 'recommendations' });
+Alert.hasMany(Recommendation, { foreignKey: 'alert_id', as: 'recommendations' });
+User.hasMany(Recommendation, { foreignKey: 'user_id', as: 'recommendations' });

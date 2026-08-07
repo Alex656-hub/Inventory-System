@@ -16,6 +16,7 @@ import DetalleSalida from '../models/DetalleSalida';
 import MovimientoInventario from '../models/MovimientoInventario';
 import StockPorSede from '../models/StockPorSede';
 import DailySale from '../models/sales';
+import { alertService } from './alertService';
 import { Op } from 'sequelize';
 
 const REQUIRED_COLUMNS = [
@@ -282,12 +283,23 @@ export class SalesImportService {
 
       console.log(`Lote ${batchIndex + 1}/${totalBatches}: procesando ${batch.length} facturas...`);
 
+      // Collect product IDs from compras in this batch for alert resolution
+      const comprasProductIds: number[] = [];
+
       await sequelize.transaction(async (t) => {
         for (const [factura, facturaRows] of batch) {
           const op = (facturaRows[0].operacion || '').toString().trim().toLowerCase();
 
           if (op === 'compra') {
             await this.processCompra(factura, facturaRows, productMap, supplierMap, sedeMap, almacenMap, usuarioId, t, result);
+            // Collect product IDs from this compra
+            for (const row of facturaRows) {
+              const sku = (row.sku || '').toString().trim();
+              const product = productMap.get(sku.toLowerCase());
+              if (product && !comprasProductIds.includes(product.id)) {
+                comprasProductIds.push(product.id);
+              }
+            }
           } else if (op === 'venta') {
             await this.processVenta(factura, facturaRows, productMap, clientMap, usuarioId, t, result);
           } else {
@@ -295,6 +307,11 @@ export class SalesImportService {
           }
         }
       });
+
+      // Auto-resolve alerts for products that were purchased
+      for (const productId of comprasProductIds) {
+        await alertService.resolveAlertsForProduct(productId);
+      }
 
       console.log(`Lote ${batchIndex + 1}/${totalBatches} completado (${result.processedRows} filas procesadas)`);
     }
