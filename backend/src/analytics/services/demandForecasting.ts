@@ -1,4 +1,4 @@
-import { Op, Model } from 'sequelize';
+import { Op } from 'sequelize';
 import { Product, SalidaInventario, DetalleSalida } from '../../models';
 import { subMonths, format, parseISO, addMonths } from 'date-fns';
 
@@ -217,21 +217,4 @@ function calculateSimpleMovingAverage(
   }
 
   return forecast;
-}
-
-/**
- * Calcula el error cuadrático medio (MSE) para evaluar el modelo
- */
-function calculateMeanSquaredError(actual: number[], predicted: number[]): number {
-  if (actual.length !== predicted.length) {
-    throw new Error('Los arreglos deben tener la misma longitud');
-  }
-
-  let sumSquaredError = 0;
-  for (let i = 0; i < actual.length; i++) {
-    const error = actual[i] - predicted[i];
-    sumSquaredError += error * error;
-  }
-
-  return sumSquaredError / actual.length;
 }

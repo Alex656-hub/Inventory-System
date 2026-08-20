@@ -15,7 +15,7 @@ const router = Router();
  * @swagger
  * /api/analytics/advanced-forecast:
  *   get:
- *     summary: Obtiene un pronóstico avanzado de demanda usando Prophet
+ *     summary: Obtiene un pronóstico avanzado de demanda (modelo estadístico en TypeScript)
  *     tags: [Analytics]
  *     security:
  *       - bearerAuth: []
@@ -49,7 +49,7 @@ const router = Router();
  *       500:
  *         description: Error al generar el pronóstico
  */
-router.get('/advanced-forecast', verificarToken, advancedForecastDemand);
+router.get('/advanced-forecast', verificarToken, verificarRol(['gerente']), advancedForecastDemand);
 
 /**
  * @swagger
@@ -95,7 +95,7 @@ router.get('/advanced-forecast', verificarToken, advancedForecastDemand);
  *       500:
  *         description: Error del servidor
  */
-router.get('/forecast', verificarToken, verificarRol(['admin', 'analyst']), forecastDemand);
+router.get('/forecast', verificarToken, verificarRol(['gerente']), forecastDemand);
 
 /**
  * @swagger

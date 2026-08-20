@@ -77,6 +77,30 @@ export interface AgingBucket {
   '90+': number;
 }
 
+export interface ForecastPoint {
+  date: string;
+  predicted: number;
+  lower: number;
+  upper: number;
+}
+
+export interface ForecastHistoricalPoint {
+  date: string;
+  quantity: number;
+}
+
+export interface AdvancedForecast {
+  forecast: ForecastPoint[];
+  historicalData: ForecastHistoricalPoint[];
+  mape: number;
+  seasonality: {
+    weekly: number[];
+    monthly: number[];
+  };
+  cached: boolean;
+  lastTrained: string;
+}
+
 export const alertService = {
   getAlerts: async (params?: {
     pagina?: number;
@@ -155,6 +179,13 @@ export const alertService = {
 
   getAging: async (): Promise<AgingBucket> => {
     const { data } = await api.get<{ success: boolean; data: AgingBucket }>('/analytics/aging');
+    return data.data;
+  },
+
+  getAdvancedForecast: async (productId: number, days: number = 30): Promise<AdvancedForecast> => {
+    const { data } = await api.get<{ success: boolean; data: AdvancedForecast }>('/analytics/advanced-forecast', {
+      params: { productId, days }
+    });
     return data.data;
   }
 };

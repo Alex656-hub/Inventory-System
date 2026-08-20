@@ -38,6 +38,19 @@
   flex-direction: column;
 }
 
+.report-field.report-hint {
+  justify-content: flex-end;
+}
+
+.report-field.report-hint span {
+  font-size: 13px;
+  color: #6b7280;
+  padding: 10px 12px;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 8px;
+}
+
 .report-field label {
   font-size: 13px;
   font-weight: 500;

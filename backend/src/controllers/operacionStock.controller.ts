@@ -173,9 +173,11 @@ class OperacionStockController {
         return res.status(400).json({ message: 'La operación ya fue procesada o cancelada' });
       }
 
+      const usuarioId = req.usuario?.id || 1;
+
       await sequelize.transaction(async (t: Transaction) => {
         for (const detalle of operacion.detalles!) {
-          await this.procesarDetalleOperacion(operacion, detalle, t);
+          await this.procesarDetalleOperacion(operacion, detalle, t, usuarioId);
         }
         await operacion.update({ estado: 'PROCESADO' }, { transaction: t });
       });
@@ -378,25 +380,25 @@ class OperacionStockController {
     return { total_unidades, costo_total };
   }
 
-  private async procesarDetalleOperacion(operacion: OperacionStock, detalle: DetalleOperacion, transaction: Transaction) {
+  private async procesarDetalleOperacion(operacion: OperacionStock, detalle: DetalleOperacion, transaction: Transaction, usuarioId: number) {
     const { producto_id, cantidad, costo_unitario, descuento, precio_lista } = detalle;
     const desc = Number(descuento) || 0;
     const pLista = Number(precio_lista) || 0;
 
     switch (operacion.tipo_operacion) {
       case 'ENTRADA':
-        await this.procesarEntrada(operacion.id, producto_id, operacion.sede_destino_id!, cantidad, costo_unitario, desc, pLista, transaction);
+        await this.procesarEntrada(operacion.id, producto_id, operacion.sede_destino_id!, cantidad, costo_unitario, desc, pLista, transaction, usuarioId);
         break;
       case 'SALIDA':
-        await this.procesarSalida(operacion.id, producto_id, operacion.sede_origen_id!, cantidad, costo_unitario, desc, pLista, transaction);
+        await this.procesarSalida(operacion.id, producto_id, operacion.sede_origen_id!, cantidad, costo_unitario, desc, pLista, transaction, usuarioId);
         break;
       case 'TRASPASO':
-        await this.procesarTraspaso(operacion.id, producto_id, operacion.sede_origen_id!, operacion.sede_destino_id!, cantidad, costo_unitario, desc, pLista, transaction);
+        await this.procesarTraspaso(operacion.id, producto_id, operacion.sede_origen_id!, operacion.sede_destino_id!, cantidad, costo_unitario, desc, pLista, transaction, usuarioId);
         break;
     }
   }
 
-  private async procesarEntrada(operacionId: number, productoId: number, sedeId: number, cantidad: number, costoUnitario: number, descuento: number, precioLista: number, transaction: Transaction) {
+  private async procesarEntrada(operacionId: number, productoId: number, sedeId: number, cantidad: number, costoUnitario: number, descuento: number, precioLista: number, transaction: Transaction, usuarioId: number) {
     // Actualizar o crear stock por sede
     const [stock, created] = await StockPorSede.findOrCreate({
       where: { producto_id: productoId, sede_id: sedeId },
@@ -435,13 +437,13 @@ class OperacionStockController {
       precio_lista: precioLista,
       stock_anterior: created ? 0 : stock.cantidad_actual - cantidad,
       stock_nuevo: stock.cantidad_actual,
-      usuario_id: 1, // TODO: Obtener del token
+      usuario_id: usuarioId,
       fecha: new Date(),
       motivo: 'Entrada de inventario'
     }, { transaction });
   }
 
-  private async procesarSalida(operacionId: number, productoId: number, sedeId: number, cantidad: number, costoUnitario: number, descuento: number, precioLista: number, transaction: Transaction) {
+  private async procesarSalida(operacionId: number, productoId: number, sedeId: number, cantidad: number, costoUnitario: number, descuento: number, precioLista: number, transaction: Transaction, usuarioId: number) {
     const stocks = await StockPorSede.findAll({
       where: { producto_id: productoId, sede_id: sedeId },
       order: [['almacen_id', 'ASC NULLS FIRST']],
@@ -484,18 +486,18 @@ class OperacionStockController {
       precio_lista: precioLista,
       stock_anterior: totalDisponible,
       stock_nuevo: stockFinal,
-      usuario_id: 1, // TODO: Obtener del token
+      usuario_id: usuarioId,
       fecha: new Date(),
       motivo: 'Salida de inventario'
     }, { transaction });
   }
 
-  private async procesarTraspaso(operacionId: number, productoId: number, sedeOrigenId: number, sedeDestinoId: number, cantidad: number, costoUnitario: number, descuento: number, precioLista: number, transaction: Transaction) {
+  private async procesarTraspaso(operacionId: number, productoId: number, sedeOrigenId: number, sedeDestinoId: number, cantidad: number, costoUnitario: number, descuento: number, precioLista: number, transaction: Transaction, usuarioId: number) {
     // Procesar salida del origen
-    await this.procesarSalida(operacionId, productoId, sedeOrigenId, cantidad, costoUnitario, descuento, precioLista, transaction);
+    await this.procesarSalida(operacionId, productoId, sedeOrigenId, cantidad, costoUnitario, descuento, precioLista, transaction, usuarioId);
     
     // Procesar entrada en destino
-    await this.procesarEntrada(operacionId, productoId, sedeDestinoId, cantidad, costoUnitario, descuento, precioLista, transaction);
+    await this.procesarEntrada(operacionId, productoId, sedeDestinoId, cantidad, costoUnitario, descuento, precioLista, transaction, usuarioId);
   }
 
   private generarPdfHtml(operacion: OperacionStock & { 

@@ -2,9 +2,13 @@
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
 import { ReportService } from '../services/ReportService';
-import { ReportParams, InventoryReportData } from '../types/reports';
+import { ReportParams, DemandForecastReportData, StockMovementsReportData, FinancialKpisReportData } from '../types/reports';
+import { advancedDemandForecasting } from '../analytics/services/advancedDemandForecasting';
+import { getInventoryMetrics } from '../analytics/services/inventoryAnalysis';
+import { getFinancialProjections, calculateBreakEvenPoint } from '../analytics/services/financialProjections';
 import Product from '../models/Product';
 import MovimientoInventario from '../models/MovimientoInventario';
+import User from '../models/User';
 import StockPorSede from '../models/StockPorSede';
 import Sede from '../models/Sede';
 import Almacen from '../models/Almacen';
@@ -14,6 +18,9 @@ import { descuentoService } from '../services/descuentoService';
 import { esPromoActiva, calcularPrecioPromo } from '../analytics/services/promotionUtils';
 
 const reportService = new ReportService();
+
+const fmtSoles = (value: number): string =>
+  `S/ ${value.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export const generateReport = async (req: Request, res: Response) => {
   try {
@@ -42,13 +49,158 @@ export const generateReport = async (req: Request, res: Response) => {
         })),
         generatedAt: new Date()
       };
+    } else if (params.type === 'demand_forecast') {
+      const products = await Product.findAll({
+        where: { activo: true },
+        order: [['stock_actual', 'DESC']],
+        limit: 50,
+        include: [{ model: require('../models/Category').default, as: 'categoria', attributes: ['nombre'] }]
+      });
+
+      const productos: DemandForecastReportData['productos'] = [];
+      for (const p of products) {
+        try {
+          const forecast = await advancedDemandForecasting.getAdvancedForecast(p.id, 30);
+          const historial = (forecast.historicalData || []).slice(-30);
+          productos.push({
+            id: p.id,
+            codigo: p.codigo,
+            nombre: p.nombre,
+            categoria: p.categoria?.nombre || 'Sin categoría',
+            ventas_30d: historial.reduce((s, h) => s + h.quantity, 0),
+            pronostico_30d: forecast.forecast.reduce((s, f) => s + f.predicted, 0),
+            limite_inferior: forecast.forecast.reduce((s, f) => s + f.lower, 0),
+            limite_superior: forecast.forecast.reduce((s, f) => s + f.upper, 0),
+            mape: typeof forecast.mape === 'number' ? forecast.mape : null
+          });
+        } catch {
+          productos.push({
+            id: p.id,
+            codigo: p.codigo,
+            nombre: p.nombre,
+            categoria: p.categoria?.nombre || 'Sin categoría',
+            ventas_30d: 0,
+            pronostico_30d: 0,
+            limite_inferior: 0,
+            limite_superior: 0,
+            mape: null
+          });
+        }
+      }
+
+      data = {
+        productos,
+        periodo: 30,
+        generatedAt: new Date()
+      } as DemandForecastReportData;
+    } else if (params.type === 'stock_movements') {
+      const where: any = {};
+
+      if (params.startDate || params.endDate) {
+        where.fecha = {};
+        if (params.startDate) where.fecha[Op.gte] = String(params.startDate);
+        if (params.endDate) where.fecha[Op.lte] = String(params.endDate);
+      } else {
+        where.fecha = { [Op.gte]: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) };
+      }
+
+      const movimientos = await MovimientoInventario.findAll({
+        where,
+        include: [
+          { model: Product, as: 'producto', attributes: ['codigo', 'nombre'] },
+          { model: User, as: 'usuario', attributes: ['usuario', 'email'] }
+        ],
+        order: [['fecha', 'DESC']],
+        limit: 1000
+      });
+
+      const filas: StockMovementsReportData['movimientos'] = movimientos.map(m => ({
+        id: m.id,
+        fecha: m.fecha,
+        tipo_movimiento: m.tipo_movimiento,
+        tipo_referencia: m.tipo_referencia,
+        referencia_id: m.referencia_id,
+        codigo: m.producto?.codigo || '-',
+        producto: m.producto?.nombre || '-',
+        cantidad: m.cantidad,
+        precio_unitario: Number(m.precio_unitario) || 0,
+        stock_anterior: m.stock_anterior,
+        stock_nuevo: m.stock_nuevo,
+        usuario: m.usuario?.usuario || m.usuario?.email || '-',
+        motivo: m.motivo
+      }));
+
+      data = {
+        movimientos: filas,
+        desde: params.startDate ? String(params.startDate) : undefined,
+        hasta: params.endDate ? String(params.endDate) : undefined,
+        totalEntradas: filas
+          .filter(f => f.tipo_movimiento === 'entrada')
+          .reduce((s, f) => s + f.cantidad, 0),
+        totalSalidas: filas
+          .filter(f => f.tipo_movimiento === 'salida')
+          .reduce((s, f) => s + f.cantidad, 0),
+        generatedAt: new Date()
+      } as StockMovementsReportData;
+    } else if (params.type === 'financial_kpis') {
+      const [metrics, proyecciones, breakEven] = await Promise.all([
+        getInventoryMetrics(),
+        getFinancialProjections(6),
+        calculateBreakEvenPoint()
+      ]);
+
+      const kpis: FinancialKpisReportData['kpis'] = [
+        { clave: 'totalProducts', descripcion: 'Total de productos', valor: String(metrics.totalProducts) },
+        { clave: 'totalInventoryValue', descripcion: 'Valor total del inventario', valor: fmtSoles(metrics.totalInventoryValue) },
+        { clave: 'inventoryTurnover', descripcion: 'Rotación de inventario', valor: `${metrics.inventoryTurnover}x` },
+        { clave: 'daysSalesOfInventory', descripcion: 'Días de inventario', valor: `${metrics.daysSalesOfInventory} días` },
+        { clave: 'grossMargin', descripcion: 'Margen bruto', valor: `${metrics.grossMargin}%` },
+        { clave: 'lowStockItems', descripcion: 'Productos con stock bajo', valor: String(metrics.lowStockItems) },
+        { clave: 'outOfStockItems', descripcion: 'Productos agotados', valor: String(metrics.outOfStockItems) },
+        { clave: 'stockoutRate', descripcion: 'Tasa de agotamiento', valor: `${metrics.stockoutRate}%` },
+        { clave: 'carryingCost', descripcion: 'Costo de mantenimiento (25%)', valor: fmtSoles(metrics.carryingCost) },
+        { clave: 'slowMovingItems', descripcion: 'Productos de lento movimiento', valor: String(metrics.slowMovingItems) },
+        { clave: 'averageStockValue', descripcion: 'Valor promedio por producto', valor: fmtSoles(metrics.averageStockValue) },
+        { clave: 'breakEvenUnits', descripcion: 'Punto de equilibrio (unidades)', valor: String(breakEven.breakEvenUnits) }
+      ];
+
+      data = {
+        kpis,
+        proyecciones: proyecciones.map(p => ({
+          date: p.date,
+          projectedRevenue: p.projectedRevenue,
+          projectedExpenses: p.projectedExpenses,
+          projectedProfit: p.projectedProfit
+        })),
+        breakEven,
+        generatedAt: new Date()
+      } as FinancialKpisReportData;
     } else {
       return res.status(400).json({ message: 'Report type not implemented yet' });
     }
 
-    const buffer = params.format === 'pdf'
-      ? await reportService.generatePDF(params.type, params, data)
-      : await reportService.generateExcel(params.type, params, data);
+    let buffer: Buffer;
+    switch (params.type) {
+      case 'demand_forecast':
+        buffer = params.format === 'pdf'
+          ? await reportService.generateDemandForecastPDF(data)
+          : await reportService.generateDemandForecastExcel(data);
+        break;
+      case 'stock_movements':
+        buffer = params.format === 'pdf'
+          ? await reportService.generateStockMovementsPDF(data)
+          : await reportService.generateStockMovementsExcel(data);
+        break;
+      case 'financial_kpis':
+        buffer = params.format === 'pdf'
+          ? await reportService.generateFinancialKpisPDF(data)
+          : await reportService.generateFinancialKpisExcel(data);
+        break;
+      default:
+        buffer = params.format === 'pdf'
+          ? await reportService.generatePDF(params.type, params, data)
+          : await reportService.generateExcel(params.type, params, data);
+    }
 
     res.setHeader('Content-Type', params.format === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${params.type}.${params.format}"`);

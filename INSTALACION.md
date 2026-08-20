@@ -165,11 +165,11 @@ Inventory-System/
 ### Gerente
 - Acceso completo a todas las funcionalidades
 - Puede crear, editar y eliminar productos, categorías, proveedores y usuarios
-- Acceso a análisis financiero y predicciones (cuando se implementen)
+- Acceso a análisis financiero, predicciones de demanda y generación de reportes
 
 ### Empleado
 - Puede consultar productos, categorías y proveedores
-- Puede registrar entradas y salidas de inventario (pendiente de implementar)
+- Puede registrar entradas, salidas y traspasos de inventario (con permiso `operacionesStock`)
 - No puede crear, editar o eliminar productos
 - No tiene acceso a funciones administrativas
 

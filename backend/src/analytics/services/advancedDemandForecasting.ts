@@ -1,25 +1,24 @@
 import { Op } from 'sequelize';
-import { format, subMonths } from 'date-fns';
+import { format, subMonths, addDays } from 'date-fns';
 import { DetalleSalida, SalidaInventario } from '../../models';
 import { cacheService } from '../../services/cache.service';
 import * as cron from 'node-cron';
-import { exec } from 'child_process';
-import * as path from 'path';
 
-interface ProphetForecast {
-  ds: string;  // fecha
-  yhat: number; // predicción
-  yhat_lower: number;
-  yhat_upper: number;
+interface ForecastPoint {
+  date: string;
+  predicted: number;
+  lower: number;
+  upper: number;
+}
+
+interface HistoricalPoint {
+  date: string;
+  quantity: number;
 }
 
 interface ForecastResult {
-  forecast: Array<{
-    date: string;
-    predicted: number;
-    lower: number;
-    upper: number;
-  }>;
+  forecast: ForecastPoint[];
+  historicalData: HistoricalPoint[];
   mape: number;
   seasonality: {
     weekly: number[];
@@ -27,6 +26,14 @@ interface ForecastResult {
   };
   cached?: boolean;
   lastTrained?: string;
+}
+
+interface ModelPoint {
+  date: Date;
+  y: number;
+  t: number;
+  dow: number;
+  resid: number;
 }
 
 export class AdvancedDemandForecasting {
@@ -109,7 +116,7 @@ export class AdvancedDemandForecasting {
     forceRetrain: boolean = false
   ): Promise<ForecastResult> {
     try {
-      const cacheKey = `forecast_${productId}_${days}`;
+      const cacheKey = `forecast_v2_${productId}_${days}`;
       
       if (!forceRetrain) {
         const cachedResult = await this.getFromCache(cacheKey);
@@ -118,16 +125,17 @@ export class AdvancedDemandForecasting {
         }
       }
 
-      const historicalData = await this.getHistoricalData(productId);
+      const historical = await this.getHistoricalData(productId);
       
-      if (historicalData.length < 30) {
+      if (historical.length < 30) {
         throw new Error('Se requieren al menos 30 días de datos históricos');
       }
       
-      const forecastData = await this.callProphetModel(historicalData, days);
+      const forecastData = this.forecastWithSeasonalTrend(historical, days);
       
       const result: ForecastResult = {
         ...forecastData,
+        historicalData: historical.map(h => ({ date: h.ds, quantity: h.y })),
         cached: false,
         lastTrained: new Date().toISOString()
       };
@@ -142,61 +150,114 @@ export class AdvancedDemandForecasting {
     }
   }
 
-  private async callProphetModel(data: any[], days: number): Promise<Omit<ForecastResult, 'cached' | 'lastTrained'>> {
-    const pythonScriptPath = path.join(__dirname, '../../python_scripts/prophet_forecast.py');
-    
-    return new Promise((resolve, reject) => {
-      const pythonProcess = exec(
-        `python "${pythonScriptPath}" '${JSON.stringify(data)}' ${days}`,
-        { maxBuffer: 1024 * 1024 * 5 },
-        (error: any, stdout: string, stderr: string) => {
-          if (error) {
-            console.error('Error ejecutando el script de Python:', error);
-            return reject(new Error('Error al ejecutar el modelo de pronóstico'));
-          }
-          
-          if (stderr) {
-            console.error('Error en el script de Python:', stderr);
-          }
-          
-          try {
-            const result = JSON.parse(stdout);
-            
-            if (result.error) {
-              console.error('Error en el modelo:', result);
-              return reject(new Error(`Error en el modelo: ${result.error}`));
-            }
-            
-            const forecast = result.forecast.map((item: any) => ({
-              date: item.ds,
-              predicted: Math.round(item.yhat),
-              lower: Math.round(item.yhat_lower),
-              upper: Math.round(item.yhat_upper)
-            }));
-            
-            resolve({
-              forecast,
-              mape: result.mape,
-              seasonality: {
-                weekly: result.seasonality?.weekly || [],
-                monthly: result.seasonality?.yearly?.slice(0, 12) || []
-              }
-            });
-            
-          } catch (parseError) {
-            console.error('Error al analizar la respuesta de Python:', parseError);
-            console.error('Salida de Python:', stdout);
-            reject(new Error('Error al procesar los resultados del modelo'));
-          }
-        }
-      );
-      
-      setTimeout(() => {
-        if (!pythonProcess.killed) {
-          pythonProcess.kill();
-          reject(new Error('Tiempo de espera agotado al ejecutar el modelo'));
-        }
-      }, 30000);
+  /**
+   * Modelo estadístico en TypeScript puro:
+   * tendencia lineal (regresión por mínimos cuadrados) + estacionalidad semanal aditiva.
+   * Los intervalos de confianza usan el intervalo de predicción de la regresión (±1.96*SE).
+   */
+  private forecastWithSeasonalTrend(
+    data: Array<{ ds: string, y: number }>,
+    days: number
+  ): Omit<ForecastResult, 'historicalData' | 'cached' | 'lastTrained'> {
+    const sorted = [...data].sort((a, b) => a.ds.localeCompare(b.ds));
+
+    const points: ModelPoint[] = sorted.map((item, index) => {
+      const date = new Date(item.ds + 'T00:00:00');
+      return {
+        date,
+        y: item.y,
+        t: index,
+        dow: date.getDay(),
+        resid: 0
+      };
+    });
+
+    const n = points.length;
+    const overallMean = points.reduce((s, p) => s + p.y, 0) / n;
+
+    // Factores de estacionalidad semanal (media por día de la semana, como desvío de la base)
+    const dowSums = new Array<number>(7).fill(0);
+    const dowCounts = new Array<number>(7).fill(0);
+    points.forEach(p => {
+      dowSums[p.dow] += p.y;
+      dowCounts[p.dow] += 1;
+    });
+    const dowMeans = dowSums.map((sum, i) => (dowCounts[i] > 0 ? sum / dowCounts[i] : 0));
+    const dowWithData = dowMeans.filter(m => m > 0);
+    const base = dowWithData.length > 0
+      ? dowWithData.reduce((s, m) => s + m, 0) / dowWithData.length
+      : overallMean;
+    const seasonalOffset = dowMeans.map(m => m - base);
+
+    // Desestacionalizar y ajustar regresión lineal y = b0 + b1 * t
+    const deseasonalized = points.map(p => p.y - seasonalOffset[p.dow]);
+    const tMean = points.reduce((s, p) => s + p.t, 0) / n;
+    const yMean = deseasonalized.reduce((s, y) => s + y, 0) / n;
+
+    let sxy = 0;
+    let sxx = 0;
+    points.forEach((p, i) => {
+      sxy += (p.t - tMean) * (deseasonalized[i] - yMean);
+      sxx += (p.t - tMean) ** 2;
+    });
+    const slope = sxx === 0 ? 0 : sxy / sxx;
+    const intercept = yMean - slope * tMean;
+
+    // Residuales y desviación estándar
+    points.forEach((p, i) => {
+      const fitted = intercept + slope * p.t + seasonalOffset[p.dow];
+      p.resid = p.y - fitted;
+    });
+    const sigma = Math.sqrt(
+      points.reduce((s, p) => s + p.resid ** 2, 0) / (n - 1 || 1)
+    );
+
+    // MAPE (error porcentual absoluto medio) sobre el ajuste
+    const nonZero = points.filter(p => p.y > 0);
+    const mape = nonZero.length > 0
+      ? Math.round((nonZero.reduce((s, p) => s + (Math.abs(p.resid) / p.y), 0) / nonZero.length) * 10000) / 100
+      : 0;
+
+    // Pronóstico para los próximos `days` días
+    const lastPoint = points[n - 1];
+    const forecast: ForecastPoint[] = [];
+    for (let i = 1; i <= days; i++) {
+      const date = addDays(lastPoint.date, i);
+      const t = lastPoint.t + i;
+      const dow = date.getDay();
+      const predicted = intercept + slope * t + seasonalOffset[dow];
+
+      // Intervalo de predicción de la regresión
+      const se = sigma * Math.sqrt(1 + (1 / n) + ((t - tMean) ** 2) / sxx);
+      forecast.push({
+        date: format(date, 'yyyy-MM-dd'),
+        predicted: Math.max(0, Math.round(predicted)),
+        lower: Math.max(0, Math.round(predicted - 1.96 * se)),
+        upper: Math.max(0, Math.round(predicted + 1.96 * se))
+      });
+    }
+
+    return {
+      forecast,
+      mape,
+      seasonality: {
+        weekly: dowMeans.map(m => (base > 0 ? Math.round((m / base) * 1000) / 1000 : 1)),
+        monthly: this.calculateMonthlySeasonality(points, overallMean)
+      }
+    };
+  }
+
+  private calculateMonthlySeasonality(points: ModelPoint[], overallMean: number): number[] {
+    const monthSums = new Array<number>(12).fill(0);
+    const monthCounts = new Array<number>(12).fill(0);
+    points.forEach(p => {
+      const m = p.date.getMonth();
+      monthSums[m] += p.y;
+      monthCounts[m] += 1;
+    });
+    return monthSums.map((sum, i) => {
+      if (monthCounts[i] === 0 || overallMean === 0) return 1;
+      return Math.round(((sum / monthCounts[i]) / overallMean) * 1000) / 1000;
     });
   }
 }

@@ -1,9 +1,12 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
-  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  PieChart, Pie, Cell, BarChart, Bar, ComposedChart, Line, Area,
+  XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend
 } from 'recharts';
-import { InventoryMetrics, alertService, AgingBucket } from '../services/alert.service';
+import { InventoryMetrics, alertService, AgingBucket, AdvancedForecast } from '../services/alert.service';
+import { productService } from '../services/product.service';
+import { Producto } from '../types';
 import './AnalyticsDashboard.css';
 
 type DatePreset = '7d' | '30d' | '90d' | 'custom';
@@ -32,6 +35,11 @@ const COLORS = {
 const formatCurrency = (value: number) => `S/ ${value.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const formatPercent = (value: number) => `${value}%`;
 const formatNumber = (value: number) => value.toLocaleString('es-PE');
+
+const formatAxisDate = (value: string) => {
+  const parts = value.split('-');
+  return parts.length === 3 ? `${parts[2]}/${parts[1]}` : value;
+};
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
@@ -64,6 +72,12 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ metrics, loadin
   const [breakEven, setBreakEven] = useState<any>(null);
   const [loadingFinancial, setLoadingFinancial] = useState(false);
   const [aging, setAging] = useState<AgingBucket>({ actual: 0, '1-30': 0, '31-60': 0, '61-90': 0, '90+': 0 });
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
+  const [forecastDays, setForecastDays] = useState<number>(30);
+  const [forecast, setForecast] = useState<AdvancedForecast | null>(null);
+  const [loadingForecast, setLoadingForecast] = useState(false);
+  const [forecastError, setForecastError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadFinancialData = async () => {
@@ -85,6 +99,47 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ metrics, loadin
     };
     loadFinancialData();
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    productService.obtenerProductos({ limite: 1000, activo: true })
+      .then(res => {
+        if (!active) return;
+        setProductos(res.productos);
+        if (res.productos.length > 0) {
+          setSelectedProductId(prev => (prev === null ? res.productos[0].id : prev));
+        }
+      })
+      .catch(() => {
+        if (active) setForecastError('No se pudieron cargar los productos');
+      });
+    return () => { active = false; };
+  }, []);
+
+  const cargarForecast = useCallback(async (productId: number, days: number) => {
+    setLoadingForecast(true);
+    setForecastError(null);
+    try {
+      const data = await alertService.getAdvancedForecast(productId, days);
+      setForecast(data);
+    } catch (error: any) {
+      setForecast(null);
+      setForecastError(
+        error?.response?.data?.details ||
+        error?.response?.data?.error ||
+        error?.message ||
+        'Error al generar el pronóstico'
+      );
+    } finally {
+      setLoadingForecast(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (selectedProductId) {
+      cargarForecast(selectedProductId, forecastDays);
+    }
+  }, [selectedProductId, forecastDays, cargarForecast]);
 
   const getDateRange = useCallback((): DateRange => {
     const now = new Date();
@@ -158,6 +213,18 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ metrics, loadin
     { name: 'Capital Inmovilizado', value: metrics.capitalInmovilizado - metrics.valorStockMuerto, color: COLORS.primary },
     { name: 'Stock Muerto', value: metrics.valorStockMuerto, color: COLORS.danger },
   ] : [];
+
+  const forecastChartData = useMemo(() => {
+    if (!forecast) return [];
+    const map: Record<string, any> = {};
+    (forecast.historicalData || []).forEach(h => {
+      map[h.date] = { ...(map[h.date] || {}), date: h.date, quantity: h.quantity };
+    });
+    forecast.forecast.forEach(f => {
+      map[f.date] = { ...(map[f.date] || {}), date: f.date, predicted: f.predicted, lower: f.lower, upper: f.upper };
+    });
+    return Object.values(map).sort((a, b) => a.date.localeCompare(b.date));
+  }, [forecast]);
 
   const isLoading = loading || loadingChart;
 
@@ -533,6 +600,123 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ metrics, loadin
                     <div className="chart-no-data">Sin datos de equilibrio</div>
                   )}
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Demand Forecast */}
+          <div className="analytics-section">
+            <h3 className="section-title">
+              <i className='bx bx-trending-up'></i>
+              Pronóstico de Demanda
+            </h3>
+            <div className="forecast-controls">
+              <div className="forecast-field">
+                <label>Producto:</label>
+                <select
+                  value={selectedProductId ?? ''}
+                  onChange={(e) => setSelectedProductId(Number(e.target.value))}
+                >
+                  {productos.length === 0 && <option value="">Sin productos</option>}
+                  {productos.map(p => (
+                    <option key={p.id} value={p.id}>{p.nombre}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="forecast-field">
+                <label>Horizonte:</label>
+                <select
+                  value={forecastDays}
+                  onChange={(e) => setForecastDays(Number(e.target.value))}
+                >
+                  <option value={30}>30 días</option>
+                  <option value={60}>60 días</option>
+                  <option value={90}>90 días</option>
+                </select>
+              </div>
+              <button
+                className="refresh-btn"
+                onClick={() => { if (selectedProductId) cargarForecast(selectedProductId, forecastDays); }}
+                disabled={loadingForecast || !selectedProductId}
+              >
+                <i className={`bx bx-refresh ${loadingForecast ? 'spinning' : ''}`}></i>
+                Actualizar
+              </button>
+            </div>
+
+            <div className="chart-card chart-wide">
+              <div className="chart-card-header">
+                <h4>Ventas históricas y pronóstico</h4>
+                {forecast && !loadingForecast && (
+                  <div className="forecast-meta">
+                    {typeof forecast.mape === 'number' && (
+                      <span>MAPE: {forecast.mape.toFixed(2)}%</span>
+                    )}
+                    {forecast.cached && <span className="forecast-cached">En caché</span>}
+                    {forecast.lastTrained && (
+                      <span>Entrenado: {new Date(forecast.lastTrained).toLocaleString()}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="chart-card-body">
+                {loadingForecast ? (
+                  <div className="chart-loading">Calculando pronóstico...</div>
+                ) : forecastError ? (
+                  <div className="chart-no-data">{forecastError}</div>
+                ) : forecast && forecastChartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={260}>
+                    <ComposedChart data={forecastChartData} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis
+                        dataKey="date"
+                        tick={{ fontSize: 11 }}
+                        minTickGap={24}
+                        tickFormatter={formatAxisDate}
+                      />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend formatter={(value) => <span className="legend-text">{value}</span>} />
+                      <Area
+                        type="monotone"
+                        dataKey="quantity"
+                        name="Ventas históricas"
+                        stroke={COLORS.muted}
+                        strokeWidth={1.5}
+                        fill="rgba(148,163,184,0.15)"
+                        dot={false}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="predicted"
+                        name="Pronóstico"
+                        stroke={COLORS.primary}
+                        strokeWidth={2.5}
+                        dot={false}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="lower"
+                        name="Límite inferior"
+                        stroke={COLORS.warning}
+                        strokeWidth={1.5}
+                        strokeDasharray="4 4"
+                        dot={false}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="upper"
+                        name="Límite superior"
+                        stroke={COLORS.warning}
+                        strokeWidth={1.5}
+                        strokeDasharray="4 4"
+                        dot={false}
+                      />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="chart-no-data">Sin datos de pronóstico</div>
+                )}
               </div>
             </div>
           </div>

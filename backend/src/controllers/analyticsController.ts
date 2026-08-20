@@ -1,11 +1,10 @@
 import { Request, Response } from 'express';
 import { getDemandForecast, DemandForecastOptions } from '../analytics/services/demandForecasting';
 import { advancedDemandForecasting } from '../analytics/services/advancedDemandForecasting';
-import { getInventoryMetrics as getInventoryMetricsService, InventoryMetrics } from '../analytics/services/inventoryAnalysis';
+import { getInventoryMetrics as getInventoryMetricsService } from '../analytics/services/inventoryAnalysis';
 import { getFinancialProjections, calculateBreakEvenPoint } from '../analytics/services/financialProjections';
 import { CuotaPago } from '../models';
 import { Op } from 'sequelize';
-import { format } from 'date-fns';
 
 /**
  * Controlador para las rutas de análisis predictivo
@@ -73,7 +72,8 @@ export const forecastDemand = async (req: Request, res: Response) => {
  * Obtiene métricas clave de inventario
  */
 /**
- * Obtiene un pronóstico avanzado de demanda utilizando Prophet
+ * Obtiene un pronóstico avanzado de demanda basado en un modelo estadístico
+ * de regresión con estacionalidad (implementado en TypeScript)
  */
 export const advancedForecastDemand = async (req: Request, res: Response) => {
   try {

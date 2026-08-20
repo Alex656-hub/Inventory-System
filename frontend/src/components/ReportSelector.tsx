@@ -77,22 +77,30 @@ const ReportSelector: React.FC = () => {
               <option value="demand_forecast">Predicciones de Demanda</option>
             </select>
           </div>
-          <div className="report-field">
-            <label>Fecha Inicio:</label>
-            <input
-              type="date"
-              value={params.startDate}
-              onChange={(e) => setParams({ ...params, startDate: e.target.value })}
-            />
-          </div>
-          <div className="report-field">
-            <label>Fecha Fin:</label>
-            <input
-              type="date"
-              value={params.endDate}
-              onChange={(e) => setParams({ ...params, endDate: e.target.value })}
-            />
-          </div>
+          {params.type === 'demand_forecast' ? (
+            <div className="report-field report-hint">
+              <span>El pronóstico usa las ventas de los últimos 12 meses (no requiere fechas).</span>
+            </div>
+          ) : (
+            <>
+              <div className="report-field">
+                <label>Fecha Inicio:</label>
+                <input
+                  type="date"
+                  value={params.startDate}
+                  onChange={(e) => setParams({ ...params, startDate: e.target.value })}
+                />
+              </div>
+              <div className="report-field">
+                <label>Fecha Fin:</label>
+                <input
+                  type="date"
+                  value={params.endDate}
+                  onChange={(e) => setParams({ ...params, endDate: e.target.value })}
+                />
+              </div>
+            </>
+          )}
           <div className="report-field">
             <label>Formato:</label>
             <select
