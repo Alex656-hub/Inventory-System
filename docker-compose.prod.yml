@@ -35,7 +35,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRE: 7d
-      FRONTEND_URL: ${FRONTEND_URL}
+      FRONTEND_URL: http://localhost:3000,http://localhost:3002,http://localhost:3003,http://localhost
       ENABLE_DB_SYNC: "false"
     # No exponer puerto 3001 en host (solo red interna, nginx hace proxy)
     networks:
