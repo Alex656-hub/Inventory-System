@@ -5,7 +5,7 @@ import { ReportService } from '../services/ReportService';
 import { ReportParams, DemandForecastReportData, StockMovementsReportData, FinancialKpisReportData } from '../types/reports';
 import { advancedDemandForecasting } from '../analytics/services/advancedDemandForecasting';
 import { getInventoryMetrics } from '../analytics/services/inventoryAnalysis';
-import { getFinancialProjections, calculateBreakEvenPoint } from '../analytics/services/financialProjections';
+import { getFinancialProjections } from '../analytics/services/financialProjections';
 import Product from '../models/Product';
 import MovimientoInventario from '../models/MovimientoInventario';
 import User from '../models/User';
@@ -61,7 +61,7 @@ export const generateReport = async (req: Request, res: Response) => {
       for (const p of products) {
         try {
           const forecast = await advancedDemandForecasting.getAdvancedForecast(p.id, 30);
-          const historial = (forecast.historicalData || []).slice(-30);
+          const historial = (forecast.historicalData || []).slice(-5);
           productos.push({
             id: p.id,
             codigo: p.codigo,
@@ -90,7 +90,7 @@ export const generateReport = async (req: Request, res: Response) => {
 
       data = {
         productos,
-        periodo: 30,
+        periodo: 5,
         generatedAt: new Date()
       } as DemandForecastReportData;
     } else if (params.type === 'stock_movements') {
@@ -143,10 +143,9 @@ export const generateReport = async (req: Request, res: Response) => {
         generatedAt: new Date()
       } as StockMovementsReportData;
     } else if (params.type === 'financial_kpis') {
-      const [metrics, proyecciones, breakEven] = await Promise.all([
+      const [metrics, proyecciones] = await Promise.all([
         getInventoryMetrics(),
-        getFinancialProjections(6),
-        calculateBreakEvenPoint()
+        getFinancialProjections(6)
       ]);
 
       const kpis: FinancialKpisReportData['kpis'] = [
@@ -160,8 +159,7 @@ export const generateReport = async (req: Request, res: Response) => {
         { clave: 'stockoutRate', descripcion: 'Tasa de agotamiento', valor: `${metrics.stockoutRate}%` },
         { clave: 'carryingCost', descripcion: 'Costo de mantenimiento (25%)', valor: fmtSoles(metrics.carryingCost) },
         { clave: 'slowMovingItems', descripcion: 'Productos de lento movimiento', valor: String(metrics.slowMovingItems) },
-        { clave: 'averageStockValue', descripcion: 'Valor promedio por producto', valor: fmtSoles(metrics.averageStockValue) },
-        { clave: 'breakEvenUnits', descripcion: 'Punto de equilibrio (unidades)', valor: String(breakEven.breakEvenUnits) }
+        { clave: 'averageStockValue', descripcion: 'Valor promedio por producto', valor: fmtSoles(metrics.averageStockValue) }
       ];
 
       data = {
@@ -172,7 +170,6 @@ export const generateReport = async (req: Request, res: Response) => {
           projectedExpenses: p.projectedExpenses,
           projectedProfit: p.projectedProfit
         })),
-        breakEven,
         generatedAt: new Date()
       } as FinancialKpisReportData;
     } else {

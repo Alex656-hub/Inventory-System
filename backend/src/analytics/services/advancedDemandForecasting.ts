@@ -1,6 +1,6 @@
 import { Op } from 'sequelize';
 import { format, subMonths, addDays } from 'date-fns';
-import { DetalleSalida, SalidaInventario } from '../../models';
+import { DetalleSalida, SalidaInventario, DetalleOperacion, OperacionStock } from '../../models';
 import { cacheService } from '../../services/cache.service';
 import * as cron from 'node-cron';
 
@@ -26,18 +26,42 @@ interface ForecastResult {
   };
   cached?: boolean;
   lastTrained?: string;
+  trainingDays?: number;
+  trainingWeeks?: number;
+  trainingSales?: number;
 }
 
 interface ModelPoint {
   date: Date;
   y: number;
   t: number;
-  dow: number;
+  month: number;
   resid: number;
 }
 
+// Las fechas DATEONLY llegan como medianoche UTC; se formatea con componentes UTC
+// para preservar el día calendario sin importar la zona horaria del servidor.
+const toDateKey = (date: Date): string => {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(date.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
+// Fecha (lunes) de la semana que contiene la fecha dada, en UTC.
+const toWeekStartKey = (date: Date): string => {
+  const y = date.getUTCFullYear();
+  const m = date.getUTCMonth();
+  const d = date.getUTCDate();
+  const dow = new Date(Date.UTC(y, m, d)).getUTCDay();
+  const monday = new Date(Date.UTC(y, m, d - ((dow + 6) % 7)));
+  return toDateKey(monday);
+};
+
+const round2 = (value: number): number => Math.round(value * 100) / 100;
+
 export class AdvancedDemandForecasting {
-  private async getHistoricalData(productId: number, months: number = 12): Promise<Array<{ds: string, y: number}>> {
+  private async getHistoricalData(productId: number, months: number = 24): Promise<Array<{ds: string, y: number}>> {
     const endDate = new Date();
     const startDate = subMonths(endDate, months);
     
@@ -48,6 +72,7 @@ export class AdvancedDemandForecasting {
       },
       include: [{
         model: DetalleSalida,
+        as: 'detalles',
         where: { producto_id: productId },
         required: true
       }],
@@ -56,21 +81,66 @@ export class AdvancedDemandForecasting {
       nest: true
     });
 
-    const dailySales = sales.reduce((acc: Record<string, number>, sale: any) => {
-      const dateStr = format(new Date(sale.fecha), 'yyyy-MM-dd');
-      if (!acc[dateStr]) {
-        acc[dateStr] = 0;
-      }
-      const detalles = Array.isArray(sale.DetalleSalidas) ? sale.DetalleSalidas : [sale.DetalleSalidas];
+    const dailySales: Record<string, number> = {};
+    sales.forEach((sale: any) => {
+      const dateStr = toDateKey(new Date(sale.fecha));
+      const detalles = Array.isArray(sale.detalles) ? sale.detalles : [sale.detalles];
       const cantidadTotal = detalles.reduce((sum: number, detalle: any) => sum + (detalle.cantidad || 0), 0);
-      acc[dateStr] += cantidadTotal;
-      return acc;
-    }, {});
+      dailySales[dateStr] = (dailySales[dateStr] || 0) + cantidadTotal;
+    });
 
-    return Object.entries(dailySales).map(([date, quantity]) => ({
-      ds: date,
-      y: quantity as number
-    }));
+    // Ventas registradas por Operaciones de Stock (SALIDA procesada)
+    const operaciones = await OperacionStock.findAll({
+      where: {
+        tipo_operacion: 'SALIDA',
+        estado: 'PROCESADO',
+        fecha_emision: { [Op.between]: [startDate, endDate] }
+      },
+      include: [{
+        model: DetalleOperacion,
+        as: 'detalles',
+        where: { producto_id: productId },
+        required: true
+      }],
+      order: [['fecha_emision', 'ASC']],
+      raw: true,
+      nest: true
+    });
+
+    operaciones.forEach((op: any) => {
+      const dateStr = toDateKey(new Date(op.fecha_emision));
+      const detalles = Array.isArray(op.detalles) ? op.detalles : [op.detalles];
+      const cantidadTotal = detalles.reduce((sum: number, detalle: any) => sum + (detalle.cantidad || 0), 0);
+      dailySales[dateStr] = (dailySales[dateStr] || 0) + cantidadTotal;
+    });
+
+    const dates = Object.keys(dailySales).sort();
+    if (dates.length === 0) {
+      return [];
+    }
+
+    // Agregar ventas diarias por semana (lunes como etiqueta de cada semana)
+    const weeklySales: Record<string, number> = {};
+    dates.forEach(dateKey => {
+      const weekKey = toWeekStartKey(new Date(dateKey + 'T00:00:00Z'));
+      weeklySales[weekKey] = (weeklySales[weekKey] || 0) + (dailySales[dateKey] || 0);
+    });
+
+    const weekKeys = Object.keys(weeklySales).sort();
+    const firstWeek = new Date(weekKeys[0] + 'T00:00:00Z');
+    const now = new Date();
+    const currentWeek = new Date(toWeekStartKey(now) + 'T00:00:00Z');
+
+    // Serie semanal continua desde la semana de la primera venta hasta la semana actual
+    const series: Array<{ds: string, y: number}> = [];
+    const cursor = new Date(firstWeek);
+    while (cursor <= currentWeek) {
+      const key = toDateKey(cursor);
+      series.push({ ds: key, y: weeklySales[key] || 0 });
+      cursor.setUTCDate(cursor.getUTCDate() + 7);
+    }
+
+    return series;
   }
 
   private getFromCache(key: string): ForecastResult | null {
@@ -98,6 +168,22 @@ export class AdvancedDemandForecasting {
     }
   }
 
+  // Invalida el caché de los horizontes de pronóstico de los productos afectados
+  public invalidateForProducts(productIds: number[]): void {
+    const keys: string[] = [];
+    const horizons = [30, 60, 90];
+    productIds.forEach(pid => {
+      horizons.forEach(d => keys.push(`forecast_v4_${pid}_${d}`));
+    });
+    if (keys.length === 0) return;
+    try {
+      cacheService.del(keys);
+      console.log(`[DemandForecasting] Caché invalidada para ${productIds.length} producto(s)`);
+    } catch (error) {
+      console.error('Error al invalidar caché de pronóstico:', error);
+    }
+  }
+
   public scheduleRetraining(cronExpression: string = '0 3 * * 0'): void {
     cron.schedule(cronExpression, async () => {
       console.log('Iniciando reentrenamiento programado de modelos...');
@@ -116,7 +202,7 @@ export class AdvancedDemandForecasting {
     forceRetrain: boolean = false
   ): Promise<ForecastResult> {
     try {
-      const cacheKey = `forecast_v2_${productId}_${days}`;
+      const cacheKey = `forecast_v4_${productId}_${days}`;
       
       if (!forceRetrain) {
         const cachedResult = await this.getFromCache(cacheKey);
@@ -126,9 +212,10 @@ export class AdvancedDemandForecasting {
       }
 
       const historical = await this.getHistoricalData(productId);
-      
-      if (historical.length < 30) {
-        throw new Error('Se requieren al menos 30 días de datos históricos');
+
+      const minWeeks = 4;
+      if (historical.length < minWeeks) {
+        throw new Error(`Se requieren al menos ${minWeeks} semanas de datos históricos; este producto tiene ${historical.length} semanas`);
       }
       
       const forecastData = this.forecastWithSeasonalTrend(historical, days);
@@ -137,7 +224,10 @@ export class AdvancedDemandForecasting {
         ...forecastData,
         historicalData: historical.map(h => ({ date: h.ds, quantity: h.y })),
         cached: false,
-        lastTrained: new Date().toISOString()
+        lastTrained: new Date().toISOString(),
+        trainingWeeks: historical.length,
+        trainingDays: historical.length * 7,
+        trainingSales: historical.reduce((sum, h) => sum + h.y, 0)
       };
       
       await this.saveToCache(cacheKey, result);
@@ -151,9 +241,12 @@ export class AdvancedDemandForecasting {
   }
 
   /**
-   * Modelo estadístico en TypeScript puro:
-   * tendencia lineal (regresión por mínimos cuadrados) + estacionalidad semanal aditiva.
-   * Los intervalos de confianza usan el intervalo de predicción de la regresión (±1.96*SE).
+   * Modelo estadístico en TypeScript puro para series semanales dispersas:
+   * media semanal global × factor de estacionalidad mensual (multiplicativo).
+   * Pronostica unidades por semana con 2 decimales; los intervalos usan la
+   * desviación estándar de los residuales (±1.96*SE). Al basarse en la media
+   * global (no en una regresión sobre cola de ceros), el pronóstico es no-cero
+   * siempre que el producto tenga al menos una venta en la ventana.
    */
   private forecastWithSeasonalTrend(
     data: Array<{ ds: string, y: number }>,
@@ -167,46 +260,32 @@ export class AdvancedDemandForecasting {
         date,
         y: item.y,
         t: index,
-        dow: date.getDay(),
+        month: date.getMonth(),
         resid: 0
       };
     });
 
     const n = points.length;
-    const overallMean = points.reduce((s, p) => s + p.y, 0) / n;
+    const totalSales = points.reduce((s, p) => s + p.y, 0);
+    const weeklyMean = n > 0 ? totalSales / n : 0;
 
-    // Factores de estacionalidad semanal (media por día de la semana, como desvío de la base)
-    const dowSums = new Array<number>(7).fill(0);
-    const dowCounts = new Array<number>(7).fill(0);
+    // Factores mensuales multiplicativos relativos a la media semanal global
+    const monthSums = new Array<number>(12).fill(0);
+    const monthCounts = new Array<number>(12).fill(0);
     points.forEach(p => {
-      dowSums[p.dow] += p.y;
-      dowCounts[p.dow] += 1;
+      monthSums[p.month] += p.y;
+      monthCounts[p.month] += 1;
     });
-    const dowMeans = dowSums.map((sum, i) => (dowCounts[i] > 0 ? sum / dowCounts[i] : 0));
-    const dowWithData = dowMeans.filter(m => m > 0);
-    const base = dowWithData.length > 0
-      ? dowWithData.reduce((s, m) => s + m, 0) / dowWithData.length
-      : overallMean;
-    const seasonalOffset = dowMeans.map(m => m - base);
-
-    // Desestacionalizar y ajustar regresión lineal y = b0 + b1 * t
-    const deseasonalized = points.map(p => p.y - seasonalOffset[p.dow]);
-    const tMean = points.reduce((s, p) => s + p.t, 0) / n;
-    const yMean = deseasonalized.reduce((s, y) => s + y, 0) / n;
-
-    let sxy = 0;
-    let sxx = 0;
-    points.forEach((p, i) => {
-      sxy += (p.t - tMean) * (deseasonalized[i] - yMean);
-      sxx += (p.t - tMean) ** 2;
+    const monthlyFactor = monthSums.map((sum, i) => {
+      if (monthCounts[i] === 0) return 1;
+      const avg = sum / monthCounts[i];
+      return weeklyMean > 0 ? Math.max(0.1, Math.min(4, avg / weeklyMean)) : 1;
     });
-    const slope = sxx === 0 ? 0 : sxy / sxx;
-    const intercept = yMean - slope * tMean;
 
-    // Residuales y desviación estándar
-    points.forEach((p, i) => {
-      const fitted = intercept + slope * p.t + seasonalOffset[p.dow];
-      p.resid = p.y - fitted;
+    // Ajuste y residuales
+    const fitted = (p: ModelPoint) => weeklyMean * monthlyFactor[p.month];
+    points.forEach(p => {
+      p.resid = p.y - fitted(p);
     });
     const sigma = Math.sqrt(
       points.reduce((s, p) => s + p.resid ** 2, 0) / (n - 1 || 1)
@@ -218,22 +297,20 @@ export class AdvancedDemandForecasting {
       ? Math.round((nonZero.reduce((s, p) => s + (Math.abs(p.resid) / p.y), 0) / nonZero.length) * 10000) / 100
       : 0;
 
-    // Pronóstico para los próximos `days` días
+    // Pronóstico para las próximas `weeks` semanas (30 días ≈ 5 semanas)
+    const weeks = Math.max(1, Math.ceil(days / 7));
     const lastPoint = points[n - 1];
     const forecast: ForecastPoint[] = [];
-    for (let i = 1; i <= days; i++) {
-      const date = addDays(lastPoint.date, i);
-      const t = lastPoint.t + i;
-      const dow = date.getDay();
-      const predicted = intercept + slope * t + seasonalOffset[dow];
+    for (let i = 1; i <= weeks; i++) {
+      const date = addDays(lastPoint.date, i * 7);
+      const predicted = weeklyMean * monthlyFactor[date.getMonth()];
 
-      // Intervalo de predicción de la regresión
-      const se = sigma * Math.sqrt(1 + (1 / n) + ((t - tMean) ** 2) / sxx);
+      const se = sigma * Math.sqrt(1 + (1 / n));
       forecast.push({
         date: format(date, 'yyyy-MM-dd'),
-        predicted: Math.max(0, Math.round(predicted)),
-        lower: Math.max(0, Math.round(predicted - 1.96 * se)),
-        upper: Math.max(0, Math.round(predicted + 1.96 * se))
+        predicted: Math.max(0, round2(predicted)),
+        lower: Math.max(0, round2(predicted - 1.96 * se)),
+        upper: Math.max(0, round2(predicted + 1.96 * se))
       });
     }
 
@@ -241,24 +318,10 @@ export class AdvancedDemandForecasting {
       forecast,
       mape,
       seasonality: {
-        weekly: dowMeans.map(m => (base > 0 ? Math.round((m / base) * 1000) / 1000 : 1)),
-        monthly: this.calculateMonthlySeasonality(points, overallMean)
+        weekly: [1, 1, 1, 1, 1, 1, 1],
+        monthly: monthlyFactor
       }
     };
-  }
-
-  private calculateMonthlySeasonality(points: ModelPoint[], overallMean: number): number[] {
-    const monthSums = new Array<number>(12).fill(0);
-    const monthCounts = new Array<number>(12).fill(0);
-    points.forEach(p => {
-      const m = p.date.getMonth();
-      monthSums[m] += p.y;
-      monthCounts[m] += 1;
-    });
-    return monthSums.map((sum, i) => {
-      if (monthCounts[i] === 0 || overallMean === 0) return 1;
-      return Math.round(((sum / monthCounts[i]) / overallMean) * 1000) / 1000;
-    });
   }
 }
 

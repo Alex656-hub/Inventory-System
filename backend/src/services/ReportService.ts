@@ -327,13 +327,13 @@ export class ReportService {
     doc.moveDown(0.5);
 
     doc.fontSize(11).font('Helvetica');
-    doc.text(`Periodo pronosticado: ${data.periodo} días`, { align: 'left' });
+    doc.text(`Periodo pronosticado: ${data.periodo} semanas`, { align: 'left' });
     doc.text(`Generado: ${new Date(data.generatedAt).toLocaleString('es-PE')}`, { align: 'left' });
     doc.moveDown(1);
 
     const tableTop = doc.y;
     const colWidths = [50, 145, 55, 60, 55, 55, 45];
-    const headers = ['Código', 'Producto', 'Ventas 30d', 'Pronóstico', 'Lím. Inf', 'Lím. Sup', 'MAPE %'];
+    const headers = ['Código', 'Producto', 'Ventas 5 sem', 'Pronóstico', 'Lím. Inf', 'Lím. Sup', 'MAPE %'];
 
     doc.fillColor('#1e3a8a').rect(50, tableTop, 465, 20).fill();
     doc.fillColor('white').fontSize(8).font('Helvetica-Bold');
@@ -407,8 +407,8 @@ export class ReportService {
       { header: 'Código', key: 'codigo', width: 15 },
       { header: 'Producto', key: 'nombre', width: 35 },
       { header: 'Categoría', key: 'categoria', width: 20 },
-      { header: 'Ventas (30d)', key: 'ventas_30d', width: 15 },
-      { header: 'Pronóstico (30d)', key: 'pronostico_30d', width: 17 },
+      { header: 'Ventas (5 sem)', key: 'ventas_30d', width: 15 },
+      { header: 'Pronóstico (5 sem)', key: 'pronostico_30d', width: 17 },
       { header: 'Límite Inferior', key: 'limite_inferior', width: 15 },
       { header: 'Límite Superior', key: 'limite_superior', width: 15 },
       { header: 'MAPE %', key: 'mape', width: 12 }
@@ -655,14 +655,6 @@ export class ReportService {
       }
     });
 
-    if (data.breakEven) {
-      doc.moveDown(1);
-      doc.fontSize(10).font('Helvetica');
-      doc.text(
-        `Punto de equilibrio: ${data.breakEven.breakEvenUnits} unidades | Costos fijos: S/ ${data.breakEven.fixedCosts.toFixed(2)} | Precio promedio: S/ ${data.breakEven.averagePrice.toFixed(2)} | Costo variable/und: S/ ${data.breakEven.variableCostPerUnit.toFixed(2)}`
-      );
-    }
-
     doc.end();
     return new Promise((resolve) => {
       doc.on('end', () => resolve(Buffer.concat(buffers)));
@@ -699,21 +691,6 @@ export class ReportService {
       profit: p.projectedProfit
     }));
     ['revenue', 'expenses', 'profit'].forEach(col => projSheet.getColumn(col).numFmt = '#,##0.00');
-
-    if (data.breakEven) {
-      const beSheet = workbook.addWorksheet('Punto de Equilibrio');
-      beSheet.columns = [
-        { header: 'Concepto', key: 'concepto', width: 35 },
-        { header: 'Valor', key: 'valor', width: 25 }
-      ];
-      beSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFF' } };
-      beSheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '1e3a8a' } };
-      beSheet.addRow({ concepto: 'Unidades para equilibrio', valor: data.breakEven.breakEvenUnits });
-      beSheet.addRow({ concepto: 'Costos fijos (S/)', valor: data.breakEven.fixedCosts });
-      beSheet.addRow({ concepto: 'Precio promedio (S/)', valor: data.breakEven.averagePrice });
-      beSheet.addRow({ concepto: 'Costo variable por unidad (S/)', valor: data.breakEven.variableCostPerUnit });
-      beSheet.getColumn('valor').numFmt = '#,##0.00';
-    }
 
     return workbook.xlsx.writeBuffer() as any;
   }

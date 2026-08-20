@@ -75,11 +75,5 @@ export interface FinancialKpisReportData {
     projectedExpenses: number;
     projectedProfit: number;
   }>;
-  breakEven: {
-    breakEvenUnits: number;
-    fixedCosts: number;
-    averagePrice: number;
-    variableCostPerUnit: number;
-  } | null;
   generatedAt: Date;
 }

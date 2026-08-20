@@ -99,6 +99,9 @@ export interface AdvancedForecast {
   };
   cached: boolean;
   lastTrained: string;
+  trainingDays?: number;
+  trainingWeeks?: number;
+  trainingSales?: number;
 }
 
 export const alertService = {
@@ -172,11 +175,6 @@ export const alertService = {
     return data;
   },
 
-  getBreakEvenPoint: async (): Promise<{ data: any }> => {
-    const { data } = await api.get('/analytics/break-even');
-    return data;
-  },
-
   getAging: async (): Promise<AgingBucket> => {
     const { data } = await api.get<{ success: boolean; data: AgingBucket }>('/analytics/aging');
     return data.data;
@@ -186,6 +184,11 @@ export const alertService = {
     const { data } = await api.get<{ success: boolean; data: AdvancedForecast }>('/analytics/advanced-forecast', {
       params: { productId, days }
     });
+    return data.data;
+  },
+
+  getForecastEligibility: async (): Promise<{ productId: number; dias: number }[]> => {
+    const { data } = await api.get<{ success: boolean; data: { productId: number; dias: number }[] }>('/analytics/forecast/eligibility');
     return data.data;
   }
 };

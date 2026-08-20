@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { forecastDemand, getInventoryMetrics, advancedForecastDemand, getFinancialProjectionsController, getBreakEvenPointController, getAging } from '../controllers/analyticsController';
+import { getInventoryMetrics, advancedForecastDemand, forecastEligibility, getFinancialProjectionsController, getAging } from '../controllers/analyticsController';
 import { verificarToken, verificarRol, verificarPermiso } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -50,52 +50,7 @@ const router = Router();
  *         description: Error al generar el pronóstico
  */
 router.get('/advanced-forecast', verificarToken, verificarRol(['gerente']), advancedForecastDemand);
-
-/**
- * @swagger
- * /api/analytics/forecast:
- *   get:
- *     summary: Obtiene un pronóstico de demanda
- *     tags: [Analytics]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: productId
- *         schema:
- *           type: integer
- *         description: ID del producto para el pronóstico
- *       - in: query
- *         name: categoryId
- *         schema:
- *           type: integer
- *         description: ID de la categoría para el pronóstico
- *       - in: query
- *         name: monthsToForecast
- *         schema:
- *           type: integer
- *           default: 3
- *         description: Número de meses a pronosticar
- *       - in: query
- *         name: confidenceLevel
- *         schema:
- *           type: number
- *           format: float
- *           minimum: 0.5
- *           maximum: 0.99
- *           default: 0.95
- *         description: Nivel de confianza del pronóstico (0.5-0.99)
- *     responses:
- *       200:
- *         description: Pronóstico generado exitosamente
- *       400:
- *         description: Parámetros inválidos
- *       401:
- *         description: No autorizado
- *       500:
- *         description: Error del servidor
- */
-router.get('/forecast', verificarToken, verificarRol(['gerente']), forecastDemand);
+router.get('/forecast/eligibility', verificarToken, verificarRol(['gerente']), forecastEligibility);
 
 /**
  * @swagger
@@ -169,8 +124,6 @@ router.get('/forecast', verificarToken, verificarRol(['gerente']), forecastDeman
 router.get('/metrics', verificarToken, verificarRol(['gerente']), getInventoryMetrics);
 
 router.get('/projections', verificarToken, verificarRol(['gerente']), getFinancialProjectionsController);
-
-router.get('/break-even', verificarToken, verificarRol(['gerente']), getBreakEvenPointController);
 
 router.get('/aging', verificarToken, verificarPermiso('alertasStock'), getAging);
 

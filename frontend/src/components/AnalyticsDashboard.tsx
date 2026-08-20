@@ -7,6 +7,7 @@ import {
 import { InventoryMetrics, alertService, AgingBucket, AdvancedForecast } from '../services/alert.service';
 import { productService } from '../services/product.service';
 import { Producto } from '../types';
+import ProductSearchSelect from './ProductSearchSelect';
 import './AnalyticsDashboard.css';
 
 type DatePreset = '7d' | '30d' | '90d' | 'custom';
@@ -69,11 +70,11 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ metrics, loadin
   });
   const [loadingChart, setLoadingChart] = useState(false);
   const [projections, setProjections] = useState<any[]>([]);
-  const [breakEven, setBreakEven] = useState<any>(null);
   const [loadingFinancial, setLoadingFinancial] = useState(false);
   const [aging, setAging] = useState<AgingBucket>({ actual: 0, '1-30': 0, '31-60': 0, '61-90': 0, '90+': 0 });
   const [productos, setProductos] = useState<Producto[]>([]);
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
+  const [eligibility, setEligibility] = useState<Record<number, number>>({});
   const [forecastDays, setForecastDays] = useState<number>(30);
   const [forecast, setForecast] = useState<AdvancedForecast | null>(null);
   const [loadingForecast, setLoadingForecast] = useState(false);
@@ -83,13 +84,11 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ metrics, loadin
     const loadFinancialData = async () => {
       setLoadingFinancial(true);
       try {
-        const [projRes, breakRes, agingRes] = await Promise.all([
+        const [projRes, agingRes] = await Promise.all([
           alertService.getFinancialProjections(6),
-          alertService.getBreakEvenPoint(),
           alertService.getAging()
         ]);
         setProjections(projRes.data || []);
-        setBreakEven(breakRes.data || null);
         setAging(agingRes);
       } catch (error) {
         console.error('Error loading financial data:', error);
@@ -103,11 +102,22 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ metrics, loadin
   useEffect(() => {
     let active = true;
     productService.obtenerProductos({ limite: 1000, activo: true })
-      .then(res => {
+      .then(async res => {
         if (!active) return;
         setProductos(res.productos);
-        if (res.productos.length > 0) {
-          setSelectedProductId(prev => (prev === null ? res.productos[0].id : prev));
+        try {
+          const elig = await alertService.getForecastEligibility();
+          if (!active) return;
+          const map: Record<number, number> = {};
+          elig.forEach(e => { map[e.productId] = e.dias; });
+          setEligibility(map);
+          const primeroApto = res.productos.find(p => (map[p.id] ?? 0) >= 30);
+          setSelectedProductId(prev => (prev === null ? (primeroApto?.id ?? null) : prev));
+          if (!primeroApto) {
+            setForecastError('No hay productos con suficientes datos de ventas para pronosticar; selecciona uno del listado');
+          }
+        } catch {
+          if (active) setSelectedProductId(prev => (prev === null ? (res.productos[0]?.id ?? null) : prev));
         }
       })
       .catch(() => {
@@ -201,17 +211,6 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ metrics, loadin
     { name: 'Margen Bruto', value: metrics.margenBruto, fill: COLORS.success },
     { name: 'ROI Inventario', value: Math.min(metrics.roiInventario, 200), fill: COLORS.primary },
     { name: 'Precisión', value: metrics.precisionInventario, fill: COLORS.warning },
-  ] : [];
-
-  const stagnantProductsData = metrics ? [
-    { name: 'Lentos', value: metrics.productosLentos, fill: COLORS.warning },
-    { name: 'Sin Movimiento', value: metrics.sinMovimiento, fill: COLORS.danger },
-    { name: 'Stock Muerto', value: metrics.stockMuerto, fill: '#6b7280' },
-  ] : [];
-
-  const capitalData = metrics ? [
-    { name: 'Capital Inmovilizado', value: metrics.capitalInmovilizado - metrics.valorStockMuerto, color: COLORS.primary },
-    { name: 'Stock Muerto', value: metrics.valorStockMuerto, color: COLORS.danger },
   ] : [];
 
   const forecastChartData = useMemo(() => {
@@ -473,71 +472,6 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ metrics, loadin
             </div>
           </div>
 
-          {/* Row 3: 2 charts */}
-          <div className="charts-row charts-row-2">
-            {/* Stagnant Products */}
-            <div className="chart-card">
-              <div className="chart-card-header">
-                <h3>Productos Estancados</h3>
-              </div>
-              <div className="chart-card-body">
-                <ResponsiveContainer width="100%" height={240}>
-                  <BarChart data={stagnantProductsData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={50}>
-                      {stagnantProductsData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Capital Donut */}
-            <div className="chart-card">
-              <div className="chart-card-header">
-                <h3>Capital vs Stock Muerto</h3>
-              </div>
-              <div className="chart-card-body">
-                {metrics.capitalInmovilizado > 0 ? (
-                  <ResponsiveContainer width="100%" height={240}>
-                    <PieChart>
-                      <Pie
-                        data={capitalData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={55}
-                        outerRadius={85}
-                        paddingAngle={3}
-                        dataKey="value"
-                        stroke="none"
-                      >
-                        {capitalData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(value: number) => [formatCurrency(value), '']}
-                        contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0' }}
-                      />
-                      <Legend
-                        verticalAlign="bottom"
-                        height={36}
-                        formatter={(value) => <span className="legend-text">{value}</span>}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="chart-no-data">Sin datos de capital</div>
-                )}
-              </div>
-            </div>
-          </div>
-
           {/* Financial Projections */}
           <div className="analytics-section">
             <h3 className="section-title">
@@ -570,37 +504,6 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ metrics, loadin
                   )}
                 </div>
               </div>
-              <div className="chart-card">
-                <div className="chart-card-header">
-                  <h4>Punto de Equilibrio</h4>
-                </div>
-                <div className="chart-card-body">
-                  {loadingFinancial ? (
-                    <div className="chart-loading">Calculando...</div>
-                  ) : breakEven ? (
-                    <div className="break-even-info">
-                      <div className="be-item">
-                        <span className="be-label">Unidades para equilibrio</span>
-                        <span className="be-value">{formatNumber(breakEven.breakEvenUnits)}</span>
-                      </div>
-                      <div className="be-item">
-                        <span className="be-label">Costos fijos</span>
-                        <span className="be-value">{formatCurrency(breakEven.fixedCosts)}</span>
-                      </div>
-                      <div className="be-item">
-                        <span className="be-label">Precio promedio</span>
-                        <span className="be-value">{formatCurrency(breakEven.averagePrice)}</span>
-                      </div>
-                      <div className="be-item">
-                        <span className="be-label">Costo variable/unidad</span>
-                        <span className="be-value">{formatCurrency(breakEven.variableCostPerUnit)}</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="chart-no-data">Sin datos de equilibrio</div>
-                  )}
-                </div>
-              </div>
             </div>
           </div>
 
@@ -613,15 +516,12 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ metrics, loadin
             <div className="forecast-controls">
               <div className="forecast-field">
                 <label>Producto:</label>
-                <select
-                  value={selectedProductId ?? ''}
-                  onChange={(e) => setSelectedProductId(Number(e.target.value))}
-                >
-                  {productos.length === 0 && <option value="">Sin productos</option>}
-                  {productos.map(p => (
-                    <option key={p.id} value={p.id}>{p.nombre}</option>
-                  ))}
-                </select>
+                <ProductSearchSelect
+                  productos={productos}
+                  eligibility={eligibility}
+                  value={selectedProductId}
+                  onChange={setSelectedProductId}
+                />
               </div>
               <div className="forecast-field">
                 <label>Horizonte:</label>
@@ -656,6 +556,15 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ metrics, loadin
                     {forecast.lastTrained && (
                       <span>Entrenado: {new Date(forecast.lastTrained).toLocaleString()}</span>
                     )}
+                    {typeof forecast.trainingWeeks === 'number' ? (
+                      <span>
+                        Datos de entrenamiento: {forecast.trainingWeeks} semanas · {forecast.trainingSales ?? 0} ventas
+                      </span>
+                    ) : typeof forecast.trainingDays === 'number' ? (
+                      <span>
+                        Datos de entrenamiento: {forecast.trainingDays} días · {forecast.trainingSales ?? 0} ventas
+                      </span>
+                    ) : null}
                   </div>
                 )}
               </div>
@@ -680,7 +589,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ metrics, loadin
                       <Area
                         type="monotone"
                         dataKey="quantity"
-                        name="Ventas históricas"
+                        name="Ventas históricas (semanales)"
                         stroke={COLORS.muted}
                         strokeWidth={1.5}
                         fill="rgba(148,163,184,0.15)"
@@ -689,7 +598,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ metrics, loadin
                       <Line
                         type="monotone"
                         dataKey="predicted"
-                        name="Pronóstico"
+                        name="Pronóstico (semanal)"
                         stroke={COLORS.primary}
                         strokeWidth={2.5}
                         dot={false}

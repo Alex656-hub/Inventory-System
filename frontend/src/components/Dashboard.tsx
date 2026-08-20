@@ -146,10 +146,10 @@ const Dashboard: React.FC = () => {
     Cantidad: p.totalQuantity,
   })) || [];
 
-  const stagnantData = inventoryMetrics ? [
-    { name: 'Lentos', value: inventoryMetrics.productosLentos, fill: COLORS.warning },
-    { name: 'Sin Movimiento', value: inventoryMetrics.sinMovimiento, fill: COLORS.danger },
-    { name: 'Stock Muerto', value: inventoryMetrics.stockMuerto, fill: '#6b7280' },
+  const stockStatusData = inventoryMetrics ? [
+    { name: 'Stock Bajo', value: inventoryMetrics.stockBajo, color: COLORS.warning },
+    { name: 'Agotados', value: inventoryMetrics.agotados, color: COLORS.danger },
+    { name: 'Sin Problemas', value: Math.max(0, inventoryMetrics.totalProductos - inventoryMetrics.stockBajo - inventoryMetrics.agotados), color: COLORS.success },
   ] : [];
 
   if (loading) {
@@ -353,25 +353,32 @@ const Dashboard: React.FC = () => {
 
         <div className="chart-card">
           <div className="chart-card-header">
-            <h3>Productos Estancados</h3>
+            <h3>Estado del Stock</h3>
           </div>
           <div className="chart-card-body">
-            {stagnantData.some(d => d.value > 0) ? (
+            {inventoryMetrics && inventoryMetrics.totalProductos > 0 ? (
               <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={stagnantData} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={50}>
-                    {stagnantData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                <PieChart>
+                  <Pie
+                    data={stockStatusData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={85}
+                    paddingAngle={3}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {stockStatusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
-                  </Bar>
-                </BarChart>
+                  </Pie>
+                  <Tooltip formatter={(value: number) => [value, '']} />
+                  <Legend formatter={(value) => <span className="legend-text">{value}</span>} />
+                </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="chart-no-data">No hay productos estancados</div>
+              <div className="chart-no-data">Sin datos de stock</div>
             )}
           </div>
         </div>

@@ -16,6 +16,7 @@ import { alertService } from '../services/alertService';
 import { ReportService } from '../services/ReportService';
 import { CuotaService } from '../services/cuotaService';
 import CuotaPago from '../models/CuotaPago';
+import { advancedDemandForecasting } from '../analytics/services/advancedDemandForecasting';
 
 interface OperacionRequest {
   tipo_operacion: 'ENTRADA' | 'SALIDA' | 'TRASPASO';
@@ -181,6 +182,16 @@ class OperacionStockController {
         }
         await operacion.update({ estado: 'PROCESADO' }, { transaction: t });
       });
+
+      // Invalidar caché del pronóstico de demanda para los productos vendidos
+      if (operacion.tipo_operacion === 'SALIDA') {
+        try {
+          const productIds = operacion.detalles!.map(d => d.producto_id);
+          advancedDemandForecasting.invalidateForProducts(productIds);
+        } catch (cacheError) {
+          console.error('Error al invalidar caché de pronóstico (no crítico):', cacheError);
+        }
+      }
 
       // Generar cuotas si es una venta a crédito con cronograma configurado
       if (operacion.tipo_operacion === 'SALIDA' && (operacion.num_cuotas || 0) > 0) {

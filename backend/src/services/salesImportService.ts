@@ -17,6 +17,7 @@ import MovimientoInventario from '../models/MovimientoInventario';
 import StockPorSede from '../models/StockPorSede';
 import DailySale from '../models/sales';
 import { alertService } from './alertService';
+import { advancedDemandForecasting } from '../analytics/services/advancedDemandForecasting';
 import { Op } from 'sequelize';
 
 const REQUIRED_COLUMNS = [
@@ -237,6 +238,14 @@ export class SalesImportService {
 
       // FASE 3: Actualizar stocks finales
       await this.updateProductStocks(productMap!);
+
+      // Invalidar caché del pronóstico para los productos importados
+      try {
+        const productIds = Array.from(productMap!.values()).map(p => p.id);
+        advancedDemandForecasting.invalidateForProducts(productIds);
+      } catch (cacheError) {
+        console.error('Error al invalidar caché de pronóstico tras importación (no crítico):', cacheError);
+      }
 
       return result;
     } catch (error) {

@@ -1,72 +1,14 @@
 import { Request, Response } from 'express';
-import { getDemandForecast, DemandForecastOptions } from '../analytics/services/demandForecasting';
 import { advancedDemandForecasting } from '../analytics/services/advancedDemandForecasting';
 import { getInventoryMetrics as getInventoryMetricsService } from '../analytics/services/inventoryAnalysis';
-import { getFinancialProjections, calculateBreakEvenPoint } from '../analytics/services/financialProjections';
+import { getFinancialProjections } from '../analytics/services/financialProjections';
 import { CuotaPago } from '../models';
 import { Op } from 'sequelize';
+import { sequelize } from '../config/database';
 
 /**
  * Controlador para las rutas de análisis predictivo
  */
-
-export const forecastDemand = async (req: Request, res: Response) => {
-  try {
-    const { productId, categoryId, monthsToForecast, confidenceLevel } = req.query;
-    
-    // Validar y convertir parámetros
-    const options: DemandForecastOptions = {};
-    
-    if (productId) options.productId = parseInt(productId as string, 10);
-    if (categoryId) options.categoryId = parseInt(categoryId as string, 10);
-    if (monthsToForecast) options.monthsToForecast = parseInt(monthsToForecast as string, 10);
-    if (confidenceLevel) options.confidenceLevel = parseFloat(confidenceLevel as string);
-
-    // Validar que al menos uno de los filtros esté presente
-    if (!options.productId && !options.categoryId) {
-      return res.status(400).json({
-        success: false,
-        error: 'Se requiere al menos un ID de producto o categoría'
-      });
-    }
-
-    // Obtener pronóstico
-    const result = await getDemandForecast(options);
-
-    if (!result.success) {
-      return res.status(500).json({
-        success: false,
-        error: result.error,
-        details: result.details
-      });
-    }
-
-    // Formatear respuesta
-    const response = {
-      success: true,
-      data: {
-        forecast: result.forecast,
-        confidence: result.confidence,
-        historicalData: result.historicalData
-      },
-      metadata: {
-        productId: options.productId,
-        categoryId: options.categoryId,
-        forecastPeriod: options.monthsToForecast || 3,
-        generatedAt: new Date().toISOString()
-      }
-    };
-
-    res.json(response);
-  } catch (error) {
-    console.error('Error en el controlador de pronóstico:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Error interno del servidor',
-      details: error instanceof Error ? error.message : 'Error desconocido'
-    });
-  }
-};
 
 /**
  * Obtiene métricas clave de inventario
@@ -111,6 +53,47 @@ export const advancedForecastDemand = async (req: Request, res: Response) => {
       success: false,
       error: 'Error al generar el pronóstico avanzado',
       details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+};
+
+/**
+ * Obtiene la elegibilidad de pronóstico por producto (días de historia desde la primera venta)
+ */
+export const forecastEligibility = async (req: Request, res: Response) => {
+  try {
+    const [rows] = await sequelize.query(
+      `SELECT t.producto_id, MIN(t.fecha) AS "primeraVenta"
+       FROM (
+         SELECT d.producto_id, s.fecha
+         FROM detalle_salidas d
+         INNER JOIN salidas_inventario s ON s.id = d.salida_id
+         WHERE s.estado = 'completado'
+           AND s.fecha >= now() - interval '24 months'
+         UNION ALL
+         SELECT det.producto_id, op.fecha_emision
+         FROM detalles_operacion det
+         INNER JOIN operaciones_stock op ON op.id = det.operacion_id
+         WHERE op.tipo_operacion = 'SALIDA'
+           AND op.estado = 'PROCESADO'
+           AND op.fecha_emision >= now() - interval '24 months'
+       ) t
+       GROUP BY t.producto_id`
+    );
+
+    const hoy = Date.now();
+    const data = (rows as Array<{ producto_id: number; primeraVenta: Date | string }>).map(r => {
+      const primera = r.primeraVenta instanceof Date ? r.primeraVenta : new Date(r.primeraVenta);
+      const dias = Math.max(1, Math.floor((hoy - primera.getTime()) / 86400000) + 1);
+      return { productId: Number(r.producto_id), dias };
+    });
+
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('Error en forecastEligibility:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al obtener la elegibilidad del pronóstico'
     });
   }
 };
@@ -178,24 +161,6 @@ export const getFinancialProjectionsController = async (req: Request, res: Respo
     res.status(500).json({
       success: false,
       error: 'Error al generar proyecciones financieras',
-      details: error instanceof Error ? error.message : 'Error desconocido'
-    });
-  }
-};
-
-export const getBreakEvenPointController = async (req: Request, res: Response) => {
-  try {
-    const breakEven = await calculateBreakEvenPoint();
-
-    res.json({
-      success: true,
-      data: breakEven
-    });
-  } catch (error) {
-    console.error('Error al calcular punto de equilibrio:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Error al calcular punto de equilibrio',
       details: error instanceof Error ? error.message : 'Error desconocido'
     });
   }
