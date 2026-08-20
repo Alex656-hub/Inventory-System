@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: inventory-postgres-prod
+    environment:
+      POSTGRES_DB: credisa_inventory
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # No exponer puerto 5432 en producción (solo red interna)
+    networks:
+      - inventory-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d credisa_inventory"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: inventory-backend-prod
+    environment:
+      PORT: 3001
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: credisa_inventory
+      DB_USER: postgres
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRE: 7d
+      FRONTEND_URL: ${FRONTEND_URL}
+      ENABLE_DB_SYNC: "false"
+    # No exponer puerto 3001 en host (solo red interna, nginx hace proxy)
+    networks:
+      - inventory-network
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: inventory-frontend-prod
+    environment:
+      REACT_APP_API_URL: /api
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - inventory-network
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+
+networks:
+  inventory-network:
+    driver: bridge

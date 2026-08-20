@@ -1,13 +1,15 @@
--- Script de inicialización de la base de datos
--- Ejecutar este script después de crear la base de datos PostgreSQL
+-- Script de inicialización de la base de datos para Docker
+-- Se ejecuta automáticamente al crear el contenedor postgres por primera vez
 
--- Crear base de datos (ejecutar manualmente si no existe)
--- CREATE DATABASE credisa_inventory;
+-- Las tablas se crean automáticamente mediante Sequelize (sync) al iniciar el backend
+-- Este archivo sirve como referencia del esquema esperado
 
--- Las tablas se crearán automáticamente mediante Sequelize
--- Este archivo es solo para referencia
+-- Extensiones útiles
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- Para crear un usuario gerente inicial después de ejecutar la aplicación:
--- INSERT INTO usuarios (nombre, email, password, rol, activo, "createdAt", "updatedAt")
--- VALUES ('Administrador', 'admin@credisa.com', '$2a$10$[hash_de_bcrypt]', 'gerente', true, NOW(), NOW());
+-- Índices adicionales de rendimiento (opcional, Sequelize los crea)
+-- Se aplican después del primer sync si es necesario
 
+-- Comentario: El seed de usuarios iniciales (gerente/empleado) se ejecuta manualmente:
+-- docker compose exec backend npm run db:seed

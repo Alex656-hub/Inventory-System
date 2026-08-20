@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: inventory-backend-dev
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - ./backend/uploads:/app/uploads
+    environment:
+      NODE_ENV: development
+      ENABLE_DB_SYNC: "true"
+      DB_SYNC_ALTER: "true"
+      FRONTEND_URL: "http://localhost:3000,http://localhost:3002,http://localhost:3003"
+    command: npm run dev
+    ports:
+      - "3001:3001"
+      - "9229:9229"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: inventory-frontend-dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+      - REACT_APP_API_URL=http://localhost:3001/api
+      - WDS_SOCKET_PORT=3003
+      - WDS_SOCKET_HOST=localhost
+    stdin_open: true
+    tty: true
+    ports:
+      - "3003:3000"

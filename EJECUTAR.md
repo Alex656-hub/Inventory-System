@@ -1,8 +1,65 @@
 # 🚀 Cómo Ejecutar el Sistema de Inventario
 
-## Opción 1: Ejecutar Backend y Frontend por Separado (Recomendado)
+## Opción A: Con Docker (Recomendado - Un Solo Comando)
 
-### Terminal 1 - Backend
+### Desarrollo (Hot-Reload Incluido)
+
+```powershell
+# Desde la raíz del proyecto
+docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.docker up --build -d
+```
+
+**URLs:**
+- Frontend: **http://localhost:3003**
+- Backend API: **http://localhost:3001**
+- PostgreSQL: **localhost:5432**
+
+**Credenciales:** `gerente` / `gerente123` (o `gerente@credisa.com` / `gerente123`)
+
+### Primer Inicio (Solo la Primera Vez)
+
+```powershell
+# 1. Levantar contenedores
+docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.docker up --build -d
+
+# 2. Ejecutar seed (crea usuarios y datos iniciales)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.docker exec backend npm run db:seed
+
+# 3. Abrir http://localhost:3003
+```
+
+### Comandos Diarios Docker
+
+```powershell
+# Ver logs backend (para debug)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f backend
+
+# Ver logs frontend
+docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f frontend
+
+# Parar (mantiene base de datos en volumen)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml down
+
+# Parar Y borrar base de datos (limpio total)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml down -v
+
+# Rebuild tras cambios en package.json o Dockerfile
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
+
+# Ejecutar seed manualmente
+docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.docker exec backend npm run db:seed
+
+# Entrar al contenedor backend (terminal)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec backend sh
+```
+
+---
+
+## Opción B: Tradicional (Sin Docker - Requiere Node.js + PostgreSQL Instalados)
+
+### Opción 1: Ejecutar Backend y Frontend por Separado (Recomendado)
+
+#### Terminal 1 - Backend
 
 ```powershell
 cd backend
@@ -16,7 +73,7 @@ Deberías ver:
 🚀 Servidor corriendo en http://localhost:3001
 ```
 
-### Terminal 2 - Frontend
+#### Terminal 2 - Frontend
 
 Abre **otra terminal PowerShell** y ejecuta:
 
@@ -43,6 +100,14 @@ Esto iniciará backend y frontend simultáneamente.
 
 ## Primera Vez - Verificar que todo está listo
 
+### Con Docker (Opción A)
+1. ✅ **Docker Desktop corriendo** (icono ballena en bandeja sistema)
+2. ✅ **WSL 2 habilitado** (`wsl --status` → "Versión predeterminada: 2")
+3. ✅ **Archivo `.env.docker`** existe en la raíz
+4. ✅ **Contenedores levantados** (`docker ps` muestra 3 contenedores)
+5. ✅ **Seed ejecutado**: `docker compose exec backend npm run db:seed`
+
+### Tradicional (Opción B)
 1. ✅ **PostgreSQL está corriendo**
 2. ✅ **Base de datos creada**: `credisa_inventory`
 3. ✅ **Archivo `.env`** creado en `backend/` con la contraseña correcta
@@ -53,8 +118,13 @@ Esto iniciará backend y frontend simultáneamente.
 
 ## Iniciar Sesión
 
-Una vez que el frontend esté corriendo:
+### Con Docker (Opción A)
+1. Abre tu navegador en **http://localhost:3003**
+2. Ingresa con:
+   - **Usuario**: `gerente` (o email `gerente@credisa.com`)
+   - **Contraseña**: `gerente123`
 
+### Tradicional (Opción B)
 1. Abre tu navegador en `http://localhost:3000`
 2. Ingresa con:
    - **Email**: `gerente@credisa.com`
@@ -89,6 +159,36 @@ Los logs aparecen en la terminal donde ejecutaste `npm run dev` (backend)
 
 ### Error de CORS
 - Verifica que `FRONTEND_URL=http://localhost:3000` esté en `backend/.env`
+
+---
+
+### Problemas Específicos de Docker
+
+#### Docker Desktop no inicia (Windows)
+- Verifica virtualización en BIOS/UEFI
+- PowerShell Admin:
+  ```powershell
+  dism /online /enable-feature /featurename:Microsoft-Hyper-V /all /norestart
+  dism /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+  wsl --install
+  Restart-Computer -Force
+  ```
+
+#### Puerto 3003 ocupado
+```powershell
+netstat -ano | findstr :3003
+taskkill /PID <PID> /F
+```
+
+#### Base de datos no persiste
+```powershell
+# NO uses 'down -v' si quieres mantener datos
+docker compose down  # Sin -v mantiene volúmenes
+```
+
+#### Frontend no conecta al backend en Docker
+- Verifica `REACT_APP_API_URL=http://localhost:3001/api` en `.env.docker`
+- En producción (nginx), usa URL relativa `/api` (configurado en `nginx.conf`)
 
 ---
 

@@ -2,13 +2,47 @@
 
 Esta guía te ayudará a configurar y ejecutar el sistema de gestión de inventario desde cero.
 
-## Requisitos Previos
+## Opción A: Instalación con Docker (Recomendada - Más Simple)
+
+### Requisitos Previos Docker
+- **Docker Desktop** (Windows/Mac) o **Docker Engine + Docker Compose** (Linux)
+- **WSL 2** habilitado en Windows (Docker Desktop lo configura automáticamente)
+
+### Pasos con Docker
+
+1. **Clonar el repositorio**
+   ```bash
+   git clone <url-del-repo>
+   cd Inventory-System
+   ```
+
+2. **Levantar todo el stack (Base de datos + Backend + Frontend)**
+   ```bash
+   # Desarrollo (con hot-reload)
+   docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.docker up --build -d
+   ```
+
+3. **Ejecutar seed (crear usuarios iniciales)**
+   ```bash
+   docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.docker exec backend npm run db:seed
+   ```
+
+4. **Acceder al sistema**
+   - Frontend: **http://localhost:3003**
+   - Backend API: **http://localhost:3001**
+   - Credenciales: `gerente` / `gerente123` (o `gerente@credisa.com` / `gerente123`)
+
+---
+
+## Opción B: Instalación Tradicional (Sin Docker)
+
+### Requisitos Previos
 
 - **Node.js** (v18 o superior)
 - **PostgreSQL** (v12 o superior)
 - **npm** o **yarn**
 
-## Paso 1: Clonar e Instalar Dependencias
+## Paso 1: Clonar e Instalar Dependencias (Solo instalación tradicional)
 
 ```bash
 # Instalar dependencias de la raíz
@@ -17,6 +51,8 @@ npm install
 # O instalar todo de una vez
 npm run install:all
 ```
+
+> **Nota**: Con Docker **no necesitas** instalar dependencias manualmente ni tener Node.js/PostgreSQL en tu máquina. Docker lo incluye todo.
 
 ## Paso 2: Configurar Base de Datos PostgreSQL
 
@@ -78,7 +114,26 @@ Esto creará:
 
 ## Paso 5: Ejecutar el Sistema
 
-### Opción 1: Ejecutar Backend y Frontend por Separado
+### Opción A: Con Docker (Recomendado)
+
+```bash
+# Desarrollo (hot-reload automático)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.docker up --build -d
+
+# Ver logs
+docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f backend
+docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f frontend
+
+# Parar (mantiene base de datos)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml down
+
+# Parar y borrar todo (base de datos limpia)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml down -v
+```
+
+### Opción B: Tradicional (Sin Docker)
+
+#### Opción 1: Ejecutar Backend y Frontend por Separado
 
 **Terminal 1 - Backend:**
 ```bash
@@ -96,7 +151,7 @@ npm start
 
 El frontend se abrirá automáticamente en `http://localhost:3000`
 
-### Opción 2: Ejecutar Todo desde la Raíz
+#### Opción 2: Ejecutar Todo desde la Raíz
 
 ```bash
 npm run dev
@@ -104,6 +159,13 @@ npm run dev
 
 ## Paso 6: Acceder al Sistema
 
+### Con Docker (Opción A)
+1. Abre tu navegador en **http://localhost:3003**
+2. Inicia sesión con:
+   - **Usuario**: `gerente` (o email `gerente@credisa.com`)
+   - **Contraseña**: `gerente123`
+
+### Tradicional (Opción B)
 1. Abre tu navegador en `http://localhost:3000`
 2. Inicia sesión con:
    - **Email**: `gerente@credisa.com`
@@ -182,12 +244,46 @@ Inventory-System/
 
 ### Error de puerto en uso
 - Backend por defecto usa el puerto 3001
-- Frontend por defecto usa el puerto 3000
+- Frontend por defecto usa el puerto 3000 (3003 en Docker dev)
 - Si están ocupados, cambia los puertos en los archivos de configuración
 
 ### Error de CORS
 - Verifica que `FRONTEND_URL` en `backend/.env` coincida con la URL del frontend
-- Por defecto debería ser `http://localhost:3000`
+- Por defecto debería ser `http://localhost:3000` (o `http://localhost:3003` en Docker dev)
+
+### Problemas Específicos de Docker
+
+#### Docker Desktop no inicia (Windows)
+- Verifica que la virtualización esté habilitada en BIOS/UEFI
+- Ejecuta en PowerShell Admin:
+  ```powershell
+  dism /online /enable-feature /featurename:Microsoft-Hyper-V /all /norestart
+  dism /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+  wsl --install
+  Restart-Computer -Force
+  ```
+
+#### Puerto 3003 ocupado en Docker dev
+```bash
+# Ver qué usa el puerto
+netstat -ano | findstr :3003
+
+# Matar proceso (reemplaza PID)
+taskkill /PID <PID> /F
+```
+
+#### Base de datos no persiste datos
+```bash
+# Verificar volúmenes
+docker volume ls
+
+# NO uses 'down -v' si quieres mantener datos (el -v borra volúmenes)
+docker compose down  # Sin -v mantiene los datos
+```
+
+#### Frontend no conecta al backend en Docker
+- Verifica que `REACT_APP_API_URL=http://localhost:3001/api` en `.env.docker`
+- En producción (nginx), la URL es relativa `/api` (configurado en `nginx.conf`)
 
 ## Próximos Pasos
 
