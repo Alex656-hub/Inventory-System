@@ -2,6 +2,10 @@ import { Request, Response } from 'express';
 import { getDemandForecast, DemandForecastOptions } from '../analytics/services/demandForecasting';
 import { advancedDemandForecasting } from '../analytics/services/advancedDemandForecasting';
 import { getInventoryMetrics as getInventoryMetricsService, InventoryMetrics } from '../analytics/services/inventoryAnalysis';
+import { getFinancialProjections, calculateBreakEvenPoint } from '../analytics/services/financialProjections';
+import { CuotaPago } from '../models';
+import { Op } from 'sequelize';
+import { format } from 'date-fns';
 
 /**
  * Controlador para las rutas de análisis predictivo
@@ -146,6 +150,111 @@ export const getInventoryMetrics = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: 'Error al obtener métricas de inventario',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+};
+
+export const getFinancialProjectionsController = async (req: Request, res: Response) => {
+  try {
+    const { months = '6' } = req.query;
+    const monthsNum = parseInt(months as string, 10);
+
+    if (isNaN(monthsNum) || monthsNum <= 0 || monthsNum > 12) {
+      return res.status(400).json({
+        success: false,
+        error: 'Los meses deben ser un número entre 1 y 12'
+      });
+    }
+
+    const projections = await getFinancialProjections(monthsNum);
+
+    res.json({
+      success: true,
+      data: projections
+    });
+  } catch (error) {
+    console.error('Error al obtener proyecciones financieras:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al generar proyecciones financieras',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+};
+
+export const getBreakEvenPointController = async (req: Request, res: Response) => {
+  try {
+    const breakEven = await calculateBreakEvenPoint();
+
+    res.json({
+      success: true,
+      data: breakEven
+    });
+  } catch (error) {
+    console.error('Error al calcular punto de equilibrio:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al calcular punto de equilibrio',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+};
+
+export const getAging = async (req: Request, res: Response) => {
+  try {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+
+    const cuotas = await CuotaPago.findAll({
+      where: {
+        estado: { [Op.in]: ['pendiente', 'atrasada'] },
+      },
+      attributes: ['monto_total', 'fecha_vencimiento'],
+      raw: true,
+    });
+
+    const aging = {
+      actual: 0,
+      '1-30': 0,
+      '31-60': 0,
+      '61-90': 0,
+      '90+': 0,
+    };
+
+    for (const c of cuotas) {
+      const venc = new Date(c.fecha_vencimiento);
+      venc.setHours(0, 0, 0, 0);
+      const diffDays = Math.floor((hoy.getTime() - venc.getTime()) / (1000 * 60 * 60 * 24));
+      const monto = Number(c.monto_total);
+
+      if (diffDays <= 0) {
+        aging.actual += monto;
+      } else if (diffDays <= 30) {
+        aging['1-30'] += monto;
+      } else if (diffDays <= 60) {
+        aging['31-60'] += monto;
+      } else if (diffDays <= 90) {
+        aging['61-90'] += monto;
+      } else {
+        aging['90+'] += monto;
+      }
+    }
+
+    // Redondear a 2 decimales
+    Object.keys(aging).forEach(k => {
+      aging[k as keyof typeof aging] = Math.round(aging[k as keyof typeof aging] * 100) / 100;
+    });
+
+    res.json({
+      success: true,
+      data: aging
+    });
+  } catch (error) {
+    console.error('Error al obtener aging:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al obtener aging de cartera',
       details: error instanceof Error ? error.message : 'Error desconocido'
     });
   }

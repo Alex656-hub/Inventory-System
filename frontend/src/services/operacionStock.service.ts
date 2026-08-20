@@ -18,6 +18,18 @@ export interface OperacionStock {
   costo_total: number;
   estado: 'BORRADOR' | 'PROCESADO' | 'CANCELADO';
   detalles: DetalleOperacion[];
+  // Campos para ventas en cuotas
+  metodo_pago?: 'efectivo' | 'credito' | 'tarjeta';
+  num_cuotas?: number;
+  frecuencia_cuota?: 'semanal' | 'quincenal' | 'mensual';
+  interes_mensual?: number;
+  primer_vencimiento?: Date;
+  garantia_tipo?: 'dni' | 'telefono' | 'ninguna';
+  garantia_valor?: string;
+  aval_nombre?: string;
+  aval_contacto?: string;
+  aval_direccion?: string;
+  responsable_cobro?: string;
 }
 
 export interface DetalleOperacion {
@@ -26,6 +38,8 @@ export interface DetalleOperacion {
   producto_id: number;
   cantidad: number;
   costo_unitario: number;
+  descuento?: number;
+  precio_lista?: number;
   subtotal: number;
   lote?: string;
   fecha_vencimiento?: Date;
@@ -105,6 +119,62 @@ export interface Personal {
   activo: boolean;
 }
 
+export interface CuentaPorCobrar {
+  id: number;
+  salida_id: number;
+  numero_cuota: number;
+  total_cuotas: number;
+  monto_capital: number;
+  monto_interes: number;
+  monto_total: number;
+  fecha_vencimiento: string;
+  estado: 'pendiente' | 'pagada' | 'atrasada';
+  fecha_pago?: string | null;
+  observaciones?: string | null;
+  garantia_tipo: string;
+  garantia_valor: string;
+  aval_nombre?: string | null;
+  aval_contacto?: string | null;
+  aval_direccion?: string | null;
+  responsable_cobro?: string | null;
+  salida: {
+    id: number;
+    numero_documento: string;
+    fecha: string;
+    total: number;
+    cliente_nombre: string;
+    cliente_documento: string;
+  };
+}
+
+export interface AgingBucket {
+  actual: number;
+  '1-30': number;
+  '31-60': number;
+  '61-90': number;
+  '90+': number;
+}
+
+export interface CuotasClienteResponse {
+  cuotas: CuentaPorCobrar[];
+  paginacion: {
+    total: number;
+    pagina: number;
+    limite: number;
+    totalPaginas: number;
+  };
+}
+
+export interface CarteraCliente {
+  cliente_id: number | null;
+  nombre: string;
+  documento: string;
+  cuotas_pendientes: number;
+  saldo_capital: number;
+  total: number;
+  aging: AgingBucket;
+}
+
 class OperacionStockService {
   // Operaciones de Stock
   async crearOperacion(operacion: Omit<OperacionStock, 'id' | 'total_unidades' | 'costo_total' | 'estado'>) {
@@ -119,6 +189,60 @@ class OperacionStockService {
     estado?: string;
   }) {
     const response = await api.get('/stock', { params });
+    return response.data;
+  }
+
+  async obtenerEstadisticas(): Promise<{
+    hoy: { total: number; entradas: number; salidas: number };
+    mes: { total: number; entradas: number; salidas: number; traspasos: number; costoTotal: number; unidadesTotales: number };
+  }> {
+    const response = await api.get('/stock/stats');
+    return response.data;
+  }
+
+  async obtenerTendencia(dias: number = 30): Promise<Array<{
+    fecha: string;
+    ENTRADA: number;
+    SALIDA: number;
+    TRASPASO: number;
+  }>> {
+    const response = await api.get('/stock/tendencia', { params: { dias } });
+    return response.data;
+  }
+
+  async obtenerMetricasPorSede(meses: number = 6): Promise<Array<{
+    sede: string;
+    ENTRADA: number;
+    SALIDA: number;
+    TRASPASO: number;
+    costoTotal: number;
+  }>> {
+    const response = await api.get('/stock/metricas-por-sede', { params: { meses } });
+    return response.data;
+  }
+
+  async topProveedores(limite: number = 5, meses: number = 6): Promise<Array<{
+    proveedorId: number;
+    nombre: string;
+    totalOperaciones: number;
+    montoTotal: number;
+  }>> {
+    const response = await api.get('/stock/top-proveedores', { params: { limite, meses } });
+    return response.data;
+  }
+
+  async topClientes(limite: number = 5, meses: number = 6): Promise<Array<{
+    clienteId: number;
+    nombre: string;
+    totalOperaciones: number;
+    montoTotal: number;
+  }>> {
+    const response = await api.get('/stock/top-clientes', { params: { limite, meses } });
+    return response.data;
+  }
+
+  async exportarExcel(): Promise<Blob> {
+    const response = await api.get('/stock/export-excel', { responseType: 'blob' });
     return response.data;
   }
 
@@ -150,7 +274,6 @@ class OperacionStockService {
   // Catálogos para selects
   async obtenerSedes(): Promise<Sede[]> {
     const response = await api.get('/sedes');
-    console.log('Respuesta sedes:', response.data);
     return response.data.sedes || response.data;
   }
 
@@ -176,22 +299,11 @@ class OperacionStockService {
 
   async obtenerPersonal(): Promise<Personal[]> {
     const response = await api.get('/personal');
-    console.log('Respuesta de /api/personal:', response.data);
     const personal = response.data.personal || response.data;
-    console.log('Personal extraído:', personal);
     return personal;
   }
 
   // Validaciones
-  async validarStockDisponible(productoId: number, sedeId: number, cantidad: number): Promise<boolean> {
-    try {
-      const stock = await this.obtenerStockDisponible(productoId, sedeId);
-      return stock.cantidad_actual >= cantidad;
-    } catch (error) {
-      return false;
-    }
-  }
-
   validarCamposPorTipo(operacion: Partial<OperacionStock>): { valido: boolean; mensaje: string } {
     switch (operacion.tipo_operacion) {
       case 'ENTRADA':
@@ -217,6 +329,32 @@ class OperacionStockService {
         break;
     }
     return { valido: true, mensaje: '' };
+  }
+
+  // Cuentas por Cobrar
+  async getCuotasCliente(clienteId: number, params?: {
+    estado?: string;
+    soloVencidas?: boolean;
+    pagina?: number;
+    limite?: number;
+  }): Promise<CuotasClienteResponse> {
+    const response = await api.get(`/cuotas/cliente/${clienteId}`, { params });
+    return response.data;
+  }
+
+  async getAgingCliente(clienteId: number): Promise<AgingBucket> {
+    const response = await api.get(`/cuotas/aging/cliente/${clienteId}`);
+    return response.data;
+  }
+
+  async getCartera(): Promise<CarteraCliente[]> {
+    const response = await api.get('/cuotas/cartera');
+    return response.data;
+  }
+
+  async pagarCuota(cuotaId: number, data: { fecha_pago?: string; observaciones?: string }): Promise<any> {
+    const response = await api.post(`/cuotas/${cuotaId}/pay`, data);
+    return response.data;
   }
 }
 

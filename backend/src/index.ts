@@ -11,11 +11,14 @@ import Alert from './models/Alert';
 import UnidadMedida from './models/UnidadMedida';
 import ConfiguracionSistema from './models/ConfiguracionSistema';
 import { alertService } from './services/alertService';
+import { recommendationService } from './services/recommendationService';
+import { CuotaService } from './services/cuotaService';
 import './models/EntradaInventario';
 import './models/DetalleEntrada';
 import './models/SalidaInventario';
 import './models/DetalleSalida';
 import './models/MovimientoInventario';
+import './models/Descuento';
 import Sede from './models/Sede';
 import Almacen from './models/Almacen';
 import OperacionStock from './models/OperacionStock';
@@ -23,7 +26,7 @@ import StockPorSede from './models/StockPorSede';
 import DetalleOperacion from './models/DetalleOperacion';
 import Client from './models/Client';
 import Personal from './models/Personal';
-import { ensureProductosProveedorOptional } from './database/ensure-schema-patches';
+import { ensureProductosProveedorOptional, ensureCamposDescuento, ensureCamposPromocionProducto, ensureRecomendacionesAlertNullable, ensureCamposCuotasOperacionStock, ensureTablaDescuentos } from './database/ensure-schema-patches';
 
 // Importar rutas
 import authRoutes from './routes/auth.routes';
@@ -48,6 +51,8 @@ import almacenRoutes from './routes/almacen.routes';
 import operacionStockRoutes from './routes/operacionStock.routes';
 import personalRoutes from './routes/personal.routes';
 import backupRoutes from './routes/backup.routes';
+import cuotaRoutes from './routes/cuota.routes';
+import descuentoRoutes from './routes/descuento.routes';
 import path from 'path';
 
 // Cargar variables de entorno
@@ -99,17 +104,36 @@ app.use('/api/almacenes', almacenRoutes);
 app.use('/api/stock', operacionStockRoutes);
 app.use('/api/personal', personalRoutes);
 app.use('/api/backup', backupRoutes);
+app.use('/api/cuotas', cuotaRoutes);
+app.use('/api/descuentos', descuentoRoutes);
 
 // Ruta de salud
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'API funcionando correctamente' });
 });
 
+// Genera recomendaciones automáticamente a nombre de un gerente activo (sistema)
+const ejercicioRecomendacionesAutomaticas = async (): Promise<void> => {
+  const gerente = await User.findOne({
+    where: { rol: 'gerente', activo: true }
+  });
+  if (!gerente) {
+    console.warn('⚠️ No hay gerente activo para asignar recomendaciones automáticas');
+    return;
+  }
+  await recommendationService.generateAllRecommendations(gerente.id);
+};
+
 // Sincronizar base de datos y iniciar servidor
 const startServer = async () => {
   try {
     await sequelize.authenticate();
     console.log('✅ Conexión a la base de datos establecida correctamente.');
+
+    // Agregar columnas de cuotas (operaciones_stock + cuotas_pago.operacion_id)
+    // ANTES del sync: el modelo de cuotas_pago crea un índice sobre operacion_id
+    // y el sync fallaría si la columna aún no existe.
+    await ensureCamposCuotasOperacionStock();
     
     // En producción, evita alterar el esquema automáticamente.
     // Usa migraciones; en dev puedes habilitar sync con un flag explícito.
@@ -127,6 +151,14 @@ const startServer = async () => {
     }
     // Corrige esquemas viejos aunque el sync esté apagado (proveedor opcional en catálogo).
     await ensureProductosProveedorOptional();
+    // Agrega columnas nuevas (descuento/precio_lista) a tablas ya existentes.
+    await ensureCamposDescuento();
+    // Agrega columnas de promoción/descuento al catálogo de productos.
+    await ensureCamposPromocionProducto();
+    // Permite recomendaciones analíticas sin alerta (alert_id opcional).
+    await ensureRecomendacionesAlertNullable();
+    // Crea la tabla de descuentos (independiente del sync).
+    await ensureTablaDescuentos();
     
     // Forzar la actualización de la estructura de la tabla personal
     try {
@@ -143,6 +175,7 @@ const startServer = async () => {
         defaults: {
           ruc: '',
           direccion: '',
+          umbral_liquidez: 1000,
         }
       });
     } catch (error) {
@@ -157,13 +190,30 @@ const startServer = async () => {
         .then(() => console.log('✅ Verificación inicial de alertas completada'))
         .catch((err: unknown) => console.error('⚠️ Error en verificación inicial de alertas:', err));
 
-      // Verificar alertas cada 6 horas
-      const SIX_HOURS = 6 * 60 * 60 * 1000;
+      // Generar nuevas recomendaciones automáticamente (analíticas + alertas) al iniciar
+      ejercicioRecomendacionesAutomaticas()
+        .then(() => console.log('✅ Generación inicial de recomendaciones completada'))
+        .catch((err: unknown) => console.error('⚠️ Error en generación inicial de recomendaciones:', err));
+
+      // JOB PERIÓDICO: cada 1 hora se verifican alertas y se regeneran recomendaciones
+      const ONE_HOUR = 60 * 60 * 1000;
       setInterval(() => {
         alertService.checkAllAlerts()
           .then(() => console.log('✅ Verificación periódica de alertas completada'))
           .catch((err: unknown) => console.error('⚠️ Error en verificación periódica de alertas:', err));
-      }, SIX_HOURS);
+
+        ejercicioRecomendacionesAutomaticas()
+          .then(() => console.log('✅ Regeneración periódica de recomendaciones completada'))
+          .catch((err: unknown) => console.error('⚠️ Error en regeneración periódica de recomendaciones:', err));
+      }, ONE_HOUR);
+
+      // JOB DIARIO: medianoche - marcar cuotas vencidas como atrasadas
+      const DAILY_MS = 24 * 60 * 60 * 1000;
+      setInterval(() => {
+        CuotaService.checkOverdue()
+          .then(count => console.log(`✅ Job diario cuotas: ${count} cuotas marcadas como atrasadas`))
+          .catch((err: unknown) => console.error('⚠️ Error en job diario cuotas:', err));
+      }, DAILY_MS);
     });
   } catch (error) {
     console.error('❌ Error al iniciar el servidor:', error);

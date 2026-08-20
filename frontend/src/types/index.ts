@@ -36,11 +36,14 @@ export interface Producto {
   unidad_id?: number;
   precio_compra: number;
   precio_venta: number;
+  descuento_promocion?: number | null;
+  promocion_hasta?: string | null;
   stock_actual: number;
   stock_minimo: number;
   ubicacion?: string;
   activo: boolean;
   imageUrl?: string | null;
+  descuento_fuente?: 'recomendacion' | 'masivo' | 'manual' | 'legacy';
   categoria?: Categoria;
   proveedor?: Proveedor;
   unidad?: UnidadMedida;
@@ -153,7 +156,7 @@ export interface GlobalSearchResponse {
 
 export interface Recommendation {
   id: number;
-  alert_id: number;
+  alert_id: number | null;
   product_id: number;
   proveedor_id?: number;
   tipo: 'REORDEN' | 'PROMOCION' | 'INVESTIGAR' | 'DESCARTAR' | 'AJUSTE';
@@ -168,7 +171,13 @@ export interface Recommendation {
   product?: Producto;
   supplier?: any; // Use Supplier type if available
   alert?: Alert;
-  created_at: string;
+  user?: { id: number; nombre: string; email?: string };
+  createdAt: string;
+}
+
+export interface RecommendationActionData {
+  descuento?: number;
+  promocion_hasta?: string | null;
 }
 
 export interface Alert {
@@ -179,6 +188,52 @@ export interface Alert {
   product_id?: number;
   product?: Producto;
   resolved: boolean;
-  created_at: string;
+  createdAt: string;
+}
+
+export type TipoDescuento = 'producto' | 'categoria' | 'todos';
+export type FuenteDescuento = 'recomendacion' | 'masivo' | 'manual';
+
+export interface Descuento {
+  id: number;
+  porcentaje: number;
+  fecha_inicio: string;
+  fecha_fin?: string | null;
+  fuente: FuenteDescuento;
+  producto_id?: number | null;
+  categoria_id?: number | null;
+  todos_productos: boolean;
+  recomendacion_id?: number | null;
+  creado_por?: number | null;
+  productos_excluidos?: number[] | null;
+  producto?: { id: number; codigo: string; nombre: string } | null;
+  categoria?: { id: number; nombre: string } | null;
+  creador?: { id: number; nombre: string } | null;
+  createdAt: string;
+}
+
+export interface ProductoVistaPrevia {
+  producto_id: number;
+  codigo: string;
+  nombre: string;
+  precio_venta: number;
+  margen: number;
+  descuentoEfectivo: number;
+  limitadoPorMargen: boolean;
+}
+
+export interface OmitidoVistaPrevia {
+  producto_id: number;
+  codigo: string;
+  nombre: string;
+  motivo: 'recomendacion' | 'inactivo';
+}
+
+export interface VistaPreviaDescuento {
+  afectados: ProductoVistaPrevia[];
+  omitidos: OmitidoVistaPrevia[];
+  excluidos?: ProductoVistaPrevia[];
+  descuentoEfectivoLote: number;
+  porcentajeSolicitado: number;
 }
 

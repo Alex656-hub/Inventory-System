@@ -10,6 +10,8 @@ import Sede from '../models/Sede';
 import Almacen from '../models/Almacen';
 import UnidadMedida from '../models/UnidadMedida';
 import Category from '../models/Category';
+import { descuentoService } from '../services/descuentoService';
+import { esPromoActiva, calcularPrecioPromo } from '../analytics/services/promotionUtils';
 
 const reportService = new ReportService();
 
@@ -112,15 +114,22 @@ export const generateKardexPDF = async (req: Request, res: Response) => {
         costoUnitario = stockAcumulado > 0 ? costoAcumulado / stockAcumulado : Number(mov.precio_unitario);
       }
 
+      const precioLista = Number(mov.precio_lista) || 0;
+      const descuento = Number(mov.descuento) || 0;
+
       return {
         fecha: mov.fecha,
         tipo_movimiento: mov.tipo_movimiento,
         referencia: mov.tipo_referencia,
         entrada_cantidad: mov.tipo_movimiento === 'entrada' ? mov.cantidad : 0,
         entrada_costo_unitario: mov.tipo_movimiento === 'entrada' ? Number(mov.precio_unitario) : 0,
+        entrada_precio_lista: mov.tipo_movimiento === 'entrada' ? precioLista : 0,
+        entrada_descuento: mov.tipo_movimiento === 'entrada' ? descuento : 0,
         entrada_valor_total: mov.tipo_movimiento === 'entrada' ? mov.cantidad * Number(mov.precio_unitario) : 0,
         salida_cantidad: mov.tipo_movimiento === 'salida' ? mov.cantidad : 0,
         salida_costo_unitario: mov.tipo_movimiento === 'salida' ? costoUnitario : 0,
+        salida_precio_lista: mov.tipo_movimiento === 'salida' ? precioLista : 0,
+        salida_descuento: mov.tipo_movimiento === 'salida' ? descuento : 0,
         salida_valor_total: mov.tipo_movimiento === 'salida' ? mov.cantidad * costoUnitario : 0,
         saldo_cantidad: stockAcumulado,
         saldo_costo_unitario: costoUnitario,
@@ -185,11 +194,22 @@ export const generateInventarioExcel = async (req: Request, res: Response) => {
     });
 
     const productosMap = new Map(productos.map(p => [p.id, p]));
+    const descuentosEfectivos = await descuentoService.getDescuentosEfectivos(productos as any);
 
     // Transformar datos para Excel
     const inventarioData = stockData.map(stock => {
       const producto = productosMap.get(stock.producto_id);
       if (!producto) return null;
+
+      const eff = descuentosEfectivos.get(producto.id);
+      const promoProduct = {
+        descuento_promocion: eff?.descuento_promocion ?? 0,
+        promocion_hasta: eff?.promocion_hasta,
+        precio_venta: producto.precio_venta
+      };
+      const promoActiva = esPromoActiva(promoProduct);
+      const precioPromo = calcularPrecioPromo(promoProduct);
+      const descuento = Number(eff?.descuento_promocion) || 0;
 
       return {
         codigo: producto.codigo,
@@ -200,7 +220,15 @@ export const generateInventarioExcel = async (req: Request, res: Response) => {
         stock_actual: stock.cantidad_actual,
         unidad: producto.unidad?.abreviatura || 'und',
         costo_unitario: Number(producto.precio_compra) || 0,
-        valor_total: stock.cantidad_actual * (Number(producto.precio_compra) || 0)
+        valor_total: stock.cantidad_actual * (Number(producto.precio_compra) || 0),
+        descuento_promocion: descuento,
+        precio_venta: Number(producto.precio_venta) || 0,
+        precio_promo: promoActiva
+          ? (precioPromo ?? 0)
+          : null,
+        valor_promo: promoActiva
+          ? stock.cantidad_actual * (precioPromo ?? 0)
+          : null
       };
     }).filter(Boolean);
 
@@ -245,10 +273,21 @@ export const getInventarioData = async (req: Request, res: Response) => {
     });
 
     const productosMap = new Map(productos.map(p => [p.id, p]));
+    const descuentosEfectivos = await descuentoService.getDescuentosEfectivos(productos as any);
 
     const inventarioData = stockData.map(stock => {
       const producto = productosMap.get(stock.producto_id);
       if (!producto) return null;
+
+      const eff = descuentosEfectivos.get(producto.id);
+      const promoProduct = {
+        descuento_promocion: eff?.descuento_promocion ?? 0,
+        promocion_hasta: eff?.promocion_hasta,
+        precio_venta: producto.precio_venta
+      };
+      const promoActiva = esPromoActiva(promoProduct);
+      const precioPromo = calcularPrecioPromo(promoProduct);
+      const descuento = Number(eff?.descuento_promocion) || 0;
 
       return {
         codigo: producto.codigo,
@@ -259,7 +298,15 @@ export const getInventarioData = async (req: Request, res: Response) => {
         stock_actual: stock.cantidad_actual,
         unidad: producto.unidad?.abreviatura || 'und',
         costo_unitario: Number(producto.precio_compra) || 0,
-        valor_total: stock.cantidad_actual * (Number(producto.precio_compra) || 0)
+        valor_total: stock.cantidad_actual * (Number(producto.precio_compra) || 0),
+        descuento_promocion: descuento,
+        precio_venta: Number(producto.precio_venta) || 0,
+        precio_promo: promoActiva
+          ? (precioPromo ?? 0)
+          : null,
+        valor_promo: promoActiva
+          ? stock.cantidad_actual * (precioPromo ?? 0)
+          : null
       };
     }).filter(Boolean);
 

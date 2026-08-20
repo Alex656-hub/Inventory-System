@@ -1,6 +1,6 @@
 import { Op } from 'sequelize';
 import { sequelize } from '../config/database';
-import { Product, Alert, User } from '../models';
+import { Product, Alert, User, CuotaPago, ConfiguracionSistema } from '../models';
 import { getDemandForecast } from '../analytics';
 
 /**
@@ -30,7 +30,8 @@ class AlertService {
         const existingAlert = await Alert.findOne({
           where: {
             product_id: product.id,
-            type: 'out_of_stock'
+            type: 'out_of_stock',
+            resolved: false
           }
         });
 
@@ -77,7 +78,8 @@ class AlertService {
         const existingAlert = await Alert.findOne({
           where: {
             product_id: product.id,
-            type: 'low_stock'
+            type: 'low_stock',
+            resolved: false
           }
         });
 
@@ -105,7 +107,8 @@ class AlertService {
         const existingAlert = await Alert.findOne({
           where: {
             product_id: product.id,
-            type: 'low_stock'
+            type: 'low_stock',
+            resolved: false
           }
         });
 
@@ -254,6 +257,65 @@ class AlertService {
     }
   }
 
+  // Método para verificar liquidez proyectada
+  async checkLiquidez(): Promise<void> {
+    try {
+      const systemUser = await User.findOne({
+        where: { rol: 'gerente', activo: true }
+      });
+
+      if (!systemUser) {
+        console.warn('No se encontró un usuario gerente activo para asignar alertas');
+        return;
+      }
+
+      const config = await ConfiguracionSistema.findOne();
+      const umbral = Number(config?.umbral_liquidez) || 1000;
+
+      // Sumar cuotas pendientes que vencen en los próximos 30 días
+      const hoy = new Date();
+      const dentro30dias = new Date(hoy.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+      const cuotasPorCobrar = await CuotaPago.sum('monto_total', {
+        where: {
+          estado: 'pendiente',
+          fecha_vencimiento: { [Op.between]: [hoy, dentro30dias] }
+        }
+      });
+
+      const saldoProyectado = Number(cuotasPorCobrar) || 0;
+      const pct = umbral > 0 ? saldoProyectado / umbral : 1;
+
+      // Severidad dinámica: 0 = HIGH, <50% = HIGH, 50-100% = MEDIUM, >100% = LOW (se resuelve)
+      const severity = saldoProyectado === 0 ? 'high' : pct < 0.5 ? 'high' : pct < 1 ? 'medium' : 'low';
+
+      if (saldoProyectado < umbral) {
+        const message = `Proyección de liquidez 30d: S/ ${saldoProyectado.toFixed(2)} (umbral: S/ ${umbral.toFixed(2)})`;
+        
+        const existingAlert = await Alert.findOne({
+          where: { type: 'liquidez_baja', resolved: false }
+        });
+
+        if (existingAlert) {
+          await existingAlert.update({ message, severity, resolved: false });
+        } else {
+          await Alert.create({
+            type: 'liquidez_baja',
+            message,
+            severity,
+            product_id: null,
+            user_id: systemUser.id
+          });
+        }
+      } else {
+        // Si hay liquidez suficiente → resolver alerta activa
+        await Alert.update({ resolved: true }, { where: { type: 'liquidez_baja', resolved: false } });
+      }
+    } catch (error) {
+      console.error('Error al verificar liquidez:', error);
+    }
+  }
+
   // Método para generar recomendaciones basadas en alertas
   async generateRecommendations(): Promise<string[]> {
     try {
@@ -324,6 +386,7 @@ class AlertService {
     await this.checkLowStock();
     await this.checkOverstock();
     await this.checkDemandTrends();
+    await this.checkLiquidez();
   }
 }
 

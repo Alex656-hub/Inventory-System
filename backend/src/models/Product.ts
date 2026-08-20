@@ -14,6 +14,8 @@ interface ProductAttributes {
   unidad_id?: number;
   precio_compra: number;
   precio_venta: number;
+  descuento_promocion?: number;
+  promocion_hasta?: Date | null;
   stock_actual: number;
   stock_minimo: number;
   ubicacion?: string;
@@ -23,7 +25,7 @@ interface ProductAttributes {
   updatedAt?: Date;
 }
 
-interface ProductCreationAttributes extends Optional<ProductAttributes, 'id' | 'activo' | 'createdAt' | 'updatedAt' | 'proveedor_id' | 'unidad_id' | 'image_filename'> {}
+interface ProductCreationAttributes extends Optional<ProductAttributes, 'id' | 'activo' | 'createdAt' | 'updatedAt' | 'proveedor_id' | 'unidad_id' | 'image_filename' | 'descuento_promocion' | 'promocion_hasta'> {}
 
 class Product extends Model<ProductAttributes, ProductCreationAttributes> implements ProductAttributes {
   public id!: number;
@@ -35,6 +37,8 @@ class Product extends Model<ProductAttributes, ProductCreationAttributes> implem
   public unidad_id?: number;
   public precio_compra!: number;
   public precio_venta!: number;
+  public descuento_promocion?: number;
+  public promocion_hasta?: Date | null;
   public stock_actual!: number;
   public stock_minimo!: number;
   public ubicacion?: string;
@@ -106,6 +110,18 @@ Product.init(
       validate: {
         min: 0
       }
+    },
+    descuento_promocion: {
+      type: DataTypes.DECIMAL(5, 2),
+      allowNull: true,
+      validate: {
+        min: 0,
+        max: 100
+      }
+    },
+    promocion_hasta: {
+      type: DataTypes.DATE,
+      allowNull: true
     },
     stock_actual: {
       type: DataTypes.INTEGER,

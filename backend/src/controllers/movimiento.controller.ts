@@ -6,6 +6,7 @@ import Product from '../models/Product';
 import User from '../models/User';
 import Personal from '../models/Personal';
 import Sede from '../models/Sede';
+import Client from '../models/Client';
 
 export const obtenerMovimientos = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -144,9 +145,13 @@ export const obtenerKardexPorProducto = async (req: Request, res: Response): Pro
         documento: mov.motivo,
         entrada_cantidad: mov.tipo_movimiento === 'entrada' ? mov.cantidad : 0,
         entrada_costo_unitario: mov.tipo_movimiento === 'entrada' ? Number(mov.precio_unitario) : 0,
+        entrada_precio_lista: mov.tipo_movimiento === 'entrada' ? Number(mov.precio_lista) || 0 : 0,
+        entrada_descuento: mov.tipo_movimiento === 'entrada' ? Number(mov.descuento) || 0 : 0,
         entrada_valor_total: mov.tipo_movimiento === 'entrada' ? mov.cantidad * Number(mov.precio_unitario) : 0,
         salida_cantidad: mov.tipo_movimiento === 'salida' ? mov.cantidad : 0,
         salida_costo_unitario: mov.tipo_movimiento === 'salida' ? costoUnitario : 0,
+        salida_precio_lista: mov.tipo_movimiento === 'salida' ? Number(mov.precio_lista) || 0 : 0,
+        salida_descuento: mov.tipo_movimiento === 'salida' ? Number(mov.descuento) || 0 : 0,
         salida_valor_total: mov.tipo_movimiento === 'salida' ? mov.cantidad * costoUnitario : 0,
         saldo_cantidad: saldoCantidad,
         saldo_costo_unitario: costoUnitario,
@@ -283,6 +288,8 @@ export const obtenerHistorialMovimientos = async (req: Request, res: Response): 
         tipo_referencia: mov.tipo_referencia,
         cantidad: mov.cantidad,
         precio_unitario: mov.precio_unitario,
+        descuento: Number(mov.descuento) || 0,
+        precio_lista: Number(mov.precio_lista) || 0,
         stock_anterior: mov.stock_anterior,
         stock_nuevo: mov.stock_nuevo,
         motivo: mov.motivo,
@@ -332,7 +339,8 @@ export const obtenerPreviewOperacion = async (req: Request, res: Response): Prom
         { model: Personal, as: 'personal', attributes: ['nombreCompleto'] },
         { model: Sede, as: 'sede_origen', attributes: ['nombre'] },
         { model: Sede, as: 'sede_destino', attributes: ['nombre'] },
-        { model: require('../models/Supplier').default, as: 'proveedor', attributes: ['nombre'] }
+        { model: require('../models/Supplier').default, as: 'proveedor', attributes: ['nombre'] },
+        { model: Client, as: 'cliente', attributes: ['nombre'] }
       ]
     });
 
@@ -349,7 +357,8 @@ export const obtenerPreviewOperacion = async (req: Request, res: Response): Prom
             { model: Personal, as: 'personal', attributes: ['nombreCompleto'] },
             { model: Sede, as: 'sede_origen', attributes: ['nombre'] },
             { model: Sede, as: 'sede_destino', attributes: ['nombre'] },
-            { model: require('../models/Supplier').default, as: 'proveedor', attributes: ['nombre'] }
+            { model: require('../models/Supplier').default, as: 'proveedor', attributes: ['nombre'] },
+            { model: Client, as: 'cliente', attributes: ['nombre'] }
           ]
         });
       }
@@ -436,7 +445,7 @@ function generarPdfHtmlPreview(operacion: any): string {
       tercerosNombre = operacion.proveedor?.nombre || '-';
     } else if (operacion.tipo_operacion === 'SALIDA') {
       tercerosLabel = 'Cliente';
-      tercerosNombre = '-';
+      tercerosNombre = operacion.cliente?.nombre || '-';
     }
 
     const responsableNombre = operacion.personal?.nombreCompleto || '-';

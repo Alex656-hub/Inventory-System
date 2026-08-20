@@ -60,6 +60,11 @@
   color: #059669;
 }
 
+.ri-metrica-item.promo .ri-metrica-valor {
+  color: #dc2626;
+  font-size: 18px;
+}
+
 /* ── Barra de filtros ── */
 .ri-filtros {
   display: flex;
@@ -257,6 +262,34 @@
 .ri-numero {
   text-align: right;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ── Promoción ── */
+.ri-promo-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.ri-text-muted {
+  color: var(--color-text-muted);
+}
+
+.ri-precio-original {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  margin-right: 6px;
+}
+
+.ri-precio-promo {
+  font-weight: 700;
+  color: #dc2626;
 }
 
 .ri-stock-und {
@@ -276,6 +309,20 @@
   font-weight: 600;
   font-size: 13px;
   color: var(--color-text);
+}
+
+/* ── Paginación ── */
+.ri-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 0;
+}
+
+.ri-pagination-info {
+  font-size: 14px;
+  color: var(--color-text-muted);
 }
 
 /* ── Loading & Empty ── */

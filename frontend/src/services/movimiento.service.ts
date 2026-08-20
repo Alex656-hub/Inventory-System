@@ -8,6 +8,8 @@ export interface Movimiento {
   tipo_referencia: string | null;
   cantidad: number;
   precio_unitario: number;
+  descuento?: number;
+  precio_lista?: number;
   stock_anterior: number;
   stock_nuevo: number;
   motivo: string | null;

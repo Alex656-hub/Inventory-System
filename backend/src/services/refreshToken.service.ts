@@ -40,11 +40,11 @@ class RefreshTokenService {
 
   /**
    * Crea un nuevo refresh token para un usuario
+   * Nota: NO revoca los tokens previos aquí. La revocación de todas las
+   * sesiones solo debe ocurrir al iniciar sesión (generateTokens) o en logoutAll.
+   * Revocar todo en cada refresh rompía las sesiones de otras pestañas/dispositivos.
    */
   async createRefreshToken(userId: number): Promise<RefreshToken> {
-    // Revocar todos los tokens anteriores del usuario
-    await this.revokeAllUserTokens(userId);
-
     const token = this.generateRefreshToken();
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30); // Expira en 30 días
@@ -58,9 +58,12 @@ class RefreshTokenService {
   }
 
   /**
-   * Genera ambos tokens (access y refresh) para un usuario
+   * Genera ambos tokens (access y refresh) para un usuario.
+   * Al iniciar sesión sí se revocan todas las sesiones anteriores.
    */
   async generateTokens(user: User): Promise<TokenResponse> {
+    await this.revokeAllUserTokens(user.id);
+
     const accessToken = this.generateAccessToken(user);
     const refreshToken = await this.createRefreshToken(user.id);
 
@@ -168,26 +171,6 @@ class RefreshTokenService {
       });
     } catch (error) {
       console.error('Error cleaning up expired tokens:', error);
-    }
-  }
-
-  /**
-   * Verifica si un refresh token es válido
-   */
-  async validateRefreshToken(token: string): Promise<RefreshToken | null> {
-    try {
-      return await RefreshToken.findOne({
-        where: {
-          token,
-          isRevoked: false,
-          expiresAt: {
-            [Op.gt]: new Date()
-          }
-        }
-      });
-    } catch (error) {
-      console.error('Error validating refresh token:', error);
-      return null;
     }
   }
 }

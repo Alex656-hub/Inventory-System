@@ -11,6 +11,8 @@ interface MovimientoInventarioAttributes {
   tipo_referencia?: string; // 'compra', 'venta', 'ajuste'
   cantidad: number;
   precio_unitario: number;
+  descuento: number;
+  precio_lista?: number;
   stock_anterior: number;
   stock_nuevo: number;
   usuario_id: number;
@@ -24,7 +26,7 @@ interface MovimientoInventarioAttributes {
   updatedAt?: Date;
 }
 
-interface MovimientoInventarioCreationAttributes extends Optional<MovimientoInventarioAttributes, 'id' | 'createdAt' | 'updatedAt' | 'fecha'> {}
+interface MovimientoInventarioCreationAttributes extends Optional<MovimientoInventarioAttributes, 'id' | 'createdAt' | 'updatedAt' | 'fecha' | 'descuento' | 'precio_lista'> {}
 
 class MovimientoInventario extends Model<MovimientoInventarioAttributes, MovimientoInventarioCreationAttributes> implements MovimientoInventarioAttributes {
   public id!: number;
@@ -34,6 +36,8 @@ class MovimientoInventario extends Model<MovimientoInventarioAttributes, Movimie
   public tipo_referencia?: string;
   public cantidad!: number;
   public precio_unitario!: number;
+  public descuento!: number;
+  public precio_lista?: number;
   public stock_anterior!: number;
   public stock_nuevo!: number;
   public usuario_id!: number;
@@ -85,6 +89,19 @@ MovimientoInventario.init(
     precio_unitario: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false
+    },
+    descuento: {
+      type: DataTypes.DECIMAL(5, 2),
+      allowNull: true,
+      defaultValue: 0,
+      validate: {
+        min: 0,
+        max: 100
+      }
+    },
+    precio_lista: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true
     },
     stock_anterior: {
       type: DataTypes.INTEGER,

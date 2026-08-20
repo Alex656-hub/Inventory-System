@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { forecastDemand, getInventoryMetrics, advancedForecastDemand } from '../controllers/analyticsController';
-import { verificarToken, verificarRol } from '../middleware/auth.middleware';
+import { forecastDemand, getInventoryMetrics, advancedForecastDemand, getFinancialProjectionsController, getBreakEvenPointController, getAging } from '../controllers/analyticsController';
+import { verificarToken, verificarRol, verificarPermiso } from '../middleware/auth.middleware';
 
 const router = Router();
 
@@ -167,5 +167,11 @@ router.get('/forecast', verificarToken, verificarRol(['admin', 'analyst']), fore
  *         description: Error del servidor al obtener las métricas
  */
 router.get('/metrics', verificarToken, verificarRol(['gerente']), getInventoryMetrics);
+
+router.get('/projections', verificarToken, verificarRol(['gerente']), getFinancialProjectionsController);
+
+router.get('/break-even', verificarToken, verificarRol(['gerente']), getBreakEvenPointController);
+
+router.get('/aging', verificarToken, verificarPermiso('alertasStock'), getAging);
 
 export default router;

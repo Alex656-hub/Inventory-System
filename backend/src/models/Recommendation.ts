@@ -7,7 +7,7 @@ import Supplier from './Supplier';
 
 interface RecommendationAttributes {
   id: number;
-  alert_id: number;
+  alert_id?: number;
   product_id: number;
   proveedor_id?: number;
   tipo: 'REORDEN' | 'PROMOCION' | 'INVESTIGAR' | 'DESCARTAR' | 'AJUSTE';
@@ -23,11 +23,11 @@ interface RecommendationAttributes {
   updatedAt?: Date;
 }
 
-interface RecommendationCreationAttributes extends Optional<RecommendationAttributes, 'id' | 'proveedor_id' | 'cantidad_sugerida' | 'costo_estimado' | 'impacto_estimado' | 'createdAt' | 'updatedAt'> {}
+interface RecommendationCreationAttributes extends Optional<RecommendationAttributes, 'id' | 'alert_id' | 'proveedor_id' | 'cantidad_sugerida' | 'costo_estimado' | 'impacto_estimado' | 'createdAt' | 'updatedAt'> {}
 
 class Recommendation extends Model<RecommendationAttributes, RecommendationCreationAttributes> implements RecommendationAttributes {
   public id!: number;
-  public alert_id!: number;
+  public alert_id?: number;
   public product_id!: number;
   public proveedor_id?: number;
   public tipo!: 'REORDEN' | 'PROMOCION' | 'INVESTIGAR' | 'DESCARTAR' | 'AJUSTE';
@@ -58,7 +58,7 @@ Recommendation.init(
     },
     alert_id: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: 'alertas',
         key: 'id'

@@ -1,11 +1,7 @@
-import { Op } from 'sequelize';
-import { SalidaInventario, EntradaInventario, Product } from '../../models';
-import ProductModel from '../../models/Product';
+import { Op, fn, col } from 'sequelize';
+import OperacionStock from '../../models/OperacionStock';
+import Product from '../../models/Product';
 import { subMonths, addMonths, format } from 'date-fns';
-
-/**
- * Servicio para proyecciones financieras
- */
 
 export interface FinancialProjection {
   date: string;
@@ -18,61 +14,54 @@ export interface FinancialProjection {
   };
 }
 
-/**
- * Obtiene proyecciones financieras para los próximos meses
- */
 export const getFinancialProjections = async (months: number = 6): Promise<FinancialProjection[]> => {
   try {
-    // Obtener datos históricos de los últimos 12 meses
     const twelveMonthsAgo = subMonths(new Date(), 12);
-    
-    // Obtener ventas de los últimos 12 meses
-    const sales = await SalidaInventario.findAll({
+
+    const ventas = await OperacionStock.findAll({
       where: {
-        fecha: {
-          [Op.gte]: twelveMonthsAgo,
-          [Op.lte]: new Date()
-        },
-        estado: 'completado'
+        tipo_operacion: 'SALIDA',
+        estado: 'PROCESADO',
+        fecha_emision: { [Op.gte]: twelveMonthsAgo }
       },
-      attributes: ['fecha', 'total'],
-      order: [['fecha', 'ASC']]
+      attributes: [
+        [fn('DATE_TRUNC', 'month', col('fecha_emision')), 'month'],
+        [fn('SUM', col('costo_total')), 'total']
+      ],
+      group: [fn('DATE_TRUNC', 'month', col('fecha_emision'))],
+      order: [[fn('DATE_TRUNC', 'month', col('fecha_emision')), 'ASC']],
+      raw: true
     });
 
-    // Obtener gastos de los últimos 12 meses
-    const expenses = await EntradaInventario.findAll({
+    const compras = await OperacionStock.findAll({
       where: {
-        fecha: {
-          [Op.gte]: twelveMonthsAgo,
-          [Op.lte]: new Date()
-        }
+        tipo_operacion: 'ENTRADA',
+        estado: 'PROCESADO',
+        fecha_emision: { [Op.gte]: twelveMonthsAgo }
       },
-      attributes: ['fecha', 'total'],
-      order: [['fecha', 'ASC']]
+      attributes: [
+        [fn('DATE_TRUNC', 'month', col('fecha_emision')), 'month'],
+        [fn('SUM', col('costo_total')), 'total']
+      ],
+      group: [fn('DATE_TRUNC', 'month', col('fecha_emision'))],
+      order: [[fn('DATE_TRUNC', 'month', col('fecha_emision')), 'ASC']],
+      raw: true
     });
 
-    // Agrupar por mes
     const monthlyData: Record<string, { revenue: number; expenses: number }> = {};
-    
-    // Procesar ventas
-    sales.forEach(sale => {
-      const month = format(sale.fecha, 'yyyy-MM');
-      if (!monthlyData[month]) {
-        monthlyData[month] = { revenue: 0, expenses: 0 };
-      }
-      monthlyData[month].revenue += parseFloat(sale.total.toString());
+
+    (ventas as any[]).forEach(v => {
+      const month = format(new Date(v.month), 'yyyy-MM');
+      if (!monthlyData[month]) monthlyData[month] = { revenue: 0, expenses: 0 };
+      monthlyData[month].revenue += Number(v.total) || 0;
     });
 
-    // Procesar gastos
-    expenses.forEach(expense => {
-      const month = format(expense.fecha, 'yyyy-MM');
-      if (!monthlyData[month]) {
-        monthlyData[month] = { revenue: 0, expenses: 0 };
-      }
-      monthlyData[month].expenses += parseFloat(expense.total.toString());
+    (compras as any[]).forEach(c => {
+      const month = format(new Date(c.month), 'yyyy-MM');
+      if (!monthlyData[month]) monthlyData[month] = { revenue: 0, expenses: 0 };
+      monthlyData[month].expenses += Number(c.total) || 0;
     });
 
-    // Calcular promedios móviles
     const monthlyArray = Object.entries(monthlyData)
       .map(([month, data]) => ({
         month,
@@ -82,53 +71,62 @@ export const getFinancialProjections = async (months: number = 6): Promise<Finan
       }))
       .sort((a, b) => a.month.localeCompare(b.month));
 
-    // Calcular promedios móviles de 3 meses
-    const windowSize = 3;
-    const movingAverages = [];
-    
-    for (let i = windowSize - 1; i < monthlyArray.length; i++) {
-      const window = monthlyArray.slice(i - windowSize + 1, i + 1);
-      const avgRevenue = window.reduce((sum, item) => sum + item.revenue, 0) / windowSize;
-      const avgExpenses = window.reduce((sum, item) => sum + item.expenses, 0) / windowSize;
-      const avgProfit = window.reduce((sum, item) => sum + item.profit, 0) / windowSize;
-      
-      movingAverages.push({
-        month: window[window.length - 1].month,
-        revenue: avgRevenue,
-        expenses: avgExpenses,
-        profit: avgProfit
+    if (monthlyArray.length === 0) {
+      return Array.from({ length: months }, (_, i) => {
+        const d = addMonths(new Date(), i + 1);
+        return {
+          date: format(d, 'yyyy-MM'),
+          projectedRevenue: 0,
+          projectedExpenses: 0,
+          projectedProfit: 0,
+          confidenceInterval: { lower: 0, upper: 0 }
+        };
       });
     }
 
-    // Generar proyecciones
-    const projections: FinancialProjection[] = [];
+    const windowSize = Math.min(3, monthlyArray.length);
+    const movingAverages: Array<{ month: string; revenue: number; expenses: number; profit: number }> = [];
+
+    for (let i = windowSize - 1; i < monthlyArray.length; i++) {
+      const window = monthlyArray.slice(i - windowSize + 1, i + 1);
+      movingAverages.push({
+        month: window[window.length - 1].month,
+        revenue: window.reduce((s, item) => s + item.revenue, 0) / windowSize,
+        expenses: window.reduce((s, item) => s + item.expenses, 0) / windowSize,
+        profit: window.reduce((s, item) => s + item.profit, 0) / windowSize
+      });
+    }
+
     const lastMonth = monthlyArray[monthlyArray.length - 1];
     const lastDate = new Date(lastMonth.month + '-01');
-    
-    // Usar la tendencia de los últimos 3 meses para la proyección
-    const trend = movingAverages.length > 1 
+
+    const trend = movingAverages.length > 1
       ? (movingAverages[movingAverages.length - 1].revenue - movingAverages[movingAverages.length - 2].revenue) / 3
       : 0;
+
+    const expenseTrend = movingAverages.length > 1
+      ? (movingAverages[movingAverages.length - 1].expenses - movingAverages[movingAverages.length - 2].expenses) / 3
+      : 0;
+
+    const projections: FinancialProjection[] = [];
 
     for (let i = 1; i <= months; i++) {
       const projectionDate = addMonths(lastDate, i);
       const monthStr = format(projectionDate, 'yyyy-MM');
-      
-      // Calcular proyección con tendencia
+
       const projectedRevenue = Math.max(0, lastMonth.revenue + (trend * i));
-      const projectedExpenses = lastMonth.expenses * (1 + (0.02 * i)); // Asumiendo un 2% de incremento mensual en gastos
+      const projectedExpenses = Math.max(0, lastMonth.expenses + (expenseTrend * i));
       const projectedProfit = projectedRevenue - projectedExpenses;
-      
-      // Calcular intervalo de confianza (simplificado)
-      const stdDev = Math.sqrt(projectedRevenue * 0.15); // 15% de desviación estándar
-      
+
+      const stdDev = Math.sqrt(Math.abs(projectedRevenue) * 0.15 + 1);
+
       projections.push({
         date: monthStr,
         projectedRevenue: parseFloat(projectedRevenue.toFixed(2)),
         projectedExpenses: parseFloat(projectedExpenses.toFixed(2)),
         projectedProfit: parseFloat(projectedProfit.toFixed(2)),
         confidenceInterval: {
-          lower: Math.max(0, projectedRevenue - (1.96 * stdDev)), // 95% de confianza
+          lower: Math.max(0, projectedRevenue - (1.96 * stdDev)),
           upper: projectedRevenue + (1.96 * stdDev)
         }
       });
@@ -141,9 +139,6 @@ export const getFinancialProjections = async (months: number = 6): Promise<Finan
   }
 };
 
-/**
- * Calcula el punto de equilibrio basado en costos fijos y márgenes
- */
 export const calculateBreakEvenPoint = async (): Promise<{
   breakEvenUnits: number;
   fixedCosts: number;
@@ -151,44 +146,48 @@ export const calculateBreakEvenPoint = async (): Promise<{
   variableCostPerUnit: number;
 }> => {
   try {
-    // Obtener costos fijos (simplificado: gastos del último mes)
-    const lastMonth = format(subMonths(new Date(), 1), 'yyyy-MM-01');
-    const currentMonth = format(new Date(), 'yyyy-MM-01');
-    
-    const fixedCosts = await EntradaInventario.sum('total', {
-      where: {
-        fecha: {
-          [Op.gte]: lastMonth,
-          [Op.lt]: currentMonth
-        }
-      }
-    }) || 10000; // Valor por defecto si no hay datos
+    const lastMonth = subMonths(new Date(), 1);
+    const inicioMes = new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1);
+    const finMes = new Date(lastMonth.getFullYear(), lastMonth.getMonth() + 1, 0);
 
-    // Obtener precio promedio y costo variable por unidad
+    const fixedCostsResult = await OperacionStock.sum('costo_total', {
+      where: {
+        tipo_operacion: 'ENTRADA',
+        estado: 'PROCESADO',
+        fecha_emision: { [Op.gte]: inicioMes, [Op.lte]: finMes }
+      }
+    });
+    const fixedCosts = Number(fixedCostsResult) || 10000;
+
     const products = await Product.findAll({
-      attributes: ['precio_venta', 'precio_compra']
+      attributes: ['precio_venta', 'precio_compra'],
+      where: {
+        precio_venta: { [Op.gt]: 0 },
+        precio_compra: { [Op.gt]: 0 }
+      },
+      raw: true
     });
 
-    interface ProductData {
-      precio_venta: number | null;
-      precio_compra: number | null;
-      [key: string]: any;
+    if (products.length === 0) {
+      return {
+        breakEvenUnits: 0,
+        fixedCosts,
+        averagePrice: 0,
+        variableCostPerUnit: 0
+      };
     }
 
-    const totalPrice = products.reduce((sum: number, p: ProductData) => sum + (p.precio_venta || 0), 0);
-    const totalCost = products.reduce((sum: number, p: ProductData) => sum + (p.precio_compra || 0), 0);
-    
-    const averagePrice = totalPrice / (products.length || 1);
-    const averageVariableCost = totalCost / (products.length || 1);
-    
-    // Calcular punto de equilibrio en unidades
-    const breakEvenUnits = fixedCosts / (averagePrice - averageVariableCost);
+    const avgPrice = products.reduce((sum, p) => sum + (Number(p.precio_venta) || 0), 0) / products.length;
+    const avgCost = products.reduce((sum, p) => sum + (Number(p.precio_compra) || 0), 0) / products.length;
+
+    const margin = avgPrice - avgCost;
+    const breakEvenUnits = margin > 0 ? Math.ceil(fixedCosts / margin) : 0;
 
     return {
-      breakEvenUnits: Math.ceil(breakEvenUnits),
+      breakEvenUnits,
       fixedCosts,
-      averagePrice: parseFloat(averagePrice.toFixed(2)),
-      variableCostPerUnit: parseFloat(averageVariableCost.toFixed(2))
+      averagePrice: parseFloat(avgPrice.toFixed(2)),
+      variableCostPerUnit: parseFloat(avgCost.toFixed(2))
     };
   } catch (error) {
     console.error('Error al calcular el punto de equilibrio:', error);

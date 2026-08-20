@@ -868,7 +868,12 @@ export class SalesImportService {
       tipo_documento: 'boleta',
       total,
       metodo_pago: 'efectivo',
-      estado: 'completado'
+      estado: 'completado',
+      // Campos para cuotas (importación es siempre contado)
+      num_cuotas: 0,
+      interes_mensual: 0,
+      garantia_tipo: 'ninguna',
+      garantia_valor: '',
     }, { transaction: t });
 
     for (const item of items) {

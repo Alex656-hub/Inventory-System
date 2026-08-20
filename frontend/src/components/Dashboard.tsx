@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { productService } from '../services/product.service';
 import { salesService, SalesSummary } from '../services/sales.service';
 import { alertService, InventoryMetrics } from '../services/alert.service';
+import operacionStockService from '../services/operacionStock.service';
 import {
   LineChart, Line, PieChart, Pie, Cell, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
@@ -39,6 +40,31 @@ const Dashboard: React.FC = () => {
   const [salesSummary, setSalesSummary] = useState<SalesSummary | null>(null);
   const [inventoryMetrics, setInventoryMetrics] = useState<InventoryMetrics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tendencia, setTendencia] = useState<Array<{
+    fecha: string;
+    ENTRADA: number;
+    SALIDA: number;
+    TRASPASO: number;
+  }>>([]);
+  const [metricasPorSede, setMetricasPorSede] = useState<Array<{
+    sede: string;
+    ENTRADA: number;
+    SALIDA: number;
+    TRASPASO: number;
+    costoTotal: number;
+  }>>([]);
+  const [topProv, setTopProv] = useState<Array<{
+    proveedorId: number;
+    nombre: string;
+    totalOperaciones: number;
+    montoTotal: number;
+  }>>([]);
+  const [topCli, setTopCli] = useState<Array<{
+    clienteId: number;
+    nombre: string;
+    totalOperaciones: number;
+    montoTotal: number;
+  }>>([]);
 
   useEffect(() => {
     cargarDatos();
@@ -47,11 +73,15 @@ const Dashboard: React.FC = () => {
   const cargarDatos = async () => {
     setLoading(true);
     try {
-      const [stockBajo, todos, summary, metrics] = await Promise.allSettled([
+      const [stockBajo, todos, summary, metrics, tendenciaData, metricasData, provData, cliData] = await Promise.allSettled([
         productService.obtenerProductosStockBajo(),
         productService.obtenerProductos({ limite: 1000, activo: true }),
         salesService.getSalesSummary(),
-        alertService.getAnalytics()
+        alertService.getAnalytics(),
+        operacionStockService.obtenerTendencia(30),
+        operacionStockService.obtenerMetricasPorSede(6),
+        operacionStockService.topProveedores(5, 6),
+        operacionStockService.topClientes(5, 6)
       ]);
 
       if (stockBajo.status === 'fulfilled') {
@@ -72,6 +102,22 @@ const Dashboard: React.FC = () => {
 
       if (metrics.status === 'fulfilled') {
         setInventoryMetrics(metrics.value);
+      }
+
+      if (tendenciaData.status === 'fulfilled') {
+        setTendencia(tendenciaData.value);
+      }
+
+      if (metricasData.status === 'fulfilled') {
+        setMetricasPorSede(metricasData.value);
+      }
+
+      if (provData.status === 'fulfilled') {
+        setTopProv(provData.value);
+      }
+
+      if (cliData.status === 'fulfilled') {
+        setTopCli(cliData.value);
       }
     } catch (error) {
       console.error('Error al cargar datos del dashboard:', error);
@@ -99,12 +145,6 @@ const Dashboard: React.FC = () => {
     name: p.producto.nombre.length > 20 ? p.producto.nombre.substring(0, 20) + '...' : p.producto.nombre,
     Cantidad: p.totalQuantity,
   })) || [];
-
-  const stockStatusData = inventoryMetrics ? [
-    { name: 'Sin Problemas', value: Math.max(0, inventoryMetrics.totalProductos - inventoryMetrics.stockBajo - inventoryMetrics.agotados) },
-    { name: 'Stock Bajo', value: inventoryMetrics.stockBajo },
-    { name: 'Agotados', value: inventoryMetrics.agotados },
-  ].filter(d => d.value > 0) : [];
 
   const stagnantData = inventoryMetrics ? [
     { name: 'Lentos', value: inventoryMetrics.productosLentos, fill: COLORS.warning },
@@ -288,9 +328,8 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Charts Row 2: 2 charts */}
+      {/* Charts Row 2: Top Products + Stagnant */}
       <div className="charts-grid">
-        {/* Top Products Bar */}
         <div className="chart-card">
           <div className="chart-card-header">
             <h3>Top 5 Productos</h3>
@@ -312,49 +351,13 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Stock Status Pie */}
-        <div className="chart-card">
-          <div className="chart-card-header">
-            <h3>Estado del Inventario</h3>
-          </div>
-          <div className="chart-card-body">
-            {stockStatusData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={260}>
-                <PieChart>
-                  <Pie
-                    data={stockStatusData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={85}
-                    paddingAngle={3}
-                    dataKey="value"
-                    stroke="none"
-                  >
-                    <Cell fill={COLORS.success} />
-                    <Cell fill={COLORS.warning} />
-                    <Cell fill={COLORS.danger} />
-                  </Pie>
-                  <Tooltip />
-                  <Legend formatter={(value) => <span className="legend-text">{value}</span>} />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="chart-no-data">Sin datos de inventario</div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Charts Row 3: Stagnant Products */}
-      <div className="charts-grid charts-single">
         <div className="chart-card">
           <div className="chart-card-header">
             <h3>Productos Estancados</h3>
           </div>
           <div className="chart-card-body">
             {stagnantData.some(d => d.value > 0) ? (
-              <ResponsiveContainer width="100%" height={220}>
+              <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={stagnantData} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="name" tick={{ fontSize: 12 }} />
@@ -369,6 +372,114 @@ const Dashboard: React.FC = () => {
               </ResponsiveContainer>
             ) : (
               <div className="chart-no-data">No hay productos estancados</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Charts Row 4: Operaciones - Tendencia + Sede */}
+      <div className="charts-grid">
+        <div className="chart-card">
+          <div className="chart-card-header">
+            <h3>Tendencia de Operaciones (30 días)</h3>
+          </div>
+          <div className="chart-card-body">
+            {tendencia.length > 0 ? (
+              <ResponsiveContainer width="100%" height={260}>
+                <LineChart data={tendencia}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis 
+                    dataKey="fecha" 
+                    tick={{ fontSize: 11 }}
+                    tickFormatter={(val) => {
+                      const d = new Date(val);
+                      return `${d.getDate()}/${d.getMonth() + 1}`;
+                    }}
+                  />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                  <Tooltip 
+                    labelFormatter={(val) => {
+                      const d = new Date(val);
+                      return d.toLocaleDateString('es-PE', { day: '2-digit', month: 'long', year: 'numeric' });
+                    }}
+                  />
+                  <Legend formatter={(value) => <span className="legend-text">{value}</span>} />
+                  <Line type="monotone" dataKey="ENTRADA" stroke={COLORS.success} strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="SALIDA" stroke={COLORS.danger} strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="TRASPASO" stroke="#a855f7" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="chart-no-data">Sin datos de tendencia</div>
+            )}
+          </div>
+        </div>
+
+        <div className="chart-card">
+          <div className="chart-card-header">
+            <h3>Operaciones por Sede (6 meses)</h3>
+          </div>
+          <div className="chart-card-body">
+            {metricasPorSede.length > 0 ? (
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={metricasPorSede}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="sede" tick={{ fontSize: 11 }} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                  <Tooltip />
+                  <Legend formatter={(value) => <span className="legend-text">{value}</span>} />
+                  <Bar dataKey="ENTRADA" fill={COLORS.success} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="SALIDA" fill={COLORS.danger} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="TRASPASO" fill="#a855f7" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="chart-no-data">Sin datos por sede</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Charts Row 5: Top Proveedores + Clientes */}
+      <div className="charts-grid">
+        <div className="chart-card">
+          <div className="chart-card-header">
+            <h3>Top Proveedores</h3>
+          </div>
+          <div className="chart-card-body">
+            {topProv.length > 0 ? (
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={topProv} layout="vertical" margin={{ left: 20, right: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => `S/ ${(v / 1000).toFixed(0)}k`} />
+                  <YAxis type="category" dataKey="nombre" tick={{ fontSize: 11 }} width={120} />
+                  <Tooltip formatter={(value: number) => [formatCurrency(value), 'Monto']} />
+                  <Bar dataKey="montoTotal" fill={COLORS.primary} radius={[0, 4, 4, 0]} barSize={24} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="chart-no-data">Sin datos de proveedores</div>
+            )}
+          </div>
+        </div>
+
+        <div className="chart-card">
+          <div className="chart-card-header">
+            <h3>Top Clientes</h3>
+          </div>
+          <div className="chart-card-body">
+            {topCli.length > 0 ? (
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={topCli} layout="vertical" margin={{ left: 20, right: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => `S/ ${(v / 1000).toFixed(0)}k`} />
+                  <YAxis type="category" dataKey="nombre" tick={{ fontSize: 11 }} width={120} />
+                  <Tooltip formatter={(value: number) => [formatCurrency(value), 'Monto']} />
+                  <Bar dataKey="montoTotal" fill="#8b5cf6" radius={[0, 4, 4, 0]} barSize={24} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="chart-no-data">Sin datos de clientes</div>
             )}
           </div>
         </div>

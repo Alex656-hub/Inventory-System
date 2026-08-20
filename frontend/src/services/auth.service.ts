@@ -70,9 +70,14 @@ export const authService = {
     return tokenManager.hasValidTokens();
   },
 
-  // Método para verificar si el token está por expirar
-  isTokenExpiringSoon: (): boolean => {
-    return tokenManager.isTokenExpiringSoon();
+  // Método para verificar si existe un refresh token (permite recuperar la sesión aunque el access token expiró)
+  tieneTokens: (): boolean => {
+    return tokenManager.hasRefreshToken();
+  },
+
+  // Indicar si se debe intentar un refresco (access token expirado o por expirar)
+  debeRefrescar: (): boolean => {
+    return tokenManager.debeRefrescar();
   },
 
   // Método para refrescar el token

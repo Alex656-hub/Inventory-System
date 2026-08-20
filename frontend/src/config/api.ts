@@ -7,11 +7,18 @@ export const api = axios.create({
   baseURL: API_URL
 });
 
+// Endpoints de autenticación en los que NO se debe intentar refrescar:
+// - login / verify-2fa: no tiene sentido refrescar con tokens residuales de una sesión anterior
+// - refresh: evita deadlock (refrescar la propia petición de refresh)
+const esEndpointAuth = (url: unknown): boolean =>
+  typeof url === 'string' &&
+  (url.includes('/auth/login') || url.includes('/auth/verify-2fa') || url.includes('/auth/refresh'));
+
 // Interceptor para agregar el token a las peticiones
 api.interceptors.request.use(
   async (config) => {
-    // Solo verificar refresco si hay una sesión activa (evitar bucle en login)
-    if (tokenManager.hasValidTokens() && tokenManager.isTokenExpiringSoon()) {
+    // Refrescar si el access token está expirado o por expirar (no solo cuando aún es válido)
+    if (!esEndpointAuth(config.url) && tokenManager.debeRefrescar()) {
       await tokenManager.refreshAccessToken();
     }
     
@@ -33,8 +40,12 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     
-    // Si el error es 401, no es un intento de refresco previo, y hay una sesión activa
-    if (error.response?.status === 401 && !originalRequest._retry && tokenManager.hasValidTokens()) {
+    // Si el error es 401, no es un intento de refresco previo, hay un refresh token,
+    // y la petición no es un endpoint de autenticación (evita deadlock y bucles)
+    if (error.response?.status === 401 &&
+        !originalRequest._retry &&
+        tokenManager.hasRefreshToken() &&
+        !esEndpointAuth(originalRequest.url)) {
       originalRequest._retry = true;
       
       // Intentar refrescar el token

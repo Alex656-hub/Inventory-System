@@ -20,7 +20,9 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
     unidad_id: '',
     precio_compra: '',
     precio_venta: '',
-    stock_minimo: '0'
+    stock_minimo: '0',
+    descuento_promocion: '',
+    promocion_hasta: ''
   });
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [unidades, setUnidades] = useState<UnidadMedida[]>([]);
@@ -39,7 +41,11 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
         unidad_id: producto.unidad_id?.toString() || '',
         precio_compra: producto.precio_compra?.toString() || '',
         precio_venta: producto.precio_venta?.toString() || '',
-        stock_minimo: producto.stock_minimo?.toString() || '0'
+        stock_minimo: producto.stock_minimo?.toString() || '0',
+        descuento_promocion: producto.descuento_promocion?.toString() || '',
+        promocion_hasta: producto.promocion_hasta
+          ? new Date(producto.promocion_hasta).toISOString().slice(0, 10)
+          : ''
       });
       setImagePreview(producto.imageUrl ?? null);
     } else {
@@ -50,7 +56,9 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
         unidad_id: '',
         precio_compra: '',
         precio_venta: '',
-        stock_minimo: '0'
+        stock_minimo: '0',
+        descuento_promocion: '',
+        promocion_hasta: ''
       });
       setImagePreview(null);
       setImageFile(null);
@@ -103,6 +111,12 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
     if (Number(formData.stock_minimo) < 0) {
       newErrors.stock_minimo = 'No puede ser negativo';
     }
+    if (formData.descuento_promocion) {
+      const desc = Number(formData.descuento_promocion);
+      if (!Number.isFinite(desc) || desc < 0 || desc > 100) {
+        newErrors.descuento_promocion = 'Debe estar entre 0 y 100';
+      }
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -118,7 +132,11 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
         unidad_id: Number(formData.unidad_id),
         precio_compra: Number(formData.precio_compra),
         precio_venta: Number(formData.precio_venta),
-        stock_minimo: Number(formData.stock_minimo)
+        stock_minimo: Number(formData.stock_minimo),
+        descuento_promocion: formData.descuento_promocion
+          ? Number(formData.descuento_promocion)
+          : null,
+        promocion_hasta: formData.promocion_hasta || null
       };
       if (producto) {
         await productService.actualizarProducto(producto.id, productoData as any, imageFile);
@@ -312,6 +330,50 @@ const ProductForm: React.FC<ProductFormProps> = ({ producto, onClose, onSuccess 
             />
           </div>
           {errors.stock_minimo && <span className="mf-field-error">{errors.stock_minimo}</span>}
+        </div>
+      </div>
+
+      {/* Promoción / Descuento */}
+      <div className="pmf-row3">
+        <div className="mf-group">
+          <label htmlFor="descuento_promocion">Promoción: Descuento (%)</label>
+          <div className="mf-field-wrap">
+            <input
+              id="descuento_promocion"
+              name="descuento_promocion"
+              type="number"
+              value={formData.descuento_promocion}
+              onChange={handleChange}
+              placeholder="Ej: 15"
+              className={`mf-field ${errors.descuento_promocion ? 'error' : ''}`}
+              min="0"
+              max="100"
+              step="0.01"
+              disabled={loading}
+            />
+          </div>
+          {errors.descuento_promocion && <span className="mf-field-error">{errors.descuento_promocion}</span>}
+        </div>
+
+        <div className="mf-group">
+          <label htmlFor="promocion_hasta">Vigencia de la Promoción</label>
+          <div className="mf-field-wrap">
+            <input
+              id="promocion_hasta"
+              name="promocion_hasta"
+              type="date"
+              value={formData.promocion_hasta}
+              onChange={handleChange}
+              className="mf-field"
+              disabled={loading}
+            />
+          </div>
+        </div>
+
+        <div className="mf-group mf-hint-group">
+          <span className="mf-help-hint">
+            Deja el descuento en 0 o vacío para quitar la promoción del producto.
+          </span>
         </div>
       </div>
 

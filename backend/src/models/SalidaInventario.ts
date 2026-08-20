@@ -15,6 +15,17 @@ interface SalidaInventarioAttributes {
   metodo_pago: string; // 'efectivo', 'credito', 'tarjeta'
   estado: string; // 'completado', 'cancelado'
   observaciones?: string;
+  // Campos para ventas en cuotas
+  num_cuotas: number;
+  frecuencia_cuota: 'semanal' | 'quincenal' | 'mensual' | null;
+  interes_mensual: number;
+  primer_vencimiento: Date | null;
+  garantia_tipo: 'dni' | 'telefono' | 'ninguna';
+  garantia_valor: string;
+  aval_nombre?: string | null;
+  aval_contacto?: string | null;
+  aval_direccion?: string | null;
+  responsable_cobro?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -34,6 +45,17 @@ class SalidaInventario extends Model<SalidaInventarioAttributes, SalidaInventari
   public metodo_pago!: string;
   public estado!: string;
   public observaciones?: string;
+  // Campos para ventas en cuotas
+  public num_cuotas!: number;
+  public frecuencia_cuota!: 'semanal' | 'quincenal' | 'mensual' | null;
+  public interes_mensual!: number;
+  public primer_vencimiento!: Date | null;
+  public garantia_tipo!: 'dni' | 'telefono' | 'ninguna';
+  public garantia_valor!: string;
+  public aval_nombre?: string | null;
+  public aval_contacto?: string | null;
+  public aval_direccion?: string | null;
+  public responsable_cobro?: string | null;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
@@ -99,10 +121,62 @@ SalidaInventario.init(
       allowNull: false,
       defaultValue: 'completado'
     },
-    observaciones: {
+observaciones: {
       type: DataTypes.TEXT,
-      allowNull: true
-    }
+      allowNull: true,
+    },
+    // Campos para ventas en cuotas
+    num_cuotas: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      validate: {
+        min: 0,
+      },
+    },
+    frecuencia_cuota: {
+      type: DataTypes.ENUM('semanal', 'quincenal', 'mensual'),
+      allowNull: true,
+    },
+    interes_mensual: {
+      type: DataTypes.DECIMAL(5, 2),
+      allowNull: false,
+      defaultValue: 0,
+      validate: {
+        min: 0,
+        max: 100,
+      },
+    },
+    primer_vencimiento: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+    },
+    garantia_tipo: {
+      type: DataTypes.ENUM('dni', 'telefono', 'ninguna'),
+      allowNull: false,
+      defaultValue: 'ninguna',
+    },
+    garantia_valor: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      defaultValue: '',
+    },
+    aval_nombre: {
+      type: DataTypes.STRING(200),
+      allowNull: true,
+    },
+    aval_contacto: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+    },
+    aval_direccion: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+responsable_cobro: {
+      type: DataTypes.STRING(200),
+      allowNull: true,
+    },
   },
   {
     sequelize,

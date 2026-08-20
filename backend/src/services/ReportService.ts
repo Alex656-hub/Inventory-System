@@ -20,9 +20,13 @@ interface KardexData {
     referencia?: string;
     entrada_cantidad: number;
     entrada_costo_unitario: number;
+    entrada_precio_lista?: number;
+    entrada_descuento?: number;
     entrada_valor_total: number;
     salida_cantidad: number;
     salida_costo_unitario: number;
+    salida_precio_lista?: number;
+    salida_descuento?: number;
     salida_valor_total: number;
     saldo_cantidad: number;
     saldo_costo_unitario: number;
@@ -45,6 +49,10 @@ interface InventarioData {
     unidad: string;
     costo_unitario: number;
     valor_total: number;
+    descuento_promocion?: number;
+    precio_venta?: number;
+    precio_promo?: number | null;
+    valor_promo?: number | null;
   }>;
 }
 
@@ -88,14 +96,14 @@ export class ReportService {
     doc.text(`Generado: ${new Date().toLocaleString('es-PE')}`, { align: 'left' });
     doc.moveDown(1);
 
-    // Encabezados de tabla
+    // Encabezados de tabla - con columnas de Precio Lista y Desc.%
     const tableTop = doc.y;
-    const colWidths = [60, 70, 45, 80, 80, 50, 65];
-    const headers = ['Fecha', 'Tipo', 'Mov. ID', 'Sede Origen', 'Destino', 'Cant.', 'Costo U.'];
+    const colWidths = [50, 50, 40, 60, 60, 35, 50, 40, 50, 50, 50];
+    const headers = ['Fecha', 'Tipo', 'Mov.ID', 'Sede Origen', 'Destino', 'Cant.', 'Precio Lista', 'Desc.%', 'Precio Final', 'Saldo Cant.', 'Saldo Costo'];
     
     // Dibujar cabecera
     doc.fillColor('#1e3a8a').rect(50, tableTop, 515, 20).fill();
-    doc.fillColor('white').fontSize(9).font('Helvetica-Bold');
+    doc.fillColor('white').fontSize(8).font('Helvetica-Bold');
     
     let xPos = 55;
     headers.forEach((header, i) => {
@@ -104,7 +112,7 @@ export class ReportService {
     });
 
     // Filas de datos
-    doc.fillColor('black').font('Helvetica').fontSize(8);
+    doc.fillColor('black').font('Helvetica').fontSize(7);
     let yPos = tableTop + 25;
     
     let totalEntradas = 0;
@@ -127,6 +135,14 @@ export class ReportService {
       const sedeOrigen = mov.tipo_movimiento === 'salida' || mov.tipo_movimiento === 'ajuste' ? 'Almacén Origen' : '-';
       const destino = mov.tipo_movimiento === 'entrada' || mov.tipo_movimiento === 'ajuste' ? 'Almacén Destino' : '-';
 
+      const esEntrada = mov.tipo_movimiento === 'entrada';
+      const cantidad = esEntrada ? mov.entrada_cantidad : mov.salida_cantidad;
+      const precioLista = esEntrada ? (mov.entrada_precio_lista || 0) : (mov.salida_precio_lista || 0);
+      const descuento = esEntrada ? (mov.entrada_descuento || 0) : (mov.salida_descuento || 0);
+      const precioFinal = esEntrada ? mov.entrada_costo_unitario : mov.salida_costo_unitario;
+      const saldoCant = mov.saldo_cantidad;
+      const saldoCosto = mov.saldo_costo_unitario;
+
       xPos = 55;
       doc.text(fechaStr, xPos, yPos, { width: colWidths[0] });
       xPos += colWidths[0];
@@ -138,11 +154,17 @@ export class ReportService {
       xPos += colWidths[3];
       doc.text(destino, xPos, yPos, { width: colWidths[4] });
       xPos += colWidths[4];
-      doc.text(mov.entrada_cantidad > 0 || mov.salida_cantidad > 0 
-        ? String(mov.entrada_cantidad > 0 ? mov.entrada_cantidad : mov.salida_cantidad) 
-        : '-', xPos, yPos, { width: colWidths[5], align: 'right' });
+      doc.text(String(cantidad), xPos, yPos, { width: colWidths[5], align: 'right' });
       xPos += colWidths[5];
-      doc.text(`S/ ${Number(mov.entrada_cantidad > 0 ? mov.entrada_costo_unitario : mov.salida_costo_unitario).toFixed(2)}`, xPos, yPos, { width: colWidths[6], align: 'right' });
+      doc.text(`S/ ${precioLista.toFixed(2)}`, xPos, yPos, { width: colWidths[6], align: 'right' });
+      xPos += colWidths[6];
+      doc.text(`${descuento > 0 ? descuento.toFixed(2) : '-'}%`, xPos, yPos, { width: colWidths[7], align: 'right' });
+      xPos += colWidths[7];
+      doc.text(`S/ ${precioFinal.toFixed(2)}`, xPos, yPos, { width: colWidths[8], align: 'right' });
+      xPos += colWidths[8];
+      doc.text(String(saldoCant), xPos, yPos, { width: colWidths[9], align: 'right' });
+      xPos += colWidths[9];
+      doc.text(`S/ ${saldoCosto.toFixed(2)}`, xPos, yPos, { width: colWidths[10], align: 'right' });
 
       totalEntradas += mov.entrada_cantidad;
       totalSalidas += mov.salida_cantidad;
@@ -159,7 +181,7 @@ export class ReportService {
     // Fila de resumen
     yPos += 5;
     doc.fillColor('#dbeafe').rect(50, yPos - 3, 515, 18).fill();
-    doc.fillColor('black').font('Helvetica-Bold').fontSize(10);
+    doc.fillColor('black').font('Helvetica-Bold').fontSize(9);
     doc.text('RESUMEN', 55, yPos, { width: 100 });
     doc.text(`Entradas: ${totalEntradas}`, 350, yPos, { width: 80, align: 'right' });
     doc.text(`Salidas: ${totalSalidas}`, 430, yPos, { width: 80, align: 'right' });
@@ -186,7 +208,11 @@ export class ReportService {
       { header: 'Stock Actual', key: 'stock_actual', width: 15 },
       { header: 'Unidad', key: 'unidad', width: 12 },
       { header: 'Costo Unitario', key: 'costo_unitario', width: 15 },
-      { header: 'Valor Total', key: 'valor_total', width: 15 }
+      { header: 'Valor Total', key: 'valor_total', width: 15 },
+      { header: 'Promo %', key: 'descuento_promocion', width: 10 },
+      { header: 'Precio Venta', key: 'precio_venta', width: 15 },
+      { header: 'Precio Promo', key: 'precio_promo', width: 15 },
+      { header: 'Valor a Promo', key: 'valor_promo', width: 15 }
     ];
 
     // Estilo de encabezados
@@ -208,7 +234,11 @@ export class ReportService {
         stock_actual: producto.stock_actual,
         unidad: producto.unidad,
         costo_unitario: producto.costo_unitario,
-        valor_total: producto.valor_total
+        valor_total: producto.valor_total,
+        descuento_promocion: producto.descuento_promocion || 0,
+        precio_venta: producto.precio_venta || 0,
+        precio_promo: producto.precio_promo ?? '',
+        valor_promo: producto.valor_promo ?? ''
       });
     });
 
@@ -216,6 +246,9 @@ export class ReportService {
     worksheet.getColumn('stock_actual').numFmt = '#,##0';
     worksheet.getColumn('costo_unitario').numFmt = '#,##0.00';
     worksheet.getColumn('valor_total').numFmt = '#,##0.00';
+    worksheet.getColumn('precio_venta').numFmt = '#,##0.00';
+    worksheet.getColumn('precio_promo').numFmt = '#,##0.00';
+    worksheet.getColumn('valor_promo').numFmt = '#,##0.00';
 
     return workbook.xlsx.writeBuffer() as any;
   }
@@ -233,6 +266,46 @@ export class ReportService {
     ];
 
     data.products.forEach((product) => worksheet.addRow(product));
+
+    return workbook.xlsx.writeBuffer() as any;
+  }
+
+  async generateOperacionesExcel(operaciones: any[]): Promise<Buffer> {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Operaciones de Stock');
+
+    worksheet.columns = [
+      { header: 'Fecha', key: 'fecha', width: 16 },
+      { header: 'Tipo', key: 'tipo', width: 14 },
+      { header: 'Estado', key: 'estado', width: 14 },
+      { header: 'Sede Origen', key: 'sedeOrigen', width: 22 },
+      { header: 'Sede Destino', key: 'sedeDestino', width: 22 },
+      { header: 'Proveedor/Cliente', key: 'tercero', width: 25 },
+      { header: 'Unidades', key: 'unidades', width: 12 },
+      { header: 'Costo Total (S/)', key: 'costoTotal', width: 18 },
+      { header: 'Referencia', key: 'referencia', width: 20 }
+    ];
+
+    const headerRow = worksheet.getRow(1);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0066CC' } };
+    headerRow.alignment = { horizontal: 'center' };
+
+    for (const op of operaciones) {
+      worksheet.addRow({
+        fecha: new Date(op.fecha_emision).toLocaleDateString('es-PE'),
+        tipo: op.tipo_operacion,
+        estado: op.estado,
+        sedeOrigen: op.sede_origen?.nombre || '-',
+        sedeDestino: op.sede_destino?.nombre || '-',
+        tercero: op.proveedor?.nombre || op.cliente?.nombre || '-',
+        unidades: op.total_unidades,
+        costoTotal: Number(op.costo_total) || 0,
+        referencia: op.referencia || '-'
+      });
+    }
+
+    worksheet.getColumn('costoTotal').numFmt = '#,##0.00';
 
     return workbook.xlsx.writeBuffer() as any;
   }

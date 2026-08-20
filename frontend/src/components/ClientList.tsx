@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import Modal from './Modal';
 import ClientForm, { Cliente } from './ClientForm';
+import CuentasPorCobrarCliente from './CuentasPorCobrarCliente';
+import CarteraCobros from './CarteraCobros';
 import clientService from '../services/client.service';
 import '../styles/moduleBase.css';
 import './ClientList.css';
@@ -11,6 +13,8 @@ const ClientList: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Cliente | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'list' | 'cuentas'>('list');
+  const [selectedClient, setSelectedClient] = useState<Cliente | null>(null);
 
   useEffect(() => {
     cargarClientes();
@@ -44,6 +48,11 @@ const ClientList: React.FC = () => {
   const handleEditar = (c: Cliente) => {
     setEditing(c);
     setShowForm(true);
+  };
+
+  const handleVerCuentas = (c: Cliente) => {
+    setSelectedClient(c);
+    setActiveTab('cuentas');
   };
 
   const handleEliminar = async (id: number) => {
@@ -98,91 +107,135 @@ const ClientList: React.FC = () => {
         </div>
       </div>
 
-      <div className="module-card">
-        <table className="module-table client-table">
-          <thead>
-            <tr>
-              <th style={{ textAlign: 'left' }}>Nombre / Razón Social</th>
-              <th style={{ textAlign: 'left' }}>DNI / RUC</th>
-              <th style={{ textAlign: 'left' }}>Contacto</th>
-              <th>Estado</th>
-              <th style={{ textAlign: 'right' }}>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
+      {/* Tabs */}
+      <div className="cpc-tabs">
+        <button
+          className={`cpc-tab ${activeTab === 'list' ? 'active' : ''}`}
+          onClick={() => { setActiveTab('list'); setSelectedClient(null); }}
+        >
+          <i className="bx bx-user" /> Clientes
+        </button>
+        <button
+          className={`cpc-tab ${activeTab === 'cuentas' ? 'active' : ''}`}
+          onClick={() => setActiveTab('cuentas')}
+        >
+          <i className="bx bx-dollar-circle" /> Cuentas por Cobrar
+        </button>
+      </div>
+
+      {activeTab === 'list' && (
+        <div className="module-card">
+          <table className="module-table client-table">
+            <thead>
               <tr>
-                <td colSpan={5}>
-                  <div className="module-skeleton">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <div key={i} className="module-skeleton-row" style={{ animationDelay: `${i * 0.1}s` }}>
-                        <div className="module-skeleton-cell module-skeleton-cell--avatar"></div>
-                        <div className="module-skeleton-cell"></div>
-                        <div className="module-skeleton-cell"></div>
-                        <div className="module-skeleton-cell module-skeleton-cell--small"></div>
-                        <div className="module-skeleton-cell module-skeleton-cell--actions"></div>
-                      </div>
-                    ))}
-                  </div>
-                </td>
+                <th style={{ textAlign: 'left' }}>Nombre / Razón Social</th>
+                <th style={{ textAlign: 'left' }}>DNI / RUC</th>
+                <th style={{ textAlign: 'left' }}>Contacto</th>
+                <th>Estado</th>
+                <th style={{ textAlign: 'right' }}>Acciones</th>
               </tr>
-            ) : filtered.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="module-empty">
-                  <i className="bx bx-user" style={{ fontSize: '32px', color: 'var(--color-sky-200)', marginBottom: '8px' }}></i>
-                  <p>No se encontraron clientes</p>
-                </td>
-              </tr>
-            ) : (
-              filtered.map((c) => (
-                <tr key={c.id}>
-                  <td style={{ textAlign: 'left' }}>
-                    <div className="client-name-cell">
-                      <span className="client-avatar">
-                        <i className="bx bx-user" />
-                      </span>
-                      {c.nombre}
-                    </div>
-                  </td>
-                  <td className="client-doc" style={{ textAlign: 'left' }}>{c.documento || '-'}</td>
-                  <td className="client-contact" style={{ textAlign: 'left' }}>{c.telefono || c.email || '-'}</td>
-                  <td>
-                    <div className="client-status">
-                      <label className="switch">
-                        <input type="checkbox" checked={c.estado} readOnly />
-                        <span className="slider" />
-                      </label>
-                      <span className={`estado-label ${c.estado ? 'activo' : 'inactivo'}`}>
-                        {c.estado ? 'Activo' : 'Inactivo'}
-                      </span>
-                    </div>
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    <div className="client-actions">
-                      <button
-                        type="button"
-                        className="action-btn edit-btn"
-                        title="Editar"
-                        onClick={() => handleEditar(c)}
-                      >
-                        <i className="bx bx-pencil" />
-                      </button>
-                      <button
-                        type="button"
-                        className="action-btn delete-btn"
-                        title="Eliminar"
-                        onClick={() => handleEliminar(c.id)}
-                      >
-                        <i className="bx bx-trash" />
-                      </button>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={5}>
+                    <div className="module-skeleton">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <div key={i} className="module-skeleton-row" style={{ animationDelay: `${i * 0.1}s` }}>
+                          <div className="module-skeleton-cell module-skeleton-cell--avatar"></div>
+                          <div className="module-skeleton-cell"></div>
+                          <div className="module-skeleton-cell"></div>
+                          <div className="module-skeleton-cell module-skeleton-cell--small"></div>
+                          <div className="module-skeleton-cell module-skeleton-cell--actions"></div>
+                        </div>
+                      ))}
                     </div>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="module-empty">
+                    <i className="bx bx-user" style={{ fontSize: '32px', color: 'var(--color-sky-200)', marginBottom: '8px' }}></i>
+                    <p>No se encontraron clientes</p>
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((c) => (
+                  <tr key={c.id}>
+                    <td style={{ textAlign: 'left' }}>
+                      <div className="client-name-cell">
+                        <span className="client-avatar">
+                          <i className="bx bx-user" />
+                        </span>
+                        {c.nombre}
+                      </div>
+                    </td>
+                    <td className="client-doc" style={{ textAlign: 'left' }}>{c.documento || '-'}</td>
+                    <td className="client-contact" style={{ textAlign: 'left' }}>{c.telefono || c.email || '-'}</td>
+                    <td>
+                      <div className="client-status">
+                        <label className="switch">
+                          <input type="checkbox" checked={c.estado} readOnly />
+                          <span className="slider" />
+                        </label>
+                        <span className={`estado-label ${c.estado ? 'activo' : 'inactivo'}`}>
+                          {c.estado ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </div>
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <div className="client-actions">
+                        <button
+                          type="button"
+                          className="action-btn edit-btn"
+                          title="Editar"
+                          onClick={() => handleEditar(c)}
+                        >
+                          <i className="bx bx-pencil" />
+                        </button>
+                        <button
+                          type="button"
+                          className="action-btn delete-btn"
+                          title="Eliminar"
+                          onClick={() => handleEliminar(c.id)}
+                        >
+                          <i className="bx bx-trash" />
+                        </button>
+                        <button
+                          type="button"
+                          className="action-btn view-btn"
+                          title="Ver cuentas por cobrar"
+                          onClick={() => handleVerCuentas(c)}
+                        >
+                          <i className="bx bx-dollar-circle" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {activeTab === 'cuentas' && selectedClient && (
+        <CuentasPorCobrarCliente
+          clienteId={selectedClient.id}
+          clienteNombre={selectedClient.nombre}
+          onRefresh={() => cargarClientes()}
+        />
+      )}
+
+      {activeTab === 'cuentas' && !selectedClient && (
+        <CarteraCobros
+          onSelect={(c) => {
+            if (c.cliente_id != null) {
+              handleVerCuentas({ id: c.cliente_id, nombre: c.nombre, documento: c.documento, estado: true } as Cliente);
+            }
+          }}
+        />
+      )}
 
       <Modal
         isOpen={showForm}

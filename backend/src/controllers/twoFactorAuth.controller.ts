@@ -87,7 +87,6 @@ export const configurar2FA = async (req: Request, res: Response): Promise<void> 
       mensaje: 'Escanea el código QR con tu aplicación de autenticación',
       qrCode,
       backupCodes,
-      secret: secret.base32, // Solo para pruebas
       otpauthUrl
     });
 

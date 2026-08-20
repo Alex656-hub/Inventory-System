@@ -9,6 +9,8 @@ interface DetalleOperacionAttributes {
   producto_id: number;
   cantidad: number;
   costo_unitario: number;
+  descuento: number;
+  precio_lista?: number;
   subtotal: number;
   lote?: string;
   fecha_vencimiento?: Date;
@@ -16,7 +18,7 @@ interface DetalleOperacionAttributes {
   updatedAt?: Date;
 }
 
-interface DetalleOperacionCreationAttributes extends Optional<DetalleOperacionAttributes, 'id' | 'lote' | 'fecha_vencimiento' | 'createdAt' | 'updatedAt'> {}
+interface DetalleOperacionCreationAttributes extends Optional<DetalleOperacionAttributes, 'id' | 'lote' | 'fecha_vencimiento' | 'descuento' | 'precio_lista' | 'createdAt' | 'updatedAt'> {}
 
 class DetalleOperacion extends Model<DetalleOperacionAttributes, DetalleOperacionCreationAttributes> implements DetalleOperacionAttributes {
   public id!: number;
@@ -24,6 +26,8 @@ class DetalleOperacion extends Model<DetalleOperacionAttributes, DetalleOperacio
   public producto_id!: number;
   public cantidad!: number;
   public costo_unitario!: number;
+  public descuento!: number;
+  public precio_lista?: number;
   public subtotal!: number;
   public lote?: string;
   public fecha_vencimiento?: Date;
@@ -71,6 +75,19 @@ DetalleOperacion.init(
       validate: {
         min: 0
       }
+    },
+    descuento: {
+      type: DataTypes.DECIMAL(5, 2),
+      allowNull: true,
+      defaultValue: 0,
+      validate: {
+        min: 0,
+        max: 100
+      }
+    },
+    precio_lista: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true
     },
     subtotal: {
       type: DataTypes.DECIMAL(12, 2),

@@ -137,3 +137,11 @@
     grid-template-columns: 1fr;
   }
 }
+
+.mf-help-hint {
+  display: block;
+  font-size: 11px;
+  color: #6b7280;
+  line-height: 1.4;
+  margin-top: 4px;
+}

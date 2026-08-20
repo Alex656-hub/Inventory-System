@@ -61,6 +61,16 @@ class TokenManager {
     return Date.now() < expiry;
   }
 
+  // Verificar si existe un refresh token (permite refrescar incluso si el access token expiró)
+  hasRefreshToken(): boolean {
+    return !!this.getRefreshToken();
+  }
+
+  // Indica si se debe intentar un refresco: hay refresh token y el access token está expirado o por expirar
+  debeRefrescar(): boolean {
+    return this.hasRefreshToken() && (!this.hasValidTokens() || this.isTokenExpiringSoon());
+  }
+
   // Refrescar el access token
   async refreshAccessToken(): Promise<RefreshTokenResponse | null> {
     // Si ya hay un refresh en progreso, retornar esa promesa

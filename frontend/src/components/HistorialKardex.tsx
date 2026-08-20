@@ -3,6 +3,7 @@ import './HistorialKardex.css';
 import { movimientoService, Movimiento } from '../services/movimiento.service';
 import ModalPrevisualizacion from './ModalPrevisualizacion';
 import ModalKardexPDF from './ModalKardexPDF';
+import ModalDetalleMovimiento from './ModalDetalleMovimiento';
 import api from '../config/api';
 
 interface SedeOption {
@@ -31,6 +32,20 @@ const HistorialKardex: React.FC = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [previewHtml, setPreviewHtml] = useState('');
   const [previewLoading, setPreviewLoading] = useState(false);
+  
+  // Modal detalle movimiento
+  const [showDetalleModal, setShowDetalleModal] = useState(false);
+  const [detalleMovimiento, setDetalleMovimiento] = useState<Movimiento | null>(null);
+
+  const handleVerDetalle = (mov: Movimiento) => {
+    setDetalleMovimiento(mov);
+    setShowDetalleModal(true);
+  };
+
+  const handleCerrarDetalle = () => {
+    setShowDetalleModal(false);
+    setDetalleMovimiento(null);
+  };
 
   useEffect(() => {
     cargarSedes();
@@ -342,6 +357,9 @@ const HistorialKardex: React.FC = () => {
                   <td className="hk-numero">{mov.cantidad}</td>
                   <td>
                     <div className="hk-actions">
+                      <button className="hk-btn-action hk-btn-detail"
+                        onClick={() => handleVerDetalle(mov)}
+                        title="Ver detalle"><i className="bx bx-detail"></i></button>
                       <button className="hk-btn-action hk-btn-preview"
                         onClick={() => handlePrevisualizar(mov)}
                         disabled={previewLoading || !mov.tiene_pdf}
@@ -379,6 +397,9 @@ const HistorialKardex: React.FC = () => {
       )}
       {showKardexModal && (
         <ModalKardexPDF onClose={() => setShowKardexModal(false)} />
+      )}
+      {showDetalleModal && detalleMovimiento && (
+        <ModalDetalleMovimiento movimiento={detalleMovimiento} onClose={handleCerrarDetalle} />
       )}
     </div>
   );

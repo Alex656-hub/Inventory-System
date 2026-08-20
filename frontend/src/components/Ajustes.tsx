@@ -14,6 +14,7 @@ const Ajustes: React.FC = () => {
   // Estados para los campos
   const [ruc, setRuc] = useState('');
   const [direccion, setDireccion] = useState('');
+  const [umbralLiquidez, setUmbralLiquidez] = useState<number>(1000);
   const [logoEmpresa, setLogoEmpresa] = useState<File | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -33,6 +34,7 @@ const Ajustes: React.FC = () => {
         const config = await ajustesService.obtenerConfiguracion();
         setRuc(config.ruc || '');
         setDireccion(config.direccion || '');
+        setUmbralLiquidez(config.umbral_liquidez || 1000);
         if (config.logo) {
           setPreviewImage(config.logo);
         }
@@ -137,6 +139,7 @@ const Ajustes: React.FC = () => {
       const formData = new FormData();
       formData.append('ruc', ruc);
       formData.append('direccion', direccion);
+      formData.append('umbral_liquidez', String(umbralLiquidez));
       
       if (logoEmpresa) {
         formData.append('logo', logoEmpresa);
@@ -305,6 +308,24 @@ const Ajustes: React.FC = () => {
                     className="mf-field"
                   />
                 </div>
+              </div>
+
+              <div className="mf-group">
+                <label htmlFor="umbral_liquidez">Umbral de Alerta de Liquidez (S/)</label>
+                <div className="mf-field-wrap">
+                  <input
+                    type="number"
+                    id="umbral_liquidez"
+                    value={umbralLiquidez}
+                    onChange={(e) => setUmbralLiquidez(Number(e.target.value) || 0)}
+                    placeholder="Ej: 10000"
+                    className="mf-field"
+                    min="0"
+                    step="100"
+                    inputMode="numeric"
+                  />
+                </div>
+                <small className="mf-hint">Si el saldo proyectado (efectivo + cuotas 30d) baja de este valor, se genera alerta de liquidez.</small>
               </div>
 
               <button 

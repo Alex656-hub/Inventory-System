@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { OperacionStock, DetalleOperacion, Sede, Proveedor, Cliente, Personal } from '../services/operacionStock.service';
 import operacionStockService from '../services/operacionStock.service';
+import Modal from './Modal';
+import { esPromoActiva } from '../utils/promociones';
 import './OperacionesStock.css';
 
 interface OperacionesStockProps {
@@ -12,6 +14,7 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
     tipo_operacion: 'ENTRADA',
     fecha_emision: new Date(),
     personal_id: 0,
+    metodo_pago: 'efectivo',
     detalles: []
   });
 
@@ -22,15 +25,32 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
   const [loading, setLoading] = useState(false);
   const [errores, setErrores] = useState<string[]>([]);
   const [exito, setExito] = useState<string>('');
+  const [estadisticas, setEstadisticas] = useState<{
+    hoy: { total: number; entradas: number; salidas: number };
+    mes: { total: number; entradas: number; salidas: number; traspasos: number; costoTotal: number; unidadesTotales: number };
+  } | null>(null);
+
+  // Estado para modal de configuración de cuotas
+  const [showCuotasModal, setShowCuotasModal] = useState(false);
+  const [cuotasConfig, setCuotasConfig] = useState({
+    numCuotas: 3,
+    frecuencia: 'mensual',
+    primerVencimiento: '',
+    interesMensual: 0,
+    // Garantía / Aval
+    garantiaTipo: 'dni',
+    garantiaValor: '',
+    avalNombre: '',
+    avalContacto: '',
+    avalDireccion: '',
+    responsableCobro: '',
+  });
+  const [cuotasConfigurada, setCuotasConfigurada] = useState(false);
 
   useEffect(() => {
     cargarCatalogos();
+    cargarEstadisticas();
   }, []);
-
-  useEffect(() => {
-    console.log('Estado personal actualizado:', personal);
-    console.log('¿Es array?', Array.isArray(personal));
-  }, [personal]);
 
   const STORAGE_KEY = 'operacionesStock_draft';
   const [isInitialized, setIsInitialized] = useState(false);
@@ -78,6 +98,8 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
         producto_id: d.producto_id,
         cantidad: d.cantidad,
         costo_unitario: d.costo_unitario,
+        descuento: d.descuento,
+        precio_lista: d.precio_lista,
         subtotal: d.subtotal,
         producto: d.producto ? {
           id: d.producto.id,
@@ -141,6 +163,15 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
   }
 };
 
+const cargarEstadisticas = async () => {
+  try {
+    const stats = await operacionStockService.obtenerEstadisticas();
+    setEstadisticas(stats);
+  } catch (error) {
+    console.error('Error al cargar estadísticas:', error);
+  }
+};
+
   const handleTipoOperacionChange = (tipo: 'ENTRADA' | 'SALIDA' | 'TRASPASO') => {
     setOperacion(prev => ({
       ...prev,
@@ -182,6 +213,18 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
     }));
   };
 
+  const actualizarDetalle = (productoId: number, costo_unitario: number, subtotal: number) => {
+    const detallesActuales = operacion.detalles || [];
+    setOperacion(prev => ({
+      ...prev,
+      detalles: detallesActuales.map(d =>
+        d.producto_id === productoId
+          ? { ...d, costo_unitario, subtotal }
+          : d
+      )
+    }));
+  };
+
   const calcularTotales = () => {
     const detalles = operacion.detalles || [];
     const total_unidades = detalles.reduce((sum, d) => sum + d.cantidad, 0);
@@ -204,11 +247,53 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
       setErrores(erroresValidacion);
       return;
     }
+    // Validar configuración de cuotas si es crédito
+    if (operacion.metodo_pago === 'credito' && cuotasConfig.numCuotas > 0) {
+      if (cuotasConfig.garantiaTipo === 'dni' && cuotasConfig.garantiaValor.length !== 8) {
+        setErrores(['El DNI del aval debe tener exactamente 8 dígitos']);
+        return;
+      }
+      if (cuotasConfig.garantiaTipo === 'telefono' && cuotasConfig.garantiaValor.length !== 9) {
+        setErrores(['El teléfono del aval debe tener exactamente 9 dígitos']);
+        return;
+      }
+      if (cuotasConfig.garantiaTipo !== 'ninguna') {
+        if (!cuotasConfig.avalNombre.trim()) {
+          setErrores(['El nombre del aval es obligatorio']);
+          return;
+        }
+        if (!cuotasConfig.avalDireccion.trim()) {
+          setErrores(['La dirección / referencia del aval es obligatoria']);
+          return;
+        }
+      }
+      if (!cuotasConfig.primerVencimiento) {
+        setErrores(['La fecha de primer vencimiento es requerida para ventas en cuotas']);
+        return;
+      }
+    }
     setLoading(true);
     limpiarMensajes();
     try {
       const { total_unidades, costo_total } = calcularTotales();
-      const operacionParaCrear = { ...operacion, total_unidades, costo_total } as OperacionStock;
+      const operacionParaCrear = { 
+        ...operacion, 
+        total_unidades, 
+        costo_total,
+        // Incluir configuración de cuotas si es crédito
+        ...(operacion.metodo_pago === 'credito' && cuotasConfig.numCuotas > 0 ? {
+          num_cuotas: cuotasConfig.numCuotas,
+          frecuencia_cuota: cuotasConfig.frecuencia,
+          interes_mensual: cuotasConfig.interesMensual,
+          primer_vencimiento: new Date(cuotasConfig.primerVencimiento),
+          garantia_tipo: cuotasConfig.garantiaTipo,
+          garantia_valor: cuotasConfig.garantiaValor,
+          aval_nombre: cuotasConfig.avalNombre,
+          aval_contacto: cuotasConfig.garantiaTipo === 'telefono' ? cuotasConfig.garantiaValor : cuotasConfig.avalContacto,
+          aval_direccion: cuotasConfig.avalDireccion,
+          responsable_cobro: cuotasConfig.responsableCobro,
+        } : {})
+      } as OperacionStock;
       
       const resultado = await operacionStockService.crearOperacion(operacionParaCrear);
       const operacionId = resultado.operacion?.id;
@@ -218,12 +303,15 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
       }
       
       setExito('Operación procesada exitosamente');
+      cargarEstadisticas();
       setOperacion({
         tipo_operacion: operacion.tipo_operacion,
         fecha_emision: new Date(),
         personal_id: operacion.personal_id,
+        metodo_pago: 'efectivo',
         detalles: []
       });
+      resetCuotasConfig();
       localStorage.removeItem(STORAGE_KEY);
       if (onOperacionCreada) onOperacionCreada(resultado.operacion);
       
@@ -396,11 +484,79 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
     }));
     localStorage.removeItem(STORAGE_KEY);
     limpiarMensajes();
+    setCuotasConfigurada(false);
   };
 
   const limpiarMensajes = () => {
     setErrores([]);
     setExito('');
+  };
+
+  // ─── Handlers para modal de cuotas ──────────────────────────────────────────
+  const abrirCuotasModal = () => {
+    // Pre-llenar fecha de primer vencimiento (mañana)
+    const mañana = new Date();
+    mañana.setDate(mañana.getDate() + 1);
+    setCuotasConfig(prev => ({
+      ...prev,
+      primerVencimiento: mañana.toISOString().split('T')[0],
+    }));
+    setShowCuotasModal(true);
+  };
+
+  const cerrarCuotasModal = () => {
+    setShowCuotasModal(false);
+  };
+
+  const handleCuotasConfigChange = (field: string, value: any) => {
+    setCuotasConfig(prev => ({ ...prev, [field]: value }));
+  };
+
+  const guardarCuotasConfig = () => {
+    if (cuotasConfig.garantiaTipo === 'dni' && cuotasConfig.garantiaValor.length !== 8) {
+      setErrores(['El DNI del aval debe tener exactamente 8 dígitos']);
+      return;
+    }
+    if (cuotasConfig.garantiaTipo === 'telefono' && cuotasConfig.garantiaValor.length !== 9) {
+      setErrores(['El teléfono del aval debe tener exactamente 9 dígitos']);
+      return;
+    }
+    if (cuotasConfig.garantiaTipo !== 'ninguna') {
+      if (!cuotasConfig.avalNombre.trim()) {
+        setErrores(['El nombre del aval es obligatorio']);
+        return;
+      }
+      if (!cuotasConfig.avalDireccion.trim()) {
+        setErrores(['La dirección / referencia del aval es obligatoria']);
+        return;
+      }
+    }
+    if (cuotasConfig.numCuotas < 1) {
+      setErrores(['El número de cuotas debe ser al menos 1']);
+      return;
+    }
+    if (!cuotasConfig.primerVencimiento) {
+      setErrores(['La fecha de primer vencimiento es requerida']);
+      return;
+    }
+    setCuotasConfigurada(true);
+    cerrarCuotasModal();
+  };
+
+  const resetCuotasConfig = () => {
+    setCuotasConfig({
+      numCuotas: 3,
+      frecuencia: 'mensual',
+      primerVencimiento: '',
+      interesMensual: 0,
+      garantiaTipo: 'dni',
+      garantiaValor: '',
+      avalNombre: '',
+      avalContacto: '',
+      avalDireccion: '',
+      responsableCobro: '',
+    });
+    setCuotasConfigurada(false);
   };
 
   const puedeAgregarProductos = (): boolean => {
@@ -718,7 +874,22 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
           <button className="os-btn os-btn-outline" onClick={generarPrevisualizacion} disabled={loading || (operacion.detalles?.length === 0)}>
             <i className="bx bx-printer os-btn-icon"></i> Imprimir
           </button>
-          <button className="os-btn os-btn-primary" onClick={procesarOperacion} disabled={loading}>
+          {operacion.tipo_operacion === 'SALIDA' && operacion.metodo_pago === 'credito' && (
+            <button 
+              type="button" 
+              className="os-btn os-btn-outline" 
+              onClick={abrirCuotasModal}
+              disabled={loading}
+            >
+              <i className="bx bx-calendar-edit os-btn-icon"></i> Configurar cuotas
+            </button>
+          )}
+          <button
+            className="os-btn os-btn-primary"
+            onClick={procesarOperacion}
+            disabled={loading || (operacion.metodo_pago === 'credito' && !cuotasConfigurada)}
+            title={operacion.metodo_pago === 'credito' && !cuotasConfigurada ? 'Configura primero las cuotas para procesar el movimiento' : undefined}
+          >
             {loading ? (
               <><span className="os-spinner"></span> Procesando...</>
             ) : (
@@ -735,6 +906,40 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
         </div>
       )}
       {exito && <div className="os-alert os-alert-success">{exito}</div>}
+
+      {/* ── KPIs Resumen ── */}
+      {estadisticas && (
+        <div className="os-kpi-row">
+          <div className="os-kpi-card">
+            <div className="os-kpi-icon"><i className="bx bx-calendar-check"></i></div>
+            <div className="os-kpi-info">
+              <span className="os-kpi-value">{estadisticas.hoy.entradas}</span>
+              <span className="os-kpi-label">Entradas hoy</span>
+            </div>
+          </div>
+          <div className="os-kpi-card">
+            <div className="os-kpi-icon os-kpi-icon-danger"><i className="bx bx-calendar-minus"></i></div>
+            <div className="os-kpi-info">
+              <span className="os-kpi-value">{estadisticas.hoy.salidas}</span>
+              <span className="os-kpi-label">Salidas hoy</span>
+            </div>
+          </div>
+          <div className="os-kpi-card">
+            <div className="os-kpi-icon os-kpi-icon-warning"><i className="bx bx-dollar"></i></div>
+            <div className="os-kpi-info">
+              <span className="os-kpi-value">S/ {estadisticas.mes.costoTotal.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</span>
+              <span className="os-kpi-label">Costo total mes</span>
+            </div>
+          </div>
+          <div className="os-kpi-card">
+            <div className="os-kpi-icon os-kpi-icon-purple"><i className="bx bx-package"></i></div>
+            <div className="os-kpi-info">
+              <span className="os-kpi-value">{estadisticas.mes.unidadesTotales}</span>
+              <span className="os-kpi-label">Unidades mes</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Sección principal: campos del formulario ── */}
       <div className="os-card">
@@ -788,8 +993,8 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
           </div>
         </div>
 
-        {/* Fila 2 */}
-        <div className="os-form-row os-form-row-3">
+{/* Fila 2 */}
+        <div className="os-form-row os-form-row-4">
           {/* Fecha de Emisión */}
           <div className="os-field-group">
           <label className="os-label">
@@ -808,6 +1013,27 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
           <React.Fragment key={operacion.tipo_operacion}>
             {renderCampoSecundario(validarCamposRequeridos())}
           </React.Fragment>
+
+          {/* Método de Pago (solo para SALIDA) */}
+          {operacion.tipo_operacion === 'SALIDA' && (
+            <div className="os-field-group">
+              <label className="os-label">
+                <i className="bx bx-credit-card os-label-icon"></i> Método de Pago
+              </label>
+              <div className="os-select-wrapper">
+                <select
+                  className="os-select"
+                  value={operacion.metodo_pago || 'efectivo'}
+                  onChange={(e) => handleFieldChange('metodo_pago', e.target.value)}
+                >
+                  <option value="efectivo">Efectivo</option>
+                  <option value="credito">Crédito (Cuotas)</option>
+                  <option value="tarjeta">Tarjeta</option>
+                </select>
+                <span className="os-select-arrow">▾</span>
+              </div>
+            </div>
+          )}
 
           {/* Referencia / Comentario */}
           <div className="os-field-group">
@@ -839,6 +1065,7 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
         <TablaDetalles
           detalles={operacion.detalles || []}
           onEliminarDetalle={eliminarDetalle}
+          onActualizarDetalle={actualizarDetalle}
           tipoOperacion={operacion.tipo_operacion}
         />
 
@@ -854,6 +1081,16 @@ const OperacionesStock: React.FC<OperacionesStockProps> = ({ onOperacionCreada }
           </div>
         </div>
       </div>
+    
+      {/* ── Modal Configurar Cuotas ── */}
+      <CuotasModal
+        isOpen={showCuotasModal}
+        onClose={cerrarCuotasModal}
+        onSave={guardarCuotasConfig}
+        config={cuotasConfig}
+        onChange={handleCuotasConfigChange}
+        errors={errores}
+      />
     </div>
   );
 };
@@ -870,9 +1107,21 @@ const ProductoSelector: React.FC<{
   const [productos, setProductos] = useState<any[]>([]);
   const [productoSeleccionado, setProductoSeleccionado] = useState<any>(null);
   const [cantidad, setCantidad] = useState(1);
+  const [descuento, setDescuento] = useState(0);
   const [stockDisponible, setStockDisponible] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Precio de lista y precio final calculado
+  const precioLista = productoSeleccionado
+    ? (operacion.tipo_operacion === 'SALIDA'
+        ? productoSeleccionado.precio_venta
+        : productoSeleccionado.precio_compra)
+    : 0;
+  const precioFinal = precioLista * (1 - descuento / 100);
+
+  // Promo activa del producto: solo aplica en SALIDA (venta al cliente)
+  const promoAplicada = operacion.tipo_operacion === 'SALIDA' && !!productoSeleccionado && esPromoActiva(productoSeleccionado);
 
   // Cerrar dropdown al hacer click fuera
   useEffect(() => {
@@ -917,6 +1166,8 @@ const ProductoSelector: React.FC<{
     setTermino(producto.nombre);
     setProductos([]);
     setCantidad(1);
+    const promo = operacion.tipo_operacion === 'SALIDA' && esPromoActiva(producto);
+    setDescuento(promo ? Number(producto.descuento_promocion) : 0);
     try {
       let sedeId: number | undefined;
       if (operacion.tipo_operacion === 'SALIDA' || operacion.tipo_operacion === 'TRASPASO') {
@@ -937,20 +1188,24 @@ const ProductoSelector: React.FC<{
 
   const agregarProducto = () => {
     if (!productoSeleccionado) return;
-    const precioUnitario = operacion.tipo_operacion === 'SALIDA'
+    const precioLista = operacion.tipo_operacion === 'SALIDA'
       ? productoSeleccionado.precio_venta
       : productoSeleccionado.precio_compra;
+    const precioFinal = precioLista * (1 - descuento / 100);
     const detalle: DetalleOperacion = {
       producto_id: productoSeleccionado.id,
       cantidad,
-      costo_unitario: precioUnitario,
-      subtotal: cantidad * precioUnitario,
+      costo_unitario: Number(precioFinal.toFixed(2)),
+      descuento,
+      precio_lista: precioLista,
+      subtotal: cantidad * Number(precioFinal.toFixed(2)),
       producto: productoSeleccionado
     };
     onProductoSeleccionado(detalle);
     setProductoSeleccionado(null);
     setTermino('');
     setCantidad(1);
+    setDescuento(0);
     setStockDisponible(null);
   };
 
@@ -1021,6 +1276,44 @@ const ProductoSelector: React.FC<{
         />
       </div>
 
+      {/* Descuento % */}
+      <div className="os-product-field">
+        <label className="os-label">Desc. %</label>
+        <input
+          type="number"
+          className={`os-input os-input-sm ${stockInsuficiente ? 'os-input-disabled' : ''}`}
+          min="0"
+          max="100"
+          step="0.01"
+          value={descuento}
+          onChange={(e) => {
+            const val = Math.max(0, Math.min(100, Number(e.target.value) || 0));
+            setDescuento(val);
+          }}
+          disabled={cantidadDeshabilitada}
+        />
+        {promoAplicada && productoSeleccionado && (
+          <span className="os-promo-hint">
+            🔥 Promo -{Number(productoSeleccionado.descuento_promocion).toFixed(0)}%
+            {productoSeleccionado.promocion_hasta
+              ? ` hasta ${new Date(productoSeleccionado.promocion_hasta).toLocaleDateString('es-PE')}`
+              : ''}
+          </span>
+        )}
+      </div>
+
+      {/* Precio Final */}
+      <div className="os-product-field">
+        <label className="os-label">Precio Final</label>
+        <input
+          type="text"
+          className="os-input os-input-sm"
+          value={precioFinal > 0 ? `S/ ${precioFinal.toFixed(2)}` : '-'}
+          readOnly
+          disabled
+        />
+      </div>
+
       {/* Agregar */}
       <div className="os-product-field os-product-field-btn">
         <label className="os-label">&nbsp;</label>
@@ -1042,9 +1335,17 @@ const ProductoSelector: React.FC<{
 const TablaDetalles: React.FC<{
   detalles: DetalleOperacion[];
   onEliminarDetalle: (productoId: number) => void;
+  onActualizarDetalle: (productoId: number, costo_unitario: number, subtotal: number) => void;
   tipoOperacion?: 'ENTRADA' | 'SALIDA' | 'TRASPASO';
-}> = ({ detalles, onEliminarDetalle, tipoOperacion }) => {
+}> = ({ detalles, onEliminarDetalle, onActualizarDetalle, tipoOperacion }) => {
   const headerPrecio = tipoOperacion === 'SALIDA' ? 'Precio Unit.' : 'Costo Unit.';
+
+  const handlePrecioChange = (productoId: number, cantidad: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const nuevoPrecio = Math.max(0, Number(e.target.value) || 0);
+    const nuevoSubtotal = cantidad * nuevoPrecio;
+    onActualizarDetalle(productoId, nuevoPrecio, nuevoSubtotal);
+  };
+
   return (
     <div className="os-table-wrap">
       <table className="os-table">
@@ -1052,7 +1353,9 @@ const TablaDetalles: React.FC<{
           <tr>
             <th>Código</th>
             <th>Descripción</th>
-            <th>{headerPrecio}</th>
+            <th>Precio Lista</th>
+            <th>Desc. %</th>
+            <th>{headerPrecio} <span className="os-editable-hint">✏️</span></th>
             <th>Cantidad</th>
             <th>Subtotal</th>
             <th></th>
@@ -1061,7 +1364,7 @@ const TablaDetalles: React.FC<{
         <tbody>
           {detalles.length === 0 ? (
             <tr>
-              <td colSpan={6}>
+              <td colSpan={8}>
                 <div className="os-table-empty">
                   <i className="bx bx-package os-table-empty-icon"></i>
                   <span className="os-table-empty-text">Lista vacía. Selecciona un producto arriba.</span>
@@ -1071,11 +1374,29 @@ const TablaDetalles: React.FC<{
           ) : (
             detalles.map((d, i) => {
               const costo = Number(d.costo_unitario) || 0;
+              const precioLista = Number(d.precio_lista) || 0;
+              const descuento = Number(d.descuento) || 0;
               const sub = Number(d.subtotal) || 0;
               return <tr key={d.producto_id || i}>
                 <td>{d.producto?.codigo || ''}</td>
                 <td>{d.producto?.nombre || ''}</td>
-                <td>S/ {costo.toFixed(2)}</td>
+                <td>S/ {precioLista.toFixed(2)}</td>
+                <td>
+                  {descuento > 0 && (
+                    <span className="os-descuento-badge">-{descuento.toFixed(2)}%</span>
+                  )}
+                  {descuento === 0 && <span className="os-text-muted">—</span>}
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    className="os-input os-input-price"
+                    min="0"
+                    step="0.01"
+                    value={costo.toFixed(2)}
+                    onChange={(e) => handlePrecioChange(d.producto_id, d.cantidad, e)}
+                  />
+                </td>
                 <td>{d.cantidad}</td>
                 <td>S/ {sub.toFixed(2)}</td>
                 <td>
@@ -1097,3 +1418,184 @@ const TablaDetalles: React.FC<{
 };
 
 export default OperacionesStock;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Modal Configurar Cuotas
+// ─────────────────────────────────────────────────────────────────────────────
+const CuotasModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: () => void;
+  config: {
+    numCuotas: number;
+    frecuencia: 'semanal' | 'quincenal' | 'mensual';
+    primerVencimiento: string;
+    interesMensual: number;
+    garantiaTipo: 'dni' | 'telefono' | 'ninguna';
+    garantiaValor: string;
+    avalNombre: string;
+    avalContacto: string;
+    avalDireccion: string;
+    responsableCobro: string;
+  };
+  onChange: (field: string, value: any) => void;
+  errors: string[];
+}> = ({ isOpen, onClose, onSave, config, onChange, errors }) => {
+  if (!isOpen) return null;
+
+  return (
+    <Modal title="Configurar venta en cuotas" isOpen={isOpen} onClose={onClose} size="large">
+      <form onSubmit={(e) => { e.preventDefault(); onSave(); }}>
+        {errors.length > 0 && (
+          <div className="os-alert os-alert-error" style={{ marginBottom: '16px' }}>
+            {errors.map((e, i) => <div key={i}>{e}</div>)}
+          </div>
+        )}
+        <div className="os-form-row os-form-row-2">
+          <div className="os-field-group">
+            <label className="os-label">N° de cuotas *</label>
+            <input
+              type="number"
+              className="os-input"
+              min="1"
+              max="36"
+              value={config.numCuotas}
+              onChange={(e) => onChange('numCuotas', Number(e.target.value))}
+              required
+            />
+          </div>
+          <div className="os-field-group">
+            <label className="os-label">Frecuencia *</label>
+            <div className="os-select-wrapper">
+              <select
+                className="os-select"
+                value={config.frecuencia}
+                onChange={(e) => onChange('frecuencia', e.target.value)}
+              >
+                <option value="mensual">Mensual (día fijo cada mes)</option>
+                <option value="quincenal">Quincenal (cada 15 días)</option>
+                <option value="semanal">Semanal (cada 7 días)</option>
+              </select>
+              <span className="os-select-arrow">▾</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="os-form-row os-form-row-2">
+          <div className="os-field-group">
+            <label className="os-label">Fecha 1er vencimiento *</label>
+            <input
+              type="date"
+              className="os-input"
+              value={config.primerVencimiento}
+              onChange={(e) => onChange('primerVencimiento', e.target.value)}
+              required
+            />
+          </div>
+          <div className="os-field-group">
+            <label className="os-label">Interés mensual %</label>
+            <input
+              type="number"
+              className="os-input"
+              min="0"
+              max="100"
+              step="0.01"
+              value={config.interesMensual}
+              onChange={(e) => onChange('interesMensual', Number(e.target.value) || 0)}
+              placeholder="0 = sin interés"
+            />
+          </div>
+        </div>
+
+        <hr style={{ margin: '20px 0', borderColor: '#e5e7eb' }} />
+        <h4 style={{ marginBottom: '12px', color: '#374151' }}>Información de Garantía / Aval</h4>
+
+        <div className="os-form-row os-form-row-2">
+          <div className="os-field-group">
+            <label className="os-label">Tipo de garantía</label>
+            <div className="os-select-wrapper">
+              <select
+                className="os-select"
+                value={config.garantiaTipo}
+                onChange={(e) => {
+                  onChange('garantiaTipo', e.target.value);
+                  onChange('garantiaValor', '');
+                }}
+              >
+                <option value="dni">DNI del aval</option>
+                <option value="telefono">Teléfono del aval</option>
+                <option value="ninguna">Sin garantía</option>
+              </select>
+              <span className="os-select-arrow">▾</span>
+            </div>
+          </div>
+        </div>
+
+        {config.garantiaTipo !== 'ninguna' && (
+          <>
+            <div className="os-form-row os-form-row-2">
+              <div className="os-field-group">
+                <label className="os-label">
+                  {config.garantiaTipo === 'dni' ? 'DNI del aval' : 'Teléfono del aval'} *
+                </label>
+                <input
+                  type="text"
+                  className="os-input"
+                  value={config.garantiaValor}
+                  onChange={(e) => onChange('garantiaValor', e.target.value.replace(/\D/g, ''))}
+                  placeholder={config.garantiaTipo === 'dni' ? '8 dígitos' : '9 dígitos'}
+                  required
+                  maxLength={config.garantiaTipo === 'dni' ? 8 : 9}
+                />
+              </div>
+              <div className="os-field-group">
+                <label className="os-label">Nombre del aval / garante</label>
+                <input
+                  type="text"
+                  className="os-input"
+                  value={config.avalNombre}
+                  onChange={(e) => onChange('avalNombre', e.target.value)}
+                  placeholder="Nombre completo del garante"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="os-form-row os-form-row-2">
+              <div className="os-field-group">
+                <label className="os-label">Dirección / Referencia del aval</label>
+                <textarea
+                  className="os-input"
+                  value={config.avalDireccion}
+                  onChange={(e) => onChange('avalDireccion', e.target.value.replace(/\d/g, ''))}
+                  placeholder="Dirección de domicilio, referencias para ubicar..."
+                  rows={2}
+                  required
+                />
+              </div>
+              <div className="os-field-group">
+                <label className="os-label">Responsable de cobro (interno)</label>
+                <input
+                  type="text"
+                  className="os-input"
+                  value={config.responsableCobro}
+                  onChange={(e) => onChange('responsableCobro', e.target.value)}
+                  placeholder="Empleado que hará seguimiento"
+                />
+              </div>
+            </div>
+          </>
+        )}
+
+        <div className="modal-actions" style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+          <button type="button" className="os-btn os-btn-ghost" onClick={onClose}>
+            Cancelar
+          </button>
+          <button type="submit" className="os-btn os-btn-primary">
+            Guardar configuración
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+};

@@ -1,5 +1,6 @@
 import { sequelize } from '../config/database';
 import { QueryTypes } from 'sequelize';
+import { descuentoService } from './descuentoService';
 
 class StockService {
   // Buscar productos por nombre o código para selección en operaciones
@@ -25,6 +26,8 @@ class StockService {
         p.descripcion,
         p.precio_compra,
         p.precio_venta,
+        p.descuento_promocion,
+        p.promocion_hasta,
         p.unidad_id,
         um.nombre as unidad_nombre,
         c.nombre as categoria_nombre,
@@ -36,7 +39,7 @@ class StockService {
       ${sedeJoin}
       ${sedeCondition}
         AND (p.codigo ILIKE :termino OR p.nombre ILIKE :termino)
-      GROUP BY p.id, p.codigo, p.nombre, p.descripcion, p.precio_compra, p.precio_venta, p.unidad_id, um.nombre, c.nombre
+      GROUP BY p.id, p.codigo, p.nombre, p.descripcion, p.precio_compra, p.precio_venta, p.descuento_promocion, p.promocion_hasta, p.unidad_id, um.nombre, c.nombre
       ORDER BY p.nombre
       LIMIT 50;
     `;
@@ -46,7 +49,19 @@ class StockService {
       type: QueryTypes.SELECT
     });
 
-    return resultados;
+    // Resolver descuento efectivo (prioridad recomendación/masivo/manual
+    // y límite por margen) para cada producto devuelto.
+    const descuentosEfectivos = await descuentoService.getDescuentosEfectivos(resultados as any);
+
+    return resultados.map((r: any) => {
+      const eff = descuentosEfectivos.get(Number(r.id));
+      return {
+        ...r,
+        descuento_promocion: eff?.descuento_promocion ?? (Number(r.descuento_promocion) || 0),
+        promocion_hasta: eff?.promocion_hasta ?? r.promocion_hasta ?? null,
+        descuento_fuente: eff?.fuente ?? 'legacy'
+      };
+    });
   }
 }
 

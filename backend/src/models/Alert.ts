@@ -5,10 +5,10 @@ import User from './User';
 
 interface AlertAttributes {
   id: number;
-  type: 'out_of_stock' | 'low_stock' | 'overstock' | 'demand_trend';
+  type: 'out_of_stock' | 'low_stock' | 'overstock' | 'demand_trend' | 'liquidez_baja';
   message: string;
   severity: 'high' | 'medium' | 'low';
-  product_id: number;
+  product_id: number | null;
   user_id: number;
   resolved: boolean;
   createdAt?: Date;
@@ -19,10 +19,10 @@ interface AlertCreationAttributes extends Optional<AlertAttributes, 'id' | 'reso
 
 class Alert extends Model<AlertAttributes, AlertCreationAttributes> implements AlertAttributes {
   public id!: number;
-  public type!: 'out_of_stock' | 'low_stock' | 'overstock' | 'demand_trend';
+  public type!: 'out_of_stock' | 'low_stock' | 'overstock' | 'demand_trend' | 'liquidez_baja';
   public message!: string;
   public severity!: 'high' | 'medium' | 'low';
-  public product_id!: number;
+  public product_id!: number | null;
   public user_id!: number;
   public resolved!: boolean;
   public readonly createdAt!: Date;
@@ -40,10 +40,13 @@ Alert.init(
       autoIncrement: true,
       primaryKey: true
     },
-    type: {
-      type: DataTypes.ENUM('out_of_stock', 'low_stock', 'overstock', 'demand_trend'),
-      allowNull: false
+type: {
+    type: DataTypes.STRING(30),
+    allowNull: false,
+    validate: {
+      isIn: [['out_of_stock', 'low_stock', 'overstock', 'demand_trend', 'liquidez_baja']],
     },
+  },
     message: {
       type: DataTypes.TEXT,
       allowNull: false
@@ -52,14 +55,14 @@ Alert.init(
       type: DataTypes.ENUM('high', 'medium', 'low'),
       allowNull: false
     },
-    product_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: 'productos',
-        key: 'id'
-      }
+product_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'productos',
+      key: 'id',
     },
+  },
     user_id: {
       type: DataTypes.INTEGER,
       allowNull: false,

@@ -21,6 +21,8 @@ import OperacionStock from './OperacionStock';
 import StockPorSede from './StockPorSede';
 import DetalleOperacion from './DetalleOperacion';
 import DailySale from './sales';
+import CuotaPago from './CuotaPago';
+import Descuento from './Descuento';
 
 // Exportar modelos
 export {
@@ -45,7 +47,9 @@ export {
   OperacionStock,
   StockPorSede,
   DetalleOperacion,
-  DailySale
+  DailySale,
+  CuotaPago,
+  Descuento
 };
 
 // Exportar tipos
@@ -65,6 +69,8 @@ export * from './ConfiguracionSistema';
 export * from './Sede';
 export * from './Almacen';
 export * from './Personal';
+export * from './CuotaPago';
+export * from './Descuento';
 
 // Definir asociaciones adicionales
 Product.hasMany(Alert, { foreignKey: 'product_id', as: 'alerts' });
@@ -72,3 +78,8 @@ User.hasMany(Alert, { foreignKey: 'user_id', as: 'alerts' });
 Product.hasMany(Recommendation, { foreignKey: 'product_id', as: 'recommendations' });
 Alert.hasMany(Recommendation, { foreignKey: 'alert_id', as: 'recommendations' });
 User.hasMany(Recommendation, { foreignKey: 'user_id', as: 'recommendations' });
+
+// Cuotas - SalidaInventario associations
+SalidaInventario.hasMany(CuotaPago, { foreignKey: 'salida_id', as: 'cuotas' });
+// Cuotas - OperacionStock associations
+OperacionStock.hasMany(CuotaPago, { foreignKey: 'operacion_id', as: 'cuotasOperacion' });

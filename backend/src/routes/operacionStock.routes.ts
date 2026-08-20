@@ -80,6 +80,12 @@ router.get('/stock/disponible/:productoId/:sedeId', operacionStockController.obt
 
 // Rutas principales
 router.post('/', operacionValidation, operacionStockController.crearOperacion);
+router.get('/stats', operacionStockController.obtenerEstadisticas);
+router.get('/tendencia', operacionStockController.obtenerTendencia);
+router.get('/metricas-por-sede', operacionStockController.obtenerMetricasPorSede);
+router.get('/top-proveedores', operacionStockController.topProveedores);
+router.get('/top-clientes', operacionStockController.topClientes);
+router.get('/export-excel', operacionStockController.exportExcel);
 router.get('/', operacionStockController.listarOperaciones);
 router.get('/:id', operacionStockController.listarOperaciones); // Reutilizar método para obtener uno específico
 

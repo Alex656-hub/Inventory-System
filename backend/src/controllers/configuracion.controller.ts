@@ -30,6 +30,7 @@ export const obtenerConfiguracion = async (req: Request, res: Response): Promise
       configuracion = await ConfiguracionSistema.create({
         ruc: '',
         direccion: '',
+        umbral_liquidez: 1000,
       });
     }
 
@@ -53,6 +54,7 @@ export const guardarConfiguracion = async (req: Request, res: Response): Promise
       const nuevaConfig: any = {
         ruc,
         direccion,
+        umbral_liquidez: 1000,
       };
 
       if (logoFile) {
@@ -105,6 +107,7 @@ export const actualizarConfiguracion = async (req: Request, res: Response): Prom
       configuracion = await ConfiguracionSistema.create({
         ruc,
         direccion,
+        umbral_liquidez: 1000,
       });
     } else {
       await configuracion.update({ ruc, direccion });

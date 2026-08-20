@@ -7,6 +7,7 @@ import { Op } from 'sequelize';
 import { sequelize } from '../config/database';
 import path from 'path';
 import fs from 'fs';
+import { descuentoService } from '../services/descuentoService';
 
 const PRODUCTS_UPLOAD_DIR = path.join(process.cwd(), 'uploads', 'products');
 
@@ -69,11 +70,19 @@ export const obtenerProductos = async (req: Request, res: Response): Promise<voi
       order: [['nombre', 'ASC']]
     });
 
+    const descuentosEfectivos = await descuentoService.getDescuentosEfectivos(rows as any);
+
     res.json({
-      productos: rows.map((p: any) => ({
-        ...p.toJSON(),
-        imageUrl: buildImageUrl(req, p.image_filename)
-      })),
+      productos: rows.map((p: any) => {
+        const eff = descuentosEfectivos.get(p.id);
+        return {
+          ...p.toJSON(),
+          imageUrl: buildImageUrl(req, p.image_filename),
+          descuento_promocion: eff?.descuento_promocion ?? (Number(p.descuento_promocion) || 0),
+          promocion_hasta: eff?.promocion_hasta ?? p.promocion_hasta ?? null,
+          descuento_fuente: eff?.fuente ?? 'legacy'
+        };
+      }),
       paginacion: {
         total: count,
         pagina: Number(pagina),
@@ -125,6 +134,8 @@ export const crearProducto = async (req: Request, res: Response): Promise<void> 
       unidad_id,
       precio_compra,
       precio_venta,
+      descuento_promocion,
+      promocion_hasta,
       stock_actual,
       stock_minimo,
       ubicacion
@@ -201,6 +212,8 @@ export const crearProducto = async (req: Request, res: Response): Promise<void> 
       unidad_id: unidadIdNum ?? undefined,
       precio_compra: Number(precio_compra),
       precio_venta: Number(precio_venta),
+      descuento_promocion: toNullableNumber(descuento_promocion) ?? undefined,
+      promocion_hasta: promocion_hasta || null,
       stock_actual: stock_actual || 0,
       stock_minimo: stock_minimo || 0,
       ubicacion,
@@ -317,6 +330,22 @@ export const actualizarProducto = async (req: Request, res: Response): Promise<v
     if (datos.proveedor_id === '' || datos.proveedor_id === null) datos.proveedor_id = null;
     if (datos.unidad_id === '' || datos.unidad_id === null) datos.unidad_id = null;
 
+    // Normalizar campos de promoción (vacíos => null)
+    if (datos.descuento_promocion === '' || datos.descuento_promocion === null || datos.descuento_promocion === undefined) {
+      datos.descuento_promocion = null;
+    } else {
+      const desc = Number(datos.descuento_promocion);
+      if (!Number.isFinite(desc) || desc < 0 || desc > 100) {
+        res.status(400).json({ mensaje: 'Descuento promocional debe estar entre 0 y 100' });
+        return;
+      }
+      datos.descuento_promocion = desc;
+      if (desc === 0) datos.descuento_promocion = null;
+    }
+    if (datos.promocion_hasta === '' || datos.promocion_hasta === null || datos.promocion_hasta === undefined) {
+      datos.promocion_hasta = null;
+    }
+
     // No permitir sobrescribir image_filename si no se subió un archivo nuevo
     if (!file) {
       delete datos.image_filename;
@@ -431,9 +460,13 @@ export const obtenerProductosStockBajo = async (req: Request, res: Response): Pr
       order: [['stock_actual', 'ASC']]
     });
 
-    // Filtrar productos donde stock_actual <= stock_minimo
+    // Criterio unificado de stock bajo (alineado con Alertas):
+    // - Con stock mínimo configurado (>0): stock_actual <= stock_minimo
+    // - Sin stock mínimo (0): stock_actual entre 1 y 5 (stock crítico)
     const productosStockBajo = productos.filter(
-      (producto) => producto.stock_actual <= producto.stock_minimo
+      (producto) =>
+        (producto.stock_minimo > 0 && producto.stock_actual <= producto.stock_minimo) ||
+        (producto.stock_minimo === 0 && producto.stock_actual > 0 && producto.stock_actual <= 5)
     );
 
     res.json({ productos: productosStockBajo });

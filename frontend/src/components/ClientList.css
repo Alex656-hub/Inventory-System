@@ -109,3 +109,51 @@
   50% { opacity: 0.4; }
 }
 
+/* Tabs */
+.cpc-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  padding: 4px;
+  background: var(--color-bg);
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+}
+
+.cpc-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.cpc-tab:hover:not(:disabled) {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+.cpc-tab.active {
+  background: var(--color-primary);
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 166, 244, 0.3);
+}
+
+/* View button */
+.action-btn.view-btn {
+  background: var(--color-info);
+  color: white;
+}
+
+.action-btn.view-btn:hover {
+  background: #0369a1;
+}
+

@@ -13,6 +13,10 @@ interface StockItem {
   unidad: string;
   costo_unitario: number;
   valor_total: number;
+  descuento_promocion?: number;
+  precio_venta?: number;
+  precio_promo?: number | null;
+  valor_promo?: number | null;
 }
 
 interface SedeOption {
@@ -29,11 +33,16 @@ const ReporteInventario: React.FC = () => {
   const [filasVisibles, setFilasVisibles] = useState(20);
   const [filtroSede, setFiltroSede] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('');
+  const [pagina, setPagina] = useState(1);
 
   useEffect(() => {
     cargarSedes();
     cargarDatos();
   }, []);
+
+  useEffect(() => {
+    setPagina(1);
+  }, [filtro, filtroSede, filtroCategoria, filasVisibles]);
 
   const cargarSedes = async () => {
     try {
@@ -76,10 +85,13 @@ const ReporteInventario: React.FC = () => {
 
   const categorias = Array.from(new Set(stockData.map(i => i.categoria))).filter(Boolean).sort();
 
-  const paginatedData = filteredData.slice(0, filasVisibles);
+  const totalPaginas = Math.max(1, Math.ceil(filteredData.length / filasVisibles));
+  const paginatedData = filteredData.slice((pagina - 1) * filasVisibles, pagina * filasVisibles);
 
   const totalValorInventario = filteredData.reduce((sum, item) => sum + item.valor_total, 0);
   const totalStock = filteredData.reduce((sum, item) => sum + item.stock_actual, 0);
+  const totalValorPromo = filteredData.reduce((sum, item) => sum + (item.valor_promo || 0), 0);
+  const productosEnPromo = filteredData.filter(item => item.descuento_promocion && item.descuento_promocion > 0).length;
 
   const renderSkeleton = () => (
     <div className="ri-container">
@@ -138,6 +150,10 @@ const ReporteInventario: React.FC = () => {
           <div className="ri-metrica-item verde">
             <span className="ri-metrica-label">Valorizado</span>
             <span className="ri-metrica-valor">S/ {totalValorInventario.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</span>
+          </div>
+          <div className="ri-metrica-item promo">
+            <span className="ri-metrica-label">En Promoción</span>
+            <span className="ri-metrica-valor">{productosEnPromo} prod. · S/ {totalValorPromo.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</span>
           </div>
         </div>
       </div>
@@ -207,12 +223,14 @@ const ReporteInventario: React.FC = () => {
               <th>Unidad</th>
               <th>Costo Unit.</th>
               <th>Total</th>
+              <th>Promo</th>
+              <th>Precio Promo</th>
             </tr>
           </thead>
           <tbody>
             {paginatedData.length === 0 ? (
               <tr>
-                <td colSpan={8} className="ri-empty">
+                <td colSpan={10} className="ri-empty">
                   <i className='bx bx-package'></i>
                   No hay datos de inventario
                 </td>
@@ -228,6 +246,23 @@ const ReporteInventario: React.FC = () => {
                   <td>{item.unidad}</td>
                   <td className="ri-numero">S/ {item.costo_unitario.toFixed(2)}</td>
                   <td className="ri-numero">S/ {item.valor_total.toFixed(2)}</td>
+                  <td>
+                    {item.descuento_promocion && item.descuento_promocion > 0 ? (
+                      <span className="ri-promo-badge">-{Number(item.descuento_promocion).toFixed(0)}%</span>
+                    ) : (
+                      <span className="ri-text-muted">—</span>
+                    )}
+                  </td>
+                  <td className="ri-numero">
+                    {item.precio_promo ? (
+                      <>
+                        <span className="ri-precio-original">S/ {Number(item.precio_venta).toFixed(2)}</span>
+                        <span className="ri-precio-promo">S/ {Number(item.precio_promo).toFixed(2)}</span>
+                      </>
+                    ) : (
+                      <span className="ri-text-muted">—</span>
+                    )}
+                  </td>
                 </tr>
               ))
             )}
@@ -240,11 +275,37 @@ const ReporteInventario: React.FC = () => {
                 <td></td>
                 <td></td>
                 <td className="ri-numero"><strong>S/ {totalValorInventario.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</strong></td>
+                <td></td>
+                <td></td>
               </tr>
             </tfoot>
           )}
         </table>
       </div>
+
+      {totalPaginas > 1 && (
+        <div className="ri-pagination">
+          <button
+            className="pagination-btn"
+            onClick={() => setPagina(pagina - 1)}
+            disabled={pagina === 1}
+            aria-label="Página anterior"
+          >
+            <i className="bx bx-chevron-left"></i>
+          </button>
+          <span className="ri-pagination-info">
+            Página {pagina} de {totalPaginas} ({filteredData.length} filas)
+          </span>
+          <button
+            className="pagination-btn"
+            onClick={() => setPagina(pagina + 1)}
+            disabled={pagina === totalPaginas}
+            aria-label="Página siguiente"
+          >
+            <i className="bx bx-chevron-right"></i>
+          </button>
+        </div>
+      )}
 
       {showExportModal && (
         <ModalInventarioExcel onClose={() => setShowExportModal(false)} />

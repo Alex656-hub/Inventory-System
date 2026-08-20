@@ -1,9 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend
 } from 'recharts';
-import { InventoryMetrics } from '../services/alert.service';
+import { InventoryMetrics, alertService, AgingBucket } from '../services/alert.service';
 import './AnalyticsDashboard.css';
 
 type DatePreset = '7d' | '30d' | '90d' | 'custom';
@@ -60,6 +60,31 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ metrics, loadin
     fechaFin: ''
   });
   const [loadingChart, setLoadingChart] = useState(false);
+  const [projections, setProjections] = useState<any[]>([]);
+  const [breakEven, setBreakEven] = useState<any>(null);
+  const [loadingFinancial, setLoadingFinancial] = useState(false);
+  const [aging, setAging] = useState<AgingBucket>({ actual: 0, '1-30': 0, '31-60': 0, '61-90': 0, '90+': 0 });
+
+  useEffect(() => {
+    const loadFinancialData = async () => {
+      setLoadingFinancial(true);
+      try {
+        const [projRes, breakRes, agingRes] = await Promise.all([
+          alertService.getFinancialProjections(6),
+          alertService.getBreakEvenPoint(),
+          alertService.getAging()
+        ]);
+        setProjections(projRes.data || []);
+        setBreakEven(breakRes.data || null);
+        setAging(agingRes);
+      } catch (error) {
+        console.error('Error loading financial data:', error);
+      } finally {
+        setLoadingFinancial(false);
+      }
+    };
+    loadFinancialData();
+  }, []);
 
   const getDateRange = useCallback((): DateRange => {
     const now = new Date();
@@ -253,6 +278,49 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ metrics, loadin
                 <div className="kpi-label">ROI Inventario</div>
               </div>
             </div>
+            <div className="kpi-card kpi-por-cobrar">
+              <div className="kpi-icon">
+                <i className='bx bx-credit-card'></i>
+              </div>
+              <div className="kpi-content">
+                <div className="kpi-value">{formatCurrency((aging.actual || 0) + (aging['1-30'] || 0))}</div>
+                <div className="kpi-label">Por cobrar (30d)</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Supplementary metrics row */}
+          <div className="supplementary-metrics">
+            <div className="supp-metric">
+              <i className='bx bx-error'></i>
+              <span className="supp-value">{metrics.stockBajo}</span>
+              <span className="supp-label">Stock Bajo</span>
+            </div>
+            <div className="supp-metric">
+              <i className='bx bx-x-circle'></i>
+              <span className="supp-value">{metrics.agotados}</span>
+              <span className="supp-label">Agotados</span>
+            </div>
+            <div className="supp-metric">
+              <i className='bx bx-calendar'></i>
+              <span className="supp-value">{metrics.diasInventario} días</span>
+              <span className="supp-label">Días Inventario</span>
+            </div>
+            <div className="supp-metric">
+              <i className='bx bx-time'></i>
+              <span className="supp-value">{metrics.cicloConversion} días</span>
+              <span className="supp-label">Ciclo Conversión</span>
+            </div>
+            <div className="supp-metric">
+              <i className='bx bx-trending-down'></i>
+              <span className="supp-value">{metrics.tasaAgotamiento}%</span>
+              <span className="supp-label">Tasa Agotamiento</span>
+            </div>
+            <div className="supp-metric">
+              <i className='bx bx-calendar-alt'></i>
+              <span className="supp-value">{metrics.antiguedadPromedio} días</span>
+              <span className="supp-label">Antigüedad Prom.</span>
+            </div>
           </div>
 
           {/* Row 2: 3 charts */}
@@ -403,37 +471,69 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ metrics, loadin
             </div>
           </div>
 
-          {/* Supplementary metrics row */}
-          <div className="supplementary-metrics">
-            <div className="supp-metric">
-              <i className='bx bx-error'></i>
-              <span className="supp-value">{metrics.stockBajo}</span>
-              <span className="supp-label">Stock Bajo</span>
-            </div>
-            <div className="supp-metric">
-              <i className='bx bx-x-circle'></i>
-              <span className="supp-value">{metrics.agotados}</span>
-              <span className="supp-label">Agotados</span>
-            </div>
-            <div className="supp-metric">
-              <i className='bx bx-calendar'></i>
-              <span className="supp-value">{metrics.diasInventario} días</span>
-              <span className="supp-label">Días Inventario</span>
-            </div>
-            <div className="supp-metric">
-              <i className='bx bx-time'></i>
-              <span className="supp-value">{metrics.cicloConversion} días</span>
-              <span className="supp-label">Ciclo Conversión</span>
-            </div>
-            <div className="supp-metric">
-              <i className='bx bx-trending-down'></i>
-              <span className="supp-value">{metrics.tasaAgotamiento}%</span>
-              <span className="supp-label">Tasa Agotamiento</span>
-            </div>
-            <div className="supp-metric">
-              <i className='bx bx-calendar-alt'></i>
-              <span className="supp-value">{metrics.antiguedadPromedio} días</span>
-              <span className="supp-label">Antigüedad Prom.</span>
+          {/* Financial Projections */}
+          <div className="analytics-section">
+            <h3 className="section-title">
+              <i className='bx bx-line-chart'></i>
+              Proyecciones Financieras
+            </h3>
+            <div className="charts-row">
+              <div className="chart-card chart-wide">
+                <div className="chart-card-header">
+                  <h4>Proyección de Ingresos y Gastos (6 meses)</h4>
+                </div>
+                <div className="chart-card-body">
+                  {loadingFinancial ? (
+                    <div className="chart-loading">Cargando proyecciones...</div>
+                  ) : projections.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={260}>
+                      <BarChart data={projections} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                        <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                        <YAxis tick={{ fontSize: 11 }} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Legend formatter={(value) => <span className="legend-text">{value}</span>} />
+                        <Bar dataKey="projectedRevenue" name="Ingresos Proyectados" fill={COLORS.primary} radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="projectedExpenses" name="Gastos Proyectados" fill={COLORS.warning} radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="projectedProfit" name="Ganancia Proyectada" fill={COLORS.success} radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="chart-no-data">Sin datos de proyecciones</div>
+                  )}
+                </div>
+              </div>
+              <div className="chart-card">
+                <div className="chart-card-header">
+                  <h4>Punto de Equilibrio</h4>
+                </div>
+                <div className="chart-card-body">
+                  {loadingFinancial ? (
+                    <div className="chart-loading">Calculando...</div>
+                  ) : breakEven ? (
+                    <div className="break-even-info">
+                      <div className="be-item">
+                        <span className="be-label">Unidades para equilibrio</span>
+                        <span className="be-value">{formatNumber(breakEven.breakEvenUnits)}</span>
+                      </div>
+                      <div className="be-item">
+                        <span className="be-label">Costos fijos</span>
+                        <span className="be-value">{formatCurrency(breakEven.fixedCosts)}</span>
+                      </div>
+                      <div className="be-item">
+                        <span className="be-label">Precio promedio</span>
+                        <span className="be-value">{formatCurrency(breakEven.averagePrice)}</span>
+                      </div>
+                      <div className="be-item">
+                        <span className="be-label">Costo variable/unidad</span>
+                        <span className="be-value">{formatCurrency(breakEven.variableCostPerUnit)}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="chart-no-data">Sin datos de equilibrio</div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </>

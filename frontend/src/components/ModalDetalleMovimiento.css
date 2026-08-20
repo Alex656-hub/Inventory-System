@@ -1,0 +1,169 @@
+.mdm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.mdm-content {
+  background: #ffffff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+}
+
+.mdm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f8f9fc;
+}
+
+.mdm-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.mdm-close {
+  background: transparent;
+  border: none;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0 0.3rem;
+}
+
+.mdm-close:hover {
+  color: #111827;
+}
+
+.mdm-body {
+  padding: 1.25rem 1.5rem;
+  overflow-y: auto;
+}
+
+.mdm-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9rem 1.2rem;
+}
+
+.mdm-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.mdm-span-2 {
+  grid-column: span 2;
+}
+
+.mdm-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #9ca3af;
+}
+
+.mdm-value {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #1f2937;
+  word-break: break-word;
+}
+
+.mdm-cantidad {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.mdm-badge {
+  display: inline-block;
+  padding: 0.22rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  width: fit-content;
+}
+
+.mdm-badge-entrada {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.mdm-badge-salida {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.mdm-badge-transferencia {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.mdm-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  background: #f8f9fc;
+  gap: 0.6rem;
+}
+
+.mdm-btn {
+  padding: 0.55rem 1.4rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.mdm-btn-secondary {
+  background: #eef0f4;
+  color: #374151;
+}
+
+.mdm-btn-secondary:hover {
+  background: #e2e5ec;
+}
+
+.mdm-btn-primary {
+  background: #00a6f4;
+  color: #ffffff;
+}
+
+.mdm-btn-primary:hover {
+  background: #0084d1;
+}
+
+@media (max-width: 480px) {
+  .mdm-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mdm-span-2 {
+    grid-column: span 1;
+  }
+}

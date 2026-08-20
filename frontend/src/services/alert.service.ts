@@ -1,5 +1,5 @@
 import api from '../config/api';
-import { Alert, Recommendation } from '../types';
+import { Alert, Recommendation, RecommendationActionData } from '../types';
 
 interface Paginacion {
   total: number;
@@ -20,7 +20,18 @@ interface RecommendationsResponse {
     pendientes: number;
     urgentes: number;
     costoTotalEstimado: number;
+    capitalEnRiesgo: number;
+    capitalInmovilizado: number;
+    accionesPendientes: number;
   };
+}
+
+export interface RecommendationHistoryResponse {
+  items: Recommendation[];
+  total: number;
+  pagina: number;
+  limite: number;
+  totalPaginas: number;
 }
 
 export interface InventoryMetrics {
@@ -41,6 +52,29 @@ export interface InventoryMetrics {
   tasaAgotamiento: number;
   valorStockMuerto: number;
   lastUpdated: string;
+  // Nuevos campos para flujo de caja
+  porCobrar30d?: number;
+  efectivoDisponible?: number;
+  saldoProyectado?: number;
+}
+
+export interface RecommendationMetrics {
+  total: number;
+  pendientes: number;
+  aceptadas: number;
+  rechazadas: number;
+  ejecutadas: number;
+  tasaAceptacion: number;
+  tasaRechazo: number;
+  precision: number;
+}
+
+export interface AgingBucket {
+  actual: number;
+  '1-30': number;
+  '31-60': number;
+  '61-90': number;
+  '90+': number;
 }
 
 export const alertService = {
@@ -65,19 +99,62 @@ export const alertService = {
     return data;
   },
 
-  getRecommendations: async (): Promise<RecommendationsResponse> => {
-    const { data } = await api.get<RecommendationsResponse>('/alerts/recommendations');
+  getRecommendations: async (estado?: 'pendientes' | 'aceptadas' | 'rechazadas' | 'todas'): Promise<RecommendationsResponse> => {
+    const { data } = await api.get<RecommendationsResponse>('/alerts/recommendations', { params: { estado } });
     return data;
   },
 
-  updateRecommendationStatus: async (id: number, action: 'accept' | 'reject' | 'execute'): Promise<{ mensaje: string }> => {
-    const endpoint = action === 'accept' ? 'accept' : action === 'reject' ? 'reject' : 'execute';
-    const { data } = await api.put<{ mensaje: string }>(`/alerts/recommendations/${id}/${endpoint}`);
+  generateRecommendations: async (): Promise<{ nuevas: number }> => {
+    const { data } = await api.post<{ nuevas: number }>('/alerts/recommendations/generate');
+    return data;
+  },
+
+  updateRecommendationStatus: async (id: number, action: 'accept' | 'reject', data?: RecommendationActionData): Promise<{ mensaje: string }> => {
+    const payload = action === 'accept' && data ? data : undefined;
+    const { data: response } = await api.put<{ mensaje: string }>(
+      `/alerts/recommendations/${id}/${action}`,
+      payload
+    );
+    return response;
+  },
+
+  getRecommendationMetrics: async (): Promise<RecommendationMetrics> => {
+    const { data } = await api.get<{ metricas: RecommendationMetrics }>('/alerts/recommendations/metrics');
+    return data.metricas;
+  },
+
+  getRecommendationHistory: async (params?: {
+    pagina?: number;
+    limite?: number;
+    estado?: string;
+    tipo?: string;
+  }): Promise<RecommendationHistoryResponse> => {
+    const { data } = await api.get<RecommendationHistoryResponse>('/alerts/recommendations/history', { params });
+    return data;
+  },
+
+  reopenRecommendation: async (id: number): Promise<{ mensaje: string; recomendacion?: Recommendation }> => {
+    const { data } = await api.put<{ mensaje: string; recomendacion?: Recommendation }>(`/alerts/recommendations/${id}/reopen`);
     return data;
   },
 
   getAnalytics: async (params?: { fechaInicio?: string; fechaFin?: string }): Promise<InventoryMetrics> => {
     const { data } = await api.get<InventoryMetrics>('/alerts/analytics', { params });
     return data;
+  },
+
+  getFinancialProjections: async (months?: number): Promise<{ data: any[] }> => {
+    const { data } = await api.get('/analytics/projections', { params: { months } });
+    return data;
+  },
+
+  getBreakEvenPoint: async (): Promise<{ data: any }> => {
+    const { data } = await api.get('/analytics/break-even');
+    return data;
+  },
+
+  getAging: async (): Promise<AgingBucket> => {
+    const { data } = await api.get<{ success: boolean; data: AgingBucket }>('/analytics/aging');
+    return data.data;
   }
 };

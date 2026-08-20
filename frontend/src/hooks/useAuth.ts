@@ -11,7 +11,6 @@ interface UseAuthReturn {
   logout: () => Promise<void>;
   logoutAll: () => Promise<void>;
   checkAuth: () => Promise<void>;
-  isTokenExpiringSoon: () => boolean;
 }
 
 export const useAuth = (): UseAuthReturn => {
@@ -22,12 +21,12 @@ export const useAuth = (): UseAuthReturn => {
   // Verificar autenticación al cargar el componente
   const checkAuth = useCallback(async () => {
     try {
-      if (authService.estaAutenticado()) {
-        const { usuario: usuarioGuardado } = authService.obtenerSesion();
-        
-        if (usuarioGuardado) {
-          // Verificar si el token está por expirar y refrescar si es necesario
-          if (authService.isTokenExpiringSoon()) {
+      const { usuario: usuarioGuardado } = authService.obtenerSesion();
+
+      // Permitir recuperar la sesión aunque el access token haya expirado (mientras exista refresh token)
+      if (authService.tieneTokens() && usuarioGuardado) {
+          // Verificar si el token está por expirar o ya expiró y refrescar si es necesario
+          if (authService.debeRefrescar()) {
             const refreshSuccess = await authService.refreshToken();
             if (!refreshSuccess) {
               // Si no se puede refrescar, limpiar sesión
@@ -54,9 +53,6 @@ export const useAuth = (): UseAuthReturn => {
         } else {
           setIsAuthenticated(false);
         }
-      } else {
-        setIsAuthenticated(false);
-      }
     } catch (error) {
       console.error('Error al verificar autenticación:', error);
       setIsAuthenticated(false);
@@ -116,11 +112,6 @@ export const useAuth = (): UseAuthReturn => {
     setIsAuthenticated(false);
   };
 
-  // Verificar si el token está por expirar
-  const isTokenExpiringSoon = () => {
-    return authService.isTokenExpiringSoon();
-  };
-
   // Efecto para verificar autenticación al cargar
   useEffect(() => {
     checkAuth();
@@ -131,7 +122,7 @@ export const useAuth = (): UseAuthReturn => {
     if (!isAuthenticated) return;
 
     const interval = setInterval(() => {
-      if (isTokenExpiringSoon()) {
+      if (authService.debeRefrescar()) {
         authService.refreshToken().catch(() => {
           // Si falla el refresco, hacer logout
           logout();
@@ -150,7 +141,6 @@ export const useAuth = (): UseAuthReturn => {
     login2FA,
     logout,
     logoutAll,
-    checkAuth,
-    isTokenExpiringSoon
+    checkAuth
   };
 };

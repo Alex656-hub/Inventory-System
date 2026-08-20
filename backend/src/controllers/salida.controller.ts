@@ -8,6 +8,8 @@ import MovimientoInventario from '../models/MovimientoInventario';
 import User from '../models/User';
 import DailySale from '../models/sales';
 import { alertService } from '../services/alertService';
+import { CuotaService } from '../services/cuotaService';
+import CuotaPago from '../models/CuotaPago';
 import StockPorSede from '../models/StockPorSede';
 import Sede from '../models/Sede';
 
@@ -92,7 +94,18 @@ export const crearSalida = async (req: Request, res: Response): Promise<void> =>
       numero_serie,
       metodo_pago,
       observaciones,
-      detalles
+      detalles,
+      // Campos para cuotas
+      num_cuotas,
+      frecuencia_cuota,
+      interes_mensual,
+      primer_vencimiento,
+      garantia_tipo,
+      garantia_valor,
+      aval_nombre,
+      aval_contacto,
+      aval_direccion,
+      responsable_cobro,
     } = req.body;
 
     if (!req.usuario) {
@@ -137,7 +150,18 @@ export const crearSalida = async (req: Request, res: Response): Promise<void> =>
       total,
       metodo_pago: metodo_pago || 'efectivo',
       estado: 'completado',
-      observaciones
+      observaciones,
+      // Campos para cuotas
+      num_cuotas: num_cuotas || 0,
+      frecuencia_cuota: frecuencia_cuota || null,
+      interes_mensual: interes_mensual || 0,
+      primer_vencimiento: primer_vencimiento || null,
+      garantia_tipo: garantia_tipo || 'ninguna',
+      garantia_valor: garantia_valor || '',
+      aval_nombre: aval_nombre || null,
+      aval_contacto: aval_contacto || null,
+      aval_direccion: aval_direccion || null,
+      responsable_cobro: responsable_cobro || null,
     }, { transaction });
 
     // Crear detalles y actualizar stock
@@ -233,6 +257,23 @@ export const crearSalida = async (req: Request, res: Response): Promise<void> =>
     }
 
     await transaction.commit();
+
+    // Generar cuotas si es venta a crédito
+    if ((metodo_pago === 'credito' || metodo_pago === 'credito') && (num_cuotas > 0)) {
+      try {
+        const salidaConCuotas = await SalidaInventario.findByPk(salida.id);
+        if (salidaConCuotas) {
+          const cuotas = CuotaService.generateSchedule(salidaConCuotas);
+          if (cuotas.length > 0) {
+            await CuotaPago.bulkCreate(cuotas);
+            console.log(`[SalidaController] ${cuotas.length} cuotas generadas para salida ${salida.id}`);
+          }
+        }
+      } catch (cuotaError) {
+        console.error('Error al generar cuotas:', cuotaError);
+        // No fallar la venta por error en cuotas, solo logear
+      }
+    }
 
     // Verificar alertas después de la salida
     try {

@@ -14,6 +14,7 @@
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   margin-bottom: 20px;
+  align-items: stretch;
 }
 
 /* ===== Stat Card ===== */
@@ -21,10 +22,10 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 12px;
-  padding: 20px;
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   transition: all 0.2s ease;
 }
 
@@ -40,8 +41,8 @@
 }
 
 .stat-card-icon {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -97,7 +98,7 @@
 }
 
 .stat-card-value {
-  font-size: 28px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--color-text);
   margin: 0;
@@ -106,25 +107,27 @@
 }
 
 .stat-card-meta {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--color-text-muted);
   margin: 0;
   opacity: 0.7;
 }
 
 /* ===== KPI Row (Sales) ===== */
-.kpi-row {
+.dashboard .kpi-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   margin-bottom: 20px;
+  align-items: stretch;
 }
 
-.kpi-card {
+.dashboard .kpi-card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 12px;
-  padding: 18px 20px;
+  padding: 26px 20px;
+  min-height: 120px;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -361,7 +364,7 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .kpi-row {
+  .dashboard .kpi-row {
     grid-template-columns: repeat(2, 1fr);
   }
 }
@@ -375,7 +378,7 @@
     grid-template-columns: 1fr;
   }
 
-  .kpi-row {
+  .dashboard .kpi-row {
     grid-template-columns: 1fr;
   }
 

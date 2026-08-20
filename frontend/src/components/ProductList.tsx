@@ -1,18 +1,29 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { productService } from '../services/product.service';
-import { Producto } from '../types';
+import { categoryService } from '../services/category.service';
+import { Producto, Categoria } from '../types';
 import { useAuth } from '../hooks/useAuth';
 import Modal from './Modal';
 import ProductForm from './ProductForm';
+import GestionDescuentos from './GestionDescuentos';
+import DescuentosActivos from './DescuentosActivos';
+import { esPromoActiva, calcularPrecioPromo } from '../utils/promociones';
 import '../styles/moduleBase.css';
+import '../styles/tabs.css';
 import './ProductList.css';
 
+type TabType = 'productos' | 'gestion' | 'activos';
+
 const ProductList: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<TabType>('productos');
+  const [descuentosRefreshKey, setDescuentosRefreshKey] = useState(0);
   const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
   const [busquedaDebounced, setBusquedaDebounced] = useState('');
+  const [categoriaFiltro, setCategoriaFiltro] = useState<number | ''>('');
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [pagina, setPagina] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
   const [showForm, setShowForm] = useState(false);
@@ -39,6 +50,9 @@ const ProductList: React.FC = () => {
       if (busquedaDebounced) {
         params.busqueda = busquedaDebounced;
       }
+      if (categoriaFiltro !== '') {
+        params.categoria_id = categoriaFiltro;
+      }
       const response = await productService.obtenerProductos(params);
       setProductos(response.productos);
       setTotalPaginas(response.paginacion.totalPaginas);
@@ -47,7 +61,7 @@ const ProductList: React.FC = () => {
     } finally {
       if (showLoading) setLoading(false);
     }
-  }, [pagina, busquedaDebounced]);
+  }, [pagina, busquedaDebounced, categoriaFiltro]);
 
   useEffect(() => {
     if (urlBusqueda) {
@@ -74,7 +88,13 @@ const ProductList: React.FC = () => {
 
   useEffect(() => {
     setPagina(1);
-  }, [busquedaDebounced]);
+  }, [busquedaDebounced, categoriaFiltro]);
+
+  useEffect(() => {
+    categoryService.obtenerCategorias(true).then((res) => {
+      setCategorias(res.categorias || []);
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     cargarDatos({ showLoading: firstLoadRef.current });
@@ -82,7 +102,12 @@ const ProductList: React.FC = () => {
   }, [cargarDatos]);
 
   const hayStockBajo = (producto: Producto) => {
-    return producto.stock_actual <= producto.stock_minimo;
+    // Criterio unificado de stock bajo (alineado con Alertas):
+    // - Con stock mínimo configurado (>0): stock_actual <= stock_minimo
+    // - Sin stock mínimo (0): stock_actual entre 1 y 5 (stock crítico)
+    const stockMinimo = Number(producto.stock_minimo) || 0;
+    return (stockMinimo > 0 && Number(producto.stock_actual) <= stockMinimo) ||
+           (stockMinimo === 0 && Number(producto.stock_actual) > 0 && Number(producto.stock_actual) <= 5);
   };
 
   const handleNuevoProducto = () => {
@@ -120,6 +145,7 @@ const ProductList: React.FC = () => {
         </div>
         <div className="module-toolbar">
           <div className="skeleton-search"></div>
+          <div className="skeleton-filter"></div>
           {esGerente && <div className="skeleton-btn"></div>}
         </div>
       </div>
@@ -142,10 +168,6 @@ const ProductList: React.FC = () => {
     </div>
   );
 
-  if (loading) {
-    return renderSkeleton();
-  }
-
   return (
     <div className="module-page">
       <div className="module-page-header">
@@ -153,7 +175,26 @@ const ProductList: React.FC = () => {
           <h1 className="module-title">Catálogo de Productos</h1>
           <p className="module-subtitle">Administra los ítems disponibles para venta y compra.</p>
         </div>
-        <div className="module-toolbar">
+      </div>
+
+      <div className="tabs-container">
+        <div className="tabs">
+          <button type="button" className={`tab ${activeTab === 'productos' ? 'active' : ''}`} onClick={() => setActiveTab('productos')}>
+            <i className='bx bx-grid-alt' /> Productos
+          </button>
+          <button type="button" className={`tab ${activeTab === 'gestion' ? 'active' : ''}`} onClick={() => setActiveTab('gestion')}>
+            <i className='bx bx-purchase-tag' /> Gestión de Descuentos
+          </button>
+          <button type="button" className={`tab ${activeTab === 'activos' ? 'active' : ''}`} onClick={() => setActiveTab('activos')}>
+            <i className='bx bx-list-ul' /> Descuentos Activos
+          </button>
+        </div>
+      </div>
+
+      {activeTab === 'productos' && (
+        <>
+          <div className="module-page-header">
+          <div className="module-toolbar">
           <div className="module-search">
             <i className="bx bx-search" />
             <input
@@ -163,16 +204,30 @@ const ProductList: React.FC = () => {
               onChange={(e) => setBusqueda(e.target.value)}
             />
           </div>
+          <div className="module-filter">
+            <i className="bx bx-category" />
+            <select
+              value={categoriaFiltro}
+              onChange={(e) => setCategoriaFiltro(e.target.value ? Number(e.target.value) : '')}
+            >
+              <option value="">Todas las categorías</option>
+              {categorias.map((cat) => (
+                <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+              ))}
+            </select>
+          </div>
           {esGerente && (
             <button type="button" onClick={handleNuevoProducto} className="module-primary-btn">
               <i className="bx bx-plus" />
               Nuevo Producto
             </button>
           )}
-        </div>
-      </div>
+          </div>
+          </div>
 
-      <div className="module-card">
+          {loading ? renderSkeleton() : (
+            <>
+              <div className="module-card">
         <table className="module-table">
           <thead>
             <tr>
@@ -216,7 +271,17 @@ const ProductList: React.FC = () => {
                   <td><span className="product-badge">{producto.categoria?.nombre}</span></td>
                   <td>{producto.unidad?.nombre}</td>
                   <td className="product-price">S/ {Number(producto.precio_compra).toFixed(2)}</td>
-                  <td className="product-price">S/ {Number(producto.precio_venta).toFixed(2)}</td>
+                  <td className="product-price">
+                    {esPromoActiva(producto) ? (
+                      <>
+                        <span className="product-price-original">S/ {Number(producto.precio_venta).toFixed(2)}</span>
+                        <span className="product-price-promo">S/ {calcularPrecioPromo(producto)!.toFixed(2)}</span>
+                        <span className="promo-badge">-{Number(producto.descuento_promocion).toFixed(0)}%</span>
+                      </>
+                    ) : (
+                      <>S/ {Number(producto.precio_venta).toFixed(2)}</>
+                    )}
+                  </td>
                   <td>
                     {hayStockBajo(producto) ? (
                       <span className="product-status warning">
@@ -281,7 +346,28 @@ const ProductList: React.FC = () => {
           >
             <i className='bx bx-chevron-right'></i>
           </button>
-        </div>
+            </div>
+          )}
+            </>
+          )}
+        </>
+      )}
+
+      {activeTab === 'gestion' && (
+        esGerente ? (
+          <GestionDescuentos onApplied={() => setDescuentosRefreshKey(k => k + 1)} />
+        ) : (
+          <div className="module-card">
+            <div className="da-empty">
+              <i className='bx bx-lock-alt'></i>
+              Solo los gerentes pueden gestionar descuentos
+            </div>
+          </div>
+        )
+      )}
+
+      {activeTab === 'activos' && (
+        <DescuentosActivos refreshKey={descuentosRefreshKey} />
       )}
 
       <Modal
