@@ -6,6 +6,7 @@ import { authService } from '../services/auth.service';
 import { userService } from '../services/user.service';
 import { searchService } from '../services/search.service';
 import { GlobalSearchResponse } from '../types';
+import TwoFactorModal from './TwoFactorModal';
 import './Layout.css';
 
 interface LayoutProps {
@@ -20,6 +21,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showSecurityModal, setShowSecurityModal] = useState(false);
   const [editForm, setEditForm] = useState({
     nombre: usuario?.nombre || '',
     numero: usuario?.usuario || '',
@@ -183,6 +185,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div className="sidebar-user-dropdown">
               <button onClick={() => { setShowEditModal(true); setShowUserMenu(false); }}>
                 <i className='bx bx-edit'></i> Editar perfil
+              </button>
+              <button onClick={() => { setShowSecurityModal(true); setShowUserMenu(false); }}>
+                <i className='bx bx-shield-quarter'></i> Seguridad
               </button>
               <button onClick={handleLogout}>
                 <i className='bx bx-log-out'></i> Cerrar sesión
@@ -425,6 +430,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
           </div>
         </div>
+      )}
+      {/* ==================== MODAL SEGURIDAD 2FA ==================== */}
+      {showSecurityModal && (
+        <TwoFactorModal
+          onClose={() => setShowSecurityModal(false)}
+          onSessionChanged={() => window.location.reload()}
+        />
       )}
     </div>
   );

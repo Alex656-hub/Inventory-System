@@ -22,7 +22,7 @@ const Login: React.FC = () => {
   const [twoFactorCode, setTwoFactorCode] = useState('');
   const [show2FA, setShow2FA] = useState(false);
   const [pendingEmail, setPendingEmail] = useState('');
-  const [error, setError] = useState('');
+  const [pendingTempToken, setPendingTempToken] = useState('');  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -46,6 +46,7 @@ const Login: React.FC = () => {
       if (response.requiere2FA) {
         setShow2FA(true);
         setPendingEmail(email);
+        setPendingTempToken(response.token || '');
         setError('');
       } else {
         authService.guardarSesion(response.usuario);
@@ -68,7 +69,7 @@ const Login: React.FC = () => {
       const resolvedEmail = esEmail
         ? pendingEmail
         : `${pendingEmail}@credisa.com`;
-      const response = await authService.login2FA(resolvedEmail, twoFactorCode);
+      const response = await authService.login2FA(resolvedEmail, twoFactorCode, pendingTempToken);
       authService.guardarSesion(response.usuario);
       navigate('/');
     } catch (err: any) {
@@ -82,6 +83,7 @@ const Login: React.FC = () => {
     setShow2FA(false);
     setTwoFactorCode('');
     setPendingEmail('');
+    setPendingTempToken('');
     setError('');
   };
 

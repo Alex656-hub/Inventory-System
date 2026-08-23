@@ -7,7 +7,7 @@ interface UseAuthReturn {
   isAuthenticated: boolean;
   loading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; requiere2FA?: boolean; error?: string }>;
-  login2FA: (email: string, code: string) => Promise<{ success: boolean; error?: string }>;
+  login2FA: (email: string, code: string, tempToken?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   logoutAll: () => Promise<void>;
   checkAuth: () => Promise<void>;
@@ -83,9 +83,12 @@ export const useAuth = (): UseAuthReturn => {
   };
 
   // Login con 2FA
-  const login2FA = async (email: string, code: string) => {
+  const login2FA = async (email: string, code: string, tempToken?: string) => {
     try {
-      const response = await authService.login2FA(email, code);
+      if (!tempToken) {
+        return { success: false, error: 'Sesión de verificación 2FA inválida. Inicia sesión nuevamente.' };
+      }
+      const response = await authService.login2FA(email, code, tempToken);
       authService.guardarSesion(response.usuario);
       setUsuario(response.usuario);
       setIsAuthenticated(true);

@@ -14,14 +14,29 @@ export const authService = {
     return data;
   },
 
-  login2FA: async (email: string, token: string): Promise<LoginResponse> => {
-    const { data } = await api.post<LoginResponse>('/auth/verify-2fa', { email, token });
+  login2FA: async (email: string, token: string, tempToken: string): Promise<LoginResponse> => {
+    const { data } = await api.post<LoginResponse>('/2fa/verificar-login', { email, token, tempToken });
     
     // Guardar tokens si la verificación 2FA es exitosa
     if (data.accessToken && data.refreshToken && data.expiresIn) {
       tokenManager.setTokens(data.accessToken, data.refreshToken, data.expiresIn);
     }
     
+    return data;
+  },
+
+  configurar2FA: async (): Promise<{ qrCode: string; backupCodes: string[] }> => {
+    const { data } = await api.post<{ qrCode: string; backupCodes: string[] }>('/2fa/configurar');
+    return data;
+  },
+
+  activar2FA: async (token: string): Promise<{ mensaje: string; backupCodes: string[] }> => {
+    const { data } = await api.post<{ mensaje: string; backupCodes: string[] }>('/2fa/verificar', { token });
+    return data;
+  },
+
+  desactivar2FA: async (password: string): Promise<{ mensaje: string }> => {
+    const { data } = await api.post<{ mensaje: string }>('/2fa/desactivar', { password });
     return data;
   },
 

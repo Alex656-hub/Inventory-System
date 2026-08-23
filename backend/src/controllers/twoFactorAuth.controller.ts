@@ -7,19 +7,7 @@ import jwt, { SignOptions } from 'jsonwebtoken';
 import RefreshTokenService from '../services/refreshToken.service';
 import { getJwtExpiresIn, getJwtSecret } from '../config/env';
 
-// Extender la interfaz Request para incluir la propiedad user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: number;
-        email: string;
-        rol: string;
-        twoFactorEnabled?: boolean;
-      };
-    }
-  }
-}
+// El middleware verificarToken adjunta el usuario como req.usuario (User completo de la DB)
 
 // Interfaz para el payload del JWT temporal
 interface JwtPayload {
@@ -47,7 +35,7 @@ const generarTokenTemporal = (usuario: User): string => {
 // Configurar 2FA para un usuario
 export const configurar2FA = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user?.id;
+    const userId = req.usuario?.id;
     if (!userId) {
       res.status(401).json({ mensaje: 'No autorizado' });
       return;
@@ -56,6 +44,15 @@ export const configurar2FA = async (req: Request, res: Response): Promise<void> 
     const user = await User.findByPk(userId);
     if (!user) {
       res.status(404).json({ mensaje: 'Usuario no encontrado' });
+      return;
+    }
+
+    // No permitir regenerar secreto/códigos si 2FA ya está activado
+    if (user.twoFactorEnabled) {
+      res.status(400).json({
+        mensaje: 'La autenticación de dos factores ya está activada',
+        codigo: '2FA_YA_ACTIVADO'
+      });
       return;
     }
 
@@ -100,7 +97,7 @@ export const configurar2FA = async (req: Request, res: Response): Promise<void> 
 export const verificar2FA = async (req: Request, res: Response): Promise<void> => {
   try {
     const { token } = req.body;
-    const userId = req.user?.id;
+    const userId = req.usuario?.id;
     
     if (!userId) {
       res.status(401).json({ mensaje: 'No autorizado' });
@@ -141,13 +138,22 @@ export const verificar2FA = async (req: Request, res: Response): Promise<void> =
   }
 };
 
-// Desactivar 2FA
+// Desactivar 2FA (requiere confirmación con contraseña)
 export const desactivar2FA = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user?.id;
+    const { password } = req.body;
+    const userId = req.usuario?.id;
     
     if (!userId) {
       res.status(401).json({ mensaje: 'No autorizado' });
+      return;
+    }
+
+    if (!password) {
+      res.status(400).json({ 
+        mensaje: 'La contraseña es requerida para desactivar la autenticación de dos factores',
+        codigo: 'PASSWORD_REQUERIDA'
+      });
       return;
     }
 
@@ -155,6 +161,15 @@ export const desactivar2FA = async (req: Request, res: Response): Promise<void> 
     
     if (!user) {
       res.status(404).json({ mensaje: 'Usuario no encontrado' });
+      return;
+    }
+
+    const esPasswordValida = await user.verificarPassword(password);
+    if (!esPasswordValida) {
+      res.status(401).json({
+        mensaje: 'Contraseña incorrecta',
+        codigo: 'PASSWORD_INCORRECTA'
+      });
       return;
     }
 
@@ -179,12 +194,33 @@ export const desactivar2FA = async (req: Request, res: Response): Promise<void> 
 // Verificar código 2FA durante el login
 export const verificarLogin2FA = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, token } = req.body;
+    const { email, token, tempToken } = req.body;
     
-    if (!email || !token) {
+    if (!email || !token || !tempToken) {
       res.status(400).json({ 
-        mensaje: 'Email y token son requeridos',
+        mensaje: 'Email, token y token temporal son requeridos',
         codigo: 'CAMPOS_REQUERIDOS'
+      });
+      return;
+    }
+
+    // Validar el token temporal emitido tras validar usuario/contraseña.
+    // Sin esto, cualquiera que conozca un email podría fuerza-brutear el código TOTP.
+    let tempPayload: JwtPayload;
+    try {
+      tempPayload = jwt.verify(tempToken, getJwtSecret()) as JwtPayload;
+    } catch {
+      res.status(401).json({ 
+        mensaje: 'Sesión de verificación 2FA inválida o expirada. Inicia sesión nuevamente.',
+        codigo: 'TEMP_TOKEN_INVALIDO'
+      });
+      return;
+    }
+
+    if (tempPayload.temp !== true) {
+      res.status(401).json({ 
+        mensaje: 'Token inválido para verificación 2FA',
+        codigo: 'TEMP_TOKEN_INVALIDO'
       });
       return;
     }
@@ -195,6 +231,23 @@ export const verificarLogin2FA = async (req: Request, res: Response): Promise<vo
       res.status(400).json({ 
         mensaje: 'Autenticación de dos factores no configurada',
         codigo: '2FA_NO_CONFIGURADO'
+      });
+      return;
+    }
+
+    // El token temporal debe pertenecer al mismo usuario
+    if (tempPayload.id !== user.id || tempPayload.email !== user.email) {
+      res.status(401).json({
+        mensaje: 'El código temporal no corresponde a este usuario',
+        codigo: 'TEMP_TOKEN_INVALIDO'
+      });
+      return;
+    }
+
+    if (!user.activo) {
+      res.status(401).json({ 
+        mensaje: 'Usuario inactivo',
+        codigo: 'USUARIO_INACTIVO'
       });
       return;
     }
@@ -226,9 +279,12 @@ export const verificarLogin2FA = async (req: Request, res: Response): Promise<vo
       ...tokens, // accessToken, refreshToken, expiresIn, tokenType
       usuario: {
         id: user.id,
+        usuario: user.usuario,
         nombre: user.nombre,
         email: user.email,
         rol: user.rol,
+        activo: user.activo,
+        permisos: user.permisos,
         twoFactorEnabled: user.twoFactorEnabled
       }
     });

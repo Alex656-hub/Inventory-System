@@ -1,5 +1,6 @@
 // backend/src/models/User.ts
 import { DataTypes, Model, Optional } from 'sequelize';
+import { randomInt } from 'crypto';
 import { sequelize } from '../config/database';
 import bcrypt from 'bcryptjs';
 
@@ -76,36 +77,41 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   }
 
   // Nuevo método para verificar códigos 2FA
+  // Nota: no valida twoFactorEnabled; los llamadores ya validan el estado
+  // (necesario para /2fa/verificar, donde el flag aún es false durante la activación)
   public async verificarCodigo2FA(token: string): Promise<boolean> {
-    if (!this.twoFactorEnabled || !this.twoFactorSecret) {
+    if (!this.twoFactorSecret) {
       return false;
     }
     
     const speakeasy = require('speakeasy');
+    const normalized = String(token || '').trim();
     return speakeasy.totp.verify({
       secret: this.twoFactorSecret,
       encoding: 'base32',
-      token,
+      token: normalized,
       window: 1 // Permite códigos del paso de tiempo anterior y siguiente
     });
   }
 
-  // Método para generar códigos de respaldo
+  // Método para generar códigos de respaldo (criptográficamente seguros)
   public generarCodigosRespaldo(): string[] {
     const codes: string[] = [];
     for (let i = 0; i < 10; i++) {
-      codes.push(Math.random().toString(36).substring(2, 8).toUpperCase());
+      const n = randomInt(0, 36 ** 6);
+      codes.push(n.toString(36).toUpperCase().padStart(6, '0'));
     }
     this.backupCodes = JSON.stringify(codes);
     return codes;
   }
 
-  // Método para verificar códigos de respaldo
+  // Método para verificar códigos de respaldo (insensible a mayúsculas/espacios)
   public verificarCodigoRespaldo(token: string): boolean {
     if (!this.backupCodes) return false;
     
-    const codes = JSON.parse(this.backupCodes);
-    const index = codes.indexOf(token);
+    const codes = JSON.parse(this.backupCodes) as string[];
+    const normalized = String(token || '').trim().toUpperCase();
+    const index = codes.indexOf(normalized);
     
     if (index !== -1) {
       // Eliminar el código usado

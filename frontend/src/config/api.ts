@@ -8,11 +8,11 @@ export const api = axios.create({
 });
 
 // Endpoints de autenticación en los que NO se debe intentar refrescar:
-// - login / verify-2fa: no tiene sentido refrescar con tokens residuales de una sesión anterior
+// - login / 2fa verificar-login: no tiene sentido refrescar con tokens residuales de una sesión anterior
 // - refresh: evita deadlock (refrescar la propia petición de refresh)
 const esEndpointAuth = (url: unknown): boolean =>
   typeof url === 'string' &&
-  (url.includes('/auth/login') || url.includes('/auth/verify-2fa') || url.includes('/auth/refresh'));
+  (url.includes('/auth/login') || url.includes('/2fa/verificar-login') || url.includes('/auth/refresh'));
 
 // Interceptor para agregar el token a las peticiones
 api.interceptors.request.use(

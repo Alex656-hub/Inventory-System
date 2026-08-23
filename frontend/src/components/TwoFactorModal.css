@@ -1,0 +1,143 @@
+/* TwoFactorModal.css — estilos específicos del modal de seguridad 2FA */
+
+.tfa-modal .modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tfa-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 10px;
+}
+
+.tfa-status i {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.tfa-status p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.tfa-status-on {
+  background: #e8f8ee;
+  border: 1px solid #b7e4c7;
+  color: #1b6b3a;
+}
+
+.tfa-status-on i {
+  color: #2d9d5f;
+}
+
+.tfa-status-off {
+  background: #fff7e6;
+  border: 1px solid #ffe1a8;
+  color: #8a5b00;
+}
+
+.tfa-status-off i {
+  color: #d99000;
+}
+
+.tfa-alert {
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.tfa-alert-error {
+  background: #fdecea;
+  border: 1px solid #f5c6c0;
+  color: #a13024;
+}
+
+.tfa-alert-success {
+  background: #e8f8ee;
+  border: 1px solid #b7e4c7;
+  color: #1b6b3a;
+}
+
+.tfa-texto {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.tfa-pasos {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.tfa-qr-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid var(--color-border, #e3e8ef);
+  border-radius: 10px;
+}
+
+.tfa-qr {
+  width: 200px;
+  height: 200px;
+  display: block;
+}
+
+.tfa-input-codigo {
+  text-align: center;
+  font-size: 22px;
+  letter-spacing: 8px;
+  font-weight: 600;
+}
+
+.tfa-codigos-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.tfa-codigo {
+  font-family: monospace;
+  font-size: 15px;
+  letter-spacing: 2px;
+  text-align: center;
+  padding: 8px 6px;
+  background: #f4f6fa;
+  border: 1px dashed #cdd5df;
+  border-radius: 6px;
+  user-select: all;
+}
+
+.tfa-codigos-acciones {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* Botón de peligro (desactivar) — usa .btn.btn-primary style base para ganar especificidad */
+button.tfa-btn-danger {
+  background-color: #dc2626;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+button.tfa-btn-danger:hover:not(:disabled) {
+  background-color: #b91c1c;
+}
+
+button.tfa-btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
