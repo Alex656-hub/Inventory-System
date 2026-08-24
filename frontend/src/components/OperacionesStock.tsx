@@ -1118,7 +1118,7 @@ const ProductoSelector: React.FC<{
         ? productoSeleccionado.precio_venta
         : productoSeleccionado.precio_compra)
     : 0;
-  const precioFinal = precioLista * (1 - descuento / 100);
+  const precioFinal = cantidad * precioLista * (1 - descuento / 100);
 
   // Promo activa del producto: solo aplica en SALIDA (venta al cliente)
   const promoAplicada = operacion.tipo_operacion === 'SALIDA' && !!productoSeleccionado && esPromoActiva(productoSeleccionado);

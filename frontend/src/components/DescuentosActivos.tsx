@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { descuentoService } from '../services/descuento.service';
-import { categoryService } from '../services/category.service';
-import { Descuento, Categoria, TipoDescuento } from '../types';
+import { Descuento, TipoDescuento } from '../types';
 import { FUENTE_LABEL } from '../utils/promociones';
 import './Descuentos.css';
 
@@ -14,8 +13,6 @@ const DescuentosActivos: React.FC<DescuentosActivosProps> = ({ refreshKey }) => 
   const [loading, setLoading] = useState(true);
   const [fuenteFiltro, setFuenteFiltro] = useState<string>('');
   const [tipoFiltro, setTipoFiltro] = useState<string>('');
-  const [categorias, setCategorias] = useState<Categoria[]>([]);
-  const [categoriaRevertir, setCategoriaRevertir] = useState<string>('');
   const [revertiendo, setRevertiendo] = useState<number | null>(null);
 
   const cargar = useCallback(async () => {
@@ -36,12 +33,6 @@ const DescuentosActivos: React.FC<DescuentosActivosProps> = ({ refreshKey }) => 
   useEffect(() => {
     cargar();
   }, [cargar, refreshKey]);
-
-  useEffect(() => {
-    categoryService.obtenerCategorias(true).then((res) => {
-      setCategorias(res.categorias || []);
-    }).catch(() => {});
-  }, []);
 
   const tipoLabel = (d: Descuento): string => {
     if (d.todos_productos) return 'Todos los productos';
@@ -78,33 +69,6 @@ const DescuentosActivos: React.FC<DescuentosActivosProps> = ({ refreshKey }) => 
     }
   };
 
-  const handleRevertirCategoria = async () => {
-    if (!categoriaRevertir) return;
-    if (!window.confirm('¿Revertir todos los descuentos masivos de esta categoría?')) return;
-    try {
-      const res = await descuentoService.revertirMasivo({
-        tipo: 'categoria',
-        categoria_id: Number(categoriaRevertir)
-      });
-      alert(`${res.revertidos} descuento(s) revertido(s)`);
-      setCategoriaRevertir('');
-      cargar();
-    } catch (e: any) {
-      alert(e.response?.data?.mensaje || 'Error al revertir');
-    }
-  };
-
-  const handleRevertirGlobal = async () => {
-    if (!window.confirm('¿Revertir el descuento global (todos los productos)?')) return;
-    try {
-      const res = await descuentoService.revertirMasivo({ tipo: 'todos' });
-      alert(`${res.revertidos} descuento(s) revertido(s)`);
-      cargar();
-    } catch (e: any) {
-      alert(e.response?.data?.mensaje || 'Error al revertir');
-    }
-  };
-
   return (
     <div className="descuentos-activos">
       <div className="da-toolbar">
@@ -123,35 +87,6 @@ const DescuentosActivos: React.FC<DescuentosActivosProps> = ({ refreshKey }) => 
           </select>
           <button type="button" className="gd-btn gd-btn-secondary" onClick={cargar}>
             <i className="bx bx-refresh" /> Actualizar
-          </button>
-        </div>
-
-        <div className="da-filtros">
-          <select
-            className="da-filtro"
-            value={categoriaRevertir}
-            onChange={(e) => setCategoriaRevertir(e.target.value)}
-          >
-            <option value="">Revertir por categoría...</option>
-            {categorias.map((c) => (
-              <option key={c.id} value={c.id}>{c.nombre}</option>
-            ))}
-          </select>
-          <button
-            type="button"
-            className="gd-btn gd-btn-secondary"
-            onClick={handleRevertirCategoria}
-            disabled={!categoriaRevertir}
-          >
-            <i className="bx bx-undo" /> Revertir categoría
-          </button>
-          <button
-            type="button"
-            className="gd-btn gd-btn-secondary"
-            onClick={handleRevertirGlobal}
-            disabled={!descuentos.some((d) => d.todos_productos && d.fuente === 'masivo')}
-          >
-            <i className="bx bx-undo" /> Revertir global
           </button>
         </div>
       </div>
