@@ -10,7 +10,7 @@ interface OperacionStockAttributes {
   id: number;
   tipo_operacion: 'ENTRADA' | 'SALIDA' | 'TRASPASO';
   fecha_emision: Date;
-  personal_id: number;
+  personal_id?: number;
   referencia?: string;
   
   // Campos dinámicos según tipo
@@ -45,7 +45,7 @@ interface OperacionStockAttributes {
   updatedAt?: Date;
 }
 
-interface OperacionStockCreationAttributes extends Optional<OperacionStockAttributes, 'id' | 'referencia' | 'sede_origen_id' | 'sede_destino_id' | 'proveedor_id' | 'cliente_id' | 'motivo_traspaso' | 'createdAt' | 'updatedAt'> {}
+interface OperacionStockCreationAttributes extends Optional<OperacionStockAttributes, 'id' | 'referencia' | 'sede_origen_id' | 'sede_destino_id' | 'proveedor_id' | 'cliente_id' | 'motivo_traspaso' | 'personal_id' | 'createdAt' | 'updatedAt'> {}
 
 class OperacionStock extends Model<OperacionStockAttributes, OperacionStockCreationAttributes> implements OperacionStockAttributes {
   public id!: number;

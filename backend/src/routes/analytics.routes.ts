@@ -49,8 +49,8 @@ const router = Router();
  *       500:
  *         description: Error al generar el pronóstico
  */
-router.get('/advanced-forecast', verificarToken, verificarRol(['gerente']), advancedForecastDemand);
-router.get('/forecast/eligibility', verificarToken, verificarRol(['gerente']), forecastEligibility);
+router.get('/advanced-forecast', verificarToken, verificarPermiso('alertasStock'), advancedForecastDemand);
+router.get('/forecast/eligibility', verificarToken, verificarPermiso('alertasStock'), forecastEligibility);
 
 /**
  * @swagger
@@ -121,9 +121,9 @@ router.get('/forecast/eligibility', verificarToken, verificarRol(['gerente']), f
  *       500:
  *         description: Error del servidor al obtener las métricas
  */
-router.get('/metrics', verificarToken, verificarRol(['gerente']), getInventoryMetrics);
+router.get('/metrics', verificarToken, verificarPermiso('alertasStock'), getInventoryMetrics);
 
-router.get('/projections', verificarToken, verificarRol(['gerente']), getFinancialProjectionsController);
+router.get('/projections', verificarToken, verificarPermiso('alertasStock'), getFinancialProjectionsController);
 
 router.get('/aging', verificarToken, verificarPermiso('alertasStock'), getAging);
 

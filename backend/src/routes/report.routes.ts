@@ -1,17 +1,15 @@
 // backend/src/routes/report.routes.ts
 import { Router } from 'express';
 import { generateReport, generateKardexPDF, generateInventarioExcel, getInventarioData } from '../controllers/ReportController';
-import { verificarToken, soloGerente } from '../middleware/auth.middleware';
+import { verificarToken, soloGerente, verificarPermiso } from '../middleware/auth.middleware';
 
 const router = Router();
 
-// Todas las rutas requieren autenticación y ser gerente
 router.use(verificarToken);
-router.use(soloGerente);
 
-router.post('/generate', generateReport);
-router.post('/kardex', generateKardexPDF);
-router.post('/inventario', generateInventarioExcel);
-router.get('/inventario-data', getInventarioData);
+router.get('/inventario-data', verificarPermiso('reporteInventario'), getInventarioData);
+router.post('/generate', soloGerente, generateReport);
+router.post('/kardex', soloGerente, generateKardexPDF);
+router.post('/inventario', soloGerente, generateInventarioExcel);
 
 export default router;

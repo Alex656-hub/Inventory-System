@@ -16,6 +16,8 @@ import DetalleSalida from '../models/DetalleSalida';
 import MovimientoInventario from '../models/MovimientoInventario';
 import StockPorSede from '../models/StockPorSede';
 import DailySale from '../models/sales';
+import OperacionStock from '../models/OperacionStock';
+import DetalleOperacion from '../models/DetalleOperacion';
 import { alertService } from './alertService';
 import { advancedDemandForecasting } from '../analytics/services/advancedDemandForecasting';
 import { Op } from 'sequelize';
@@ -812,6 +814,39 @@ export class SalesImportService {
     }
 
     result.newEntradas++;
+
+    // Crear OperacionStock derivada para analytics
+    const personalNombre = (firstRow.personal || '').toString().trim();
+    let personalCompra = undefined;
+    if (personalNombre) {
+      personalCompra = await Personal.findOne({ where: { nombreCompleto: personalNombre }, transaction: t });
+    }
+    const sedeCompra = sedeNombre ? sedeMap.get(sedeNombre.toLowerCase()) : undefined;
+    const totalUnidadesCompra = items.reduce((sum, item) => sum + item.cantidad, 0);
+    const operacionCompra = await OperacionStock.create({
+      tipo_operacion: 'ENTRADA',
+      fecha_emision: fecha,
+      referencia: factura,
+      sede_destino_id: sedeCompra?.id,
+      proveedor_id: supplier.id,
+      personal_id: personalCompra?.id ?? undefined,
+      total_unidades: totalUnidadesCompra,
+      costo_total: total,
+      estado: 'PROCESADO',
+      metodo_pago: 'efectivo',
+      num_cuotas: 0,
+      garantia_tipo: 'ninguna',
+      garantia_valor: '',
+    }, { transaction: t });
+
+    const detallesCompra = items.map(item => ({
+      operacion_id: operacionCompra.id,
+      producto_id: item.producto.id,
+      cantidad: item.cantidad,
+      costo_unitario: item.precio,
+      subtotal: item.cantidad * item.precio,
+    }));
+    await DetalleOperacion.bulkCreate(detallesCompra, { transaction: t });
   }
 
   private static async processVenta(
@@ -947,6 +982,39 @@ export class SalesImportService {
     }
 
     result.newSalidas++;
+
+    // Crear OperacionStock derivada para analytics
+    const sedeVenta = await Sede.findOne({ where: { estado: 'activo' }, order: [['id', 'ASC']], transaction: t });
+    const personalNombreVenta = (firstRow.personal || '').toString().trim();
+    let personalVenta = undefined;
+    if (personalNombreVenta) {
+      personalVenta = await Personal.findOne({ where: { nombreCompleto: personalNombreVenta }, transaction: t });
+    }
+    const totalUnidadesVenta = items.reduce((sum, item) => sum + item.cantidad, 0);
+    const operacionVenta = await OperacionStock.create({
+      tipo_operacion: 'SALIDA',
+      fecha_emision: fecha,
+      referencia: factura,
+      sede_origen_id: sedeVenta?.id,
+      cliente_id: client?.id,
+      personal_id: personalVenta?.id ?? undefined,
+      total_unidades: totalUnidadesVenta,
+      costo_total: total,
+      estado: 'PROCESADO',
+      metodo_pago: 'efectivo',
+      num_cuotas: 0,
+      garantia_tipo: 'ninguna',
+      garantia_valor: '',
+    }, { transaction: t });
+
+    const detallesVenta = items.map(item => ({
+      operacion_id: operacionVenta.id,
+      producto_id: item.producto.id,
+      cantidad: item.cantidad,
+      costo_unitario: item.precio,
+      subtotal: item.cantidad * item.precio,
+    }));
+    await DetalleOperacion.bulkCreate(detallesVenta, { transaction: t });
   }
 
   private static async updateProductStocks(
